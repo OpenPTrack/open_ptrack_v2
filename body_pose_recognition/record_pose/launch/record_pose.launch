@@ -1,0 +1,11 @@
+<launch>
+
+	<arg name="pose_name" />
+
+  <node name="record_pose" type="record_pose.py" pkg="record_pose" output="screen" >
+    <rosparam command="load" file="$(find record_pose)/conf/params.yaml" />
+    <remap from="skeletons" to="/tracker/standard_skeleton_tracks" /> 
+    <param name="pose_name" value="$(arg pose_name)" /> 
+  </node>
+
+</launch>

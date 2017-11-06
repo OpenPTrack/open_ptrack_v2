@@ -1,0 +1,7 @@
+<launch>
+
+	<node pkg="pose_recognition" type="pose_recognition" name="pose_recognition" output="screen">
+		<rosparam command="load" file="$(find pose_recognition)/conf/params.yaml" />
+	</node>
+
+</launch>

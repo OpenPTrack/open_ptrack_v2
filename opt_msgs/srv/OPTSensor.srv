@@ -1,0 +1,39 @@
+uint8 TYPE_NOT_SET=0
+uint8 TYPE_KINECT1=1
+uint8 TYPE_SR4500=2
+uint8 TYPE_STEREO_PG=3
+uint8 TYPE_KINECT2=4
+uint8 TYPE_ZED=5
+uint8 PEOPLE_DETECTOR_MUNARO_BASED=0
+uint8 PEOPLE_DETECTOR_YOLO_BASED=1
+
+uint64 session_id
+
+string id
+uint8  type
+uint8  people_detector_type
+
+# if TYPE_KINECT1 | TYPE_KINECT2
+string serial
+
+# if TYPE_SR4500
+string ip
+
+# if TYPE_STEREO_PG
+string serial_left
+string serial_right
+
+# if TYPE_ZED
+string id_num
+
+bool enable_people_tracking
+bool enable_object
+bool enable_pose
+
+---
+
+uint8 STATUS_OK=0
+uint8 STATUS_ERROR=1
+
+uint8  status
+string message

@@ -1,0 +1,54 @@
+# Camera network parameters
+# Supported sensor types: 
+#  * Kinect 1st version (type: kinect1)
+#  * Kinect 2nd version (type: kinect2)
+#  * ZED camera (type: zed)
+#  * Custom stereo pair composed of PointGrey (e.g. BlackFly) cameras (type: stereo_pg)
+#enable_people_tracking: true
+#enable_pose: false
+#enable_object: false
+#network:
+#  - pc: "Cassiopea"
+#    sensors:
+#      - type: kinect1
+#        id: "Kinect_v1_0"
+#        people_detector: munaro 
+#      - type: kinect2
+#        id: "Kinect_v2"
+#        people_detector: munaro
+#      - type: zed
+#        id: "ZED_Camera"
+#        people_detector: yolo
+#  - pc: "pc_2"
+#    sensors:
+#      - type: kinect1
+#        id: "Kinect_v1_1"
+#        people_detector: munaro
+#        serial: "A00364820345039A"
+#      - type: stereo_pg
+#        id: "blackfly_stereo"
+#        serial_left: "13310958"
+#        people_detector: munaro
+#        serial_right: "13310959"
+enable_people_tracking: true
+enable_object: false
+enable_pose: true
+network:
+  - pc: "opt-01"
+    sensors:
+      - type: zed
+        id: "zed_01"
+        people_detector: yolo
+  - pc: "opt-02"
+    sensors:
+      - type: kinect2
+        id: "kinect_02"
+        use_hog: true
+        people_detector: munaro
+
+# Checkerboard parameters
+checkerboard:
+  rows: 6
+  cols: 5
+  cell_width: 0.102
+  cell_height: 0.102

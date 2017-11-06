@@ -1,0 +1,9 @@
+1. Mkdir in this folder with the names of the sensors
+
+2. Drawing boudingbox in the gui , set the object names and press the "confirm" button. The images of the boudingbox will be saved here 
+
+3. Before the save/restore, the users should remove all the previous generated images first in order to avoid the old images interference in the image tempalte selecting.
+
+3. In the image tempalte selecting, select some good images and put them in the right folder(named with the sensor name) for the save/restore
+
+4. If you want to update the images for save/restore, you need first remove the old images in each folder named with sensor name.

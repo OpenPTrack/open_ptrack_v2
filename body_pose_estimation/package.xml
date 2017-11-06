@@ -1,0 +1,17 @@
+<package format="2">
+  <name>body_pose_estimation</name>
+  <version>1.0.0</version>
+  <description>
+    This package provides body_pose_estimation capability.
+  </description>
+  <maintainer email="carraromarco89@gmail.com">Marco Carraro</maintainer>
+  <license>BSD</license>
+
+  <build_depend>catkin</build_depend>
+  
+  <depend>opt_msgs</depend>
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>

@@ -1,0 +1,15 @@
+############################################################
+## The skeleton must be valid (no NaNs or INFs) for at least 
+## this number of frames
+min_valid_skeletons: 100
+############################################################
+## If the joint pose of (at least) one joint varies more than this 
+## threshold the pose is considered not valid
+per_joint_valid_pose_threshold: 0.2
+############################################################
+## The skeleton position must not vary for at least this 
+## number of frames to consider registration of the new pose
+min_valid_poses: 100
+
+## joints which are taken in consideration for the pose
+joints_to_consider_by_index: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] #no head, neck and chest
