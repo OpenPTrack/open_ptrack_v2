@@ -3,6 +3,8 @@
 // Static member definition ...
 cv::Mat Object_Detector::mainColor;
 cv::Mat Object_Detector::mainDepth;
+cv::Mat Object_Detector::mainColorOrigin;
+cv::Mat Object_Detector::hsvMask;
 
 void Object_Detector::setMainColor(const cv::Mat _mainColor)
 {
@@ -23,6 +25,29 @@ cv::Mat Object_Detector::getMainDepth()
 {
     return mainDepth;
 }
+
+
+void Object_Detector::setMainColorOrigin(const cv::Mat _mainColorOrigin)
+{
+    _mainColorOrigin.copyTo(mainColorOrigin);
+}
+
+cv::Mat Object_Detector::getMainColorOrigin()
+{
+    return mainColorOrigin;
+}
+
+
+void Object_Detector::setHsvMask(const cv::Mat _hsvMask)
+{
+    _hsvMask.copyTo(hsvMask);
+}
+
+cv::Mat Object_Detector::getHsvMask()
+{
+    return hsvMask;
+}
+
 
 
 void Object_Detector::setCurrentRect(const cv::Rect _currentRect)
@@ -62,14 +87,18 @@ void Object_Detector::H_backprojection()
     float h_ranges[] = {0,(float)HMax};
     const float* ph_ranges = h_ranges;
     int h_channels[] = {0, 0};
-    hue.create(hsv.size(), hsv.depth());
-    cv::mixChannels(&hsv, 1, &hue, 1, h_channels, 1);
+    hue.create(Color.size(), Color.depth());
+    cv::mixChannels(&Color, 1, &hue, 1, h_channels, 1);
 
     if( firstRun )
     {
         if(!occluded)
         {
-        cv::Mat roi(hue, selection), maskroi(hsv_mask, selection);
+        Mat _hsv, _hue,_hsv_mask;
+        cv::cvtColor(ColorOrigin, _hsv, CV_BGR2HSV);
+        cv::inRange(_hsv, cv::Scalar(HMin, SMin, MIN(VMin,VMax)), cv::Scalar(HMax, SMax, MAX(VMin, VMax)), _hsv_mask);
+        cv::mixChannels(&_hsv, 1, &_hue, 1, h_channels, 1);
+        cv::Mat roi(_hue, selection), maskroi(_hsv_mask, selection);
         cv::calcHist(&roi, 1, 0, maskroi, h_hist, 1, &h_bins, &ph_ranges);
         cv::normalize(h_hist, h_hist, 0, 255, CV_MINMAX);
         detectWindow = selection;
@@ -78,8 +107,6 @@ void Object_Detector::H_backprojection()
         }
         else{
             Mat roi_color= roi_from_file;
-//            cv::imshow("roi from file",roi_color);
-//            cv::waitKey(30);
             Mat roi_hsv,roi_hsv_mask;
             cv::cvtColor(roi_color, roi_hsv, CV_BGR2HSV);
             cv::inRange(roi_hsv, cv::Scalar(HMin, SMin, MIN(VMin,VMax)),
@@ -106,7 +133,11 @@ void Object_Detector::HS_backprojection()
     {
         if(!occluded)
         {
-            cv::Mat roi(hsv, selection), maskroi(hsv_mask, selection);
+            Mat _hsv,_hsv_mask;
+            cv::cvtColor(ColorOrigin, _hsv, CV_BGR2HSV);
+            cv::inRange(_hsv, cv::Scalar(HMin, SMin, MIN(VMin,VMax)), cv::Scalar(HMax, SMax, MAX(VMin, VMax)), _hsv_mask);
+            cv::Mat roi(_hsv, selection), maskroi(_hsv_mask, selection);
+            // imshow("hsv_mask",hsv_mask);
             cv::calcHist(&roi, 1, hs_channels, maskroi, hs_hist_for_HS, 2, hs_size, phs_ranges, true, false);
             cv::normalize(hs_hist_for_HS, hs_hist_for_HS, 0, 255, CV_MINMAX);
             detectWindow = selection;
@@ -115,8 +146,6 @@ void Object_Detector::HS_backprojection()
         }
         else{
             Mat roi_color= roi_from_file;
-//            cv::imshow("roi from file",roi_color);
-//            cv::waitKey(30);
             Mat roi_hsv,roi_hsv_mask;
             cv::cvtColor(roi_color, roi_hsv, CV_BGR2HSV);
             cv::inRange(roi_hsv, cv::Scalar(HMin, SMin, MIN(VMin,VMax)),
@@ -127,8 +156,8 @@ void Object_Detector::HS_backprojection()
             firstRun = false;
         }
     }
-    cv::calcBackProject( &hsv, 1, hs_channels, hs_hist_for_HS, backproj, phs_ranges, 1, true );
-
+    cv::calcBackProject( &Color, 1, hs_channels, hs_hist_for_HS, backproj, phs_ranges, 1, true );
+//    imshow("backproj",backproj);
 }
 
 void Object_Detector::HSD_backprojection()
@@ -149,13 +178,15 @@ void Object_Detector::HSD_backprojection()
     int hsd_channels[] = {0,1,2};
     int hsd_channels_formix[] = {0, 2};
 
-    cv::mixChannels(&Depth, 1, &hsv, 3, hsd_channels_formix, 1);//hsv-->hsd
+    cv::mixChannels(&Depth, 1, &Color, 3, hsd_channels_formix, 1);//hsv-->hsd
 
     if( firstRun )
     {
         if(!occluded)//if the roi is from the file, the first frame will be set to occluded, in this situation,we just calculate the hs pdf and use it to search the object
         {
-            cv::Mat roi(hsv, selection), maskroi(hsv_mask, selection);
+            Mat _hsv;
+            cv::cvtColor(ColorOrigin, _hsv, CV_BGR2HSV);
+            cv::Mat roi(_hsv, selection), maskroi(hsv_mask, selection);
             cv::calcHist(&roi, 1, hs_channels, maskroi, hs_hist_for_HSD, 2, hs_size, phs_ranges, true, false);
             cv::normalize(hs_hist_for_HSD , hs_hist_for_HSD , 0, 255, CV_MINMAX);
 
@@ -271,11 +302,11 @@ void Object_Detector::HSD_backprojection()
 
     if(!occluded&&!half_occluded)//if not occluded, use hsd pdf
     {
-        cv::calcBackProject( &hsv, 1, hsd_channels, hsd_hist, backproj, phsd_ranges, 1, true );
+        cv::calcBackProject( &Color, 1, hsd_channels, hsd_hist, backproj, phsd_ranges, 1, true );
     }
     else//if occluded, use hs pdf
     {
-        cv::calcBackProject( &hsv, 1, hs_channels, hs_hist_for_HSD, backproj, phs_ranges, 1, true );
+        cv::calcBackProject( &Color, 1, hs_channels, hs_hist_for_HSD, backproj, phs_ranges, 1, true );
     }
 
 }
@@ -422,11 +453,8 @@ cv::RotatedRect Object_Detector::detectCurrentRect(int id)
 
     mainColor.copyTo(Color);
     mainDepth.copyTo(Depth);
-
-    cv::cvtColor(Color, hsv, CV_BGR2HSV);
-
-    //calculate the hsv_mask by the range
-    cv::inRange(hsv, cv::Scalar(HMin, SMin, MIN(VMin,VMax)), cv::Scalar(HMax, SMax, MAX(VMin, VMax)), hsv_mask);
+    mainColorOrigin.copyTo(ColorOrigin);
+    hsvMask.copyTo(hsv_mask);
 
     if(Backprojection_Mode=="H")
     {
@@ -440,7 +468,7 @@ cv::RotatedRect Object_Detector::detectCurrentRect(int id)
     {
         HSD_backprojection();
     }
-    //    imshow("backproj first",backproj);
+//    imshow("backproj first",backproj);
 
 
     // calculate the other_object_mask with the current_detected_boxes
@@ -457,7 +485,7 @@ cv::RotatedRect Object_Detector::detectCurrentRect(int id)
     }
 
 
-    detectWindow=detectWindow&Rect(0,0,hsv.size().width,hsv.size().height);
+    detectWindow=detectWindow&Rect(0,0,Color.size().width,Color.size().height);
     if(occluded==false&&detectWindow.area()>1)
     {
         //use x y to generate position_mask,the object can move in the window which is AREA_TOLERANCE size bigger than the last detected window

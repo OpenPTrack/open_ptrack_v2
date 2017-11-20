@@ -65,6 +65,10 @@ private:
     static cv::Mat mainDepth;
     cv::Mat Color,Depth;//copied from mainColor,mainDepth
 
+    static cv::Mat mainColorOrigin;
+    static cv::Mat hsvMask;
+    cv::Mat ColorOrigin,hsv_mask;//copied from mainColorOrigin,hsv_mask
+
 
     bool firstRun;
     cv::Rect currentRect;// just used in the  initilization(no important)
@@ -75,7 +79,7 @@ private:
 
 
     //////////main variable for calculate the histogram ///////////
-    cv::Mat hsv, hue, hsv_mask,backproj;
+    cv::Mat hue,backproj;
     cv::Mat h_hist;//H mode
     cv::Mat hs_hist_for_HS;//HS mode
     cv::Mat hs_hist_for_HSD,//just used under occlusion,because ,when oclluded ,can't use depth infomation to detect the objects
@@ -99,6 +103,12 @@ public:
 
     static void setMainDepth(const cv::Mat _mainDepth);
     static cv::Mat getMainDepth();
+
+    static void setMainColorOrigin(const cv::Mat _mainColorOrigin);
+    static cv::Mat getMainColorOrigin();
+
+    static void setHsvMask(const cv::Mat _hsvMask);
+    static cv::Mat getHsvMask();
 
     void setCurrentRect(const cv::Rect _currentRect);
     cv::Rect getCurrentRect();

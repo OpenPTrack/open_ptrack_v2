@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<!-- SESSION ID: 1505919046 -->
+<!-- SESSION ID: 1511184148 -->
 <launch>
 
-  <arg name="enable_people_tracking" default="true" />
-  <arg name="enable_pose" default="true" />
-  <arg name="enable_object" default="false" />
+  <arg name="enable_people_tracking" default="false" />
+  <arg name="enable_pose" default="false" />
+  <arg name="enable_object" default="true" />
   <!-- Load calibration results -->
   <include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/>
 
