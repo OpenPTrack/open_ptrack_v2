@@ -5,7 +5,7 @@
 output_detection_topic: /objects_detector/detections
 
 #if you want to see the tracks result on the image, set show_2D_track to true
-show_2D_track: false #true
+show_2D_track: false
 
 
 ###########For choose on which camera to set the object names###########
@@ -21,6 +21,7 @@ use_background_removal: true
 
 threshold_4_shadow: 250
 
+number_of_frames_to_compute_the_static_background: 20
 
 ##############################################
 ## object_detector parameters ##

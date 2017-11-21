@@ -62,6 +62,8 @@ int main(int argc, char** argv){
 //    nh.param("background_calculate_frames",background_calculate_frames,100);
     nh.param("threshold_4_shadow",threshold_4_shadow,240);
     nh.param("show_2D_track",show_2D_tracks,false);
+    int number_of_frames_for_static_bs;
+    nh.param("number_of_frames_to_compute_the_static_background",number_of_frames_for_static_bs, -1);
     nh.param("output_detection_topic",output_detection_topic,std::string("/objects_detector/detections"));
     nh.param("set_object_names",set_object_names,false);
 
@@ -111,7 +113,7 @@ int main(int argc, char** argv){
 
     // main class for detection
     Multiple_Objects_Detection _multiple_objects_detection(output_detection_topic,set_object_names,useExact, useCompressed,
-                                                           use_background_removal,threshold_4_shadow,show_2D_tracks);
+                                                           use_background_removal,threshold_4_shadow,number_of_frames_for_static_bs,show_2D_tracks);
 
     std::cout << "start detecting..." << std::endl;
     _multiple_objects_detection.run_detection();
