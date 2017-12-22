@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(body_pose_estimation)
 
-SET(CMAKE_BUILD_TYPE RelWithDebInfo)
+#SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 add_definitions(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS

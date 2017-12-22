@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(detection)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+#set(CMAKE_BUILD_TYPE RelWithDebInfo)
 add_definitions("-std=c++11")
 
 ## Find catkin macros and libraries

@@ -3,7 +3,7 @@ project(tracking)
 
 add_definitions("-std=c++11")
 
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+#set(CMAKE_BUILD_TYPE RelWithDebInfo)
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   roscpp

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(opt_utils)
-SET(CMAKE_BUILD_TYPE RelWithDebInfo)
+#SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules roscpp rosconsole image_transport cv_bridge opt_msgs
