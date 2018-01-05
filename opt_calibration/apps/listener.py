@@ -35,7 +35,7 @@
 #
 # Author: Matteo Munaro [matteo.munaro@dei.unipd.it]
 #         Filippo Basso [filippo.basso@dei.unipd.it]
-#	  Marco Carraro [carraromarco89@gmail.com]
+#	        Marco Carraro [carraromarco89@gmail.com]
 #         Chandler Brown
 #
 ######################################################################
@@ -354,7 +354,7 @@ class Listener :
 
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
-      if request.people_detector == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
+      if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
         file.write('          <include file="$(find detection)/launch/detector_zed.launch">\n')
         if request.id_num != '':
           file.write('    	<arg name="sensor_id"               value="$(arg sensor_id)" />\n')
