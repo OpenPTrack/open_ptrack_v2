@@ -126,7 +126,7 @@ synchronizedCallback(
        pose.Add("prediction_score", ppr.score);
       poses.Add(pose);
     }
-    current_track.Add("pose_tracks", poses);
+    current_track.Add("poses", poses);
 
     // joints
     Jzon::Object joints;
