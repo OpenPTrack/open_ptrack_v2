@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "run_yolo.h"
+#include "run_yolo_obj.h"
 
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
