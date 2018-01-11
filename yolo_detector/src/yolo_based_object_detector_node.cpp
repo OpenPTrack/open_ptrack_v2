@@ -23,7 +23,7 @@
 extern  "C"{
 #include "network.h"
 #include "image.h"
-#include "run_yolo.h"
+#include "run_yolo_obj.h"
 #include "parser.h"
 
 #include "network.h"
