@@ -21,7 +21,7 @@
 #include <time.h>
 
 
-box* init_boxes(network net)
+box* init_boxes_obj(network net)
 {
 	layer l = net.layers[net.n-1];
     box *boxes = (box*)calloc(l.w*l.h*l.n, sizeof(box));
@@ -29,7 +29,7 @@ box* init_boxes(network net)
     return boxes;
 }
 
-float** init_probs(network net)
+float** init_probs_obj(network net)
 {
 	int j;
 	layer l = net.layers[net.n-1];
@@ -43,7 +43,7 @@ float** init_probs(network net)
     return probs;
 }
 
-IplImage* image_to_ipl(image p)
+IplImage* image_to_ipl_obj(image p)
 {
 	image copy = copy_image(p);
 	if(p.c == 3) rgbgr_image(copy);
@@ -64,7 +64,7 @@ IplImage* image_to_ipl(image p)
 	return disp;
 }
 
-image **load_alphabet_(char* path)
+image **load_alphabet_obj_(char* path)
 {
     int i, j;
     const int nsize = 8;
@@ -80,7 +80,7 @@ image **load_alphabet_(char* path)
     return alphabets;
 }
 
-void draw_people_detections(image im, int num,  box *boxes)
+void draw_object_detections(image im, int num,  box *boxes)
 {
 	int i;
 	for(i = 0; i < num; i++)
@@ -108,7 +108,7 @@ void draw_people_detections(image im, int num,  box *boxes)
 	}
 }
 
-void extractPerson(int imW, int imH, int num, float thresh, box *boxes, float **probs, char **names, int classes, boxInfo *result)
+void extractObject(int imW, int imH, int num, float thresh, box *boxes, float **probs, char **names, int classes, boxInfo *result)
 {
 	int i;
 	int newNum = 0;
@@ -172,7 +172,7 @@ void extractPerson(int imW, int imH, int num, float thresh, box *boxes, float **
     //free_ptrs((void **)probs, num);
 }
 
-void run_yolo_detection(image im, network net, box *boxes, float **probs, float thresh, float hier_thresh, char **names, boxInfo *result)
+void run_yolo_detection_obj(image im, network net, box *boxes, float **probs, float thresh, float hier_thresh, char **names, boxInfo *result)
 {
     float nms=.4;
     layer l = net.layers[net.n-1];
@@ -212,6 +212,6 @@ void run_yolo_detection(image im, network net, box *boxes, float **probs, float 
     //printf("took %f seconds to predict yolo \n", time_taken);
    // free_ptrs((void **)probs, l.w*l.h*l.n);
   // printf( "detect layer (layer %d) w = %d h = %d n = %d\n", net.n, l.w, l.h, l.n);
-    extractPerson(imW, imH, l.w*l.h*l.n, thresh, boxes, probs, names,  l.classes, result);
+    extractObject(imW, imH, l.w*l.h*l.n, thresh, boxes, probs, names,  l.classes, result);
 }
 

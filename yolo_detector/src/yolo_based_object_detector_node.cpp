@@ -179,7 +179,7 @@ void callback(const Image::ConstPtr& rgb_image,
 		boxes->boxes = (adjBox*)calloc(200, sizeof(adjBox));
 		
 		//std::cout << "ENTER C CODE" << std::endl;
-		run_yolo_detection(im, net, boxes_y, probs, thresh,  hier_thresh, names, boxes);
+		run_yolo_detection_obj(im, net, boxes_y, probs, thresh,  hier_thresh, names, boxes);
 		
 		//printf( "Num of people here = %d\n", boxes->num);
 		//double duration = ros::Time::now().toSec() - begin.toSec();
@@ -299,7 +299,7 @@ void callback(const Image::ConstPtr& rgb_image,
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "yolo_based_people_detector");
+    ros::init(argc, argv, "yolo_based_object_detector");
     ros::NodeHandle nh("~");
 	
 	std::string depth_image_topic;
@@ -372,8 +372,8 @@ int main(int argc, char** argv)
     set_batch_network( &net, 1 );
 	srand(2222222);
 	
-	boxes_y = init_boxes(net);
-	probs = init_probs(net);
+	boxes_y = init_boxes_obj(net);
+	probs = init_probs_obj(net);
 	
 	list *options = read_data_cfg((char*)datacfg.c_str() );
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -386,12 +386,12 @@ int main(int argc, char** argv)
     
     
     names = get_labels((char*)name_list_str.c_str());
-    image **alphabet = load_alphabet_((char*)data_list_str.c_str());
+    image **alphabet = load_alphabet_obj_((char*)data_list_str.c_str());
 
-	std::cout<<"YOLO Set UP"<<std::endl;
+	std::cout<<"YOLO Set UP - objects"<<std::endl;
 	
 	image_transport::ImageTransport it(nh);
-    pub = it.advertise("yolo_detector/image", 1);
+    pub = it.advertise("yolo_object_detector/image", 1);
     detection_pub= nh.advertise<DetectionArray>(output_topic, 3);
     
     dynamic_reconfigure::Server<yolo_detector::open_ptrack_yoloConfig> server;
