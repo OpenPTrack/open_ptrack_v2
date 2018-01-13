@@ -24,7 +24,7 @@
     <param name="encoding_type"                      value="32FC1"/>
     <param name="in_mm"                      value="0"/>
     
-    <param name="root"                      value="/$(find yolo_detector)"/>
+    <param name="root"                      value="$(find yolo_detector)"/>
 
   </node>
 
