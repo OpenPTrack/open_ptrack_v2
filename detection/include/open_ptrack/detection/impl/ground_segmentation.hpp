@@ -685,7 +685,15 @@ open_ptrack::detection::GroundplaneEstimation<PointT>::click_cb(int event, int x
     data->clicked_points_2d.push_back(p);
     break;
   }
-  case CV_EVENT_RBUTTONUP:
+  }
+  switch (flags)
+  {
+  case CV_EVENT_FLAG_SHIFTKEY:
+  {
+    data->selection_finished = true;
+    break;
+  }
+  case CV_EVENT_FLAG_CTRLKEY:
   {
     data->selection_finished = true;
     break;
