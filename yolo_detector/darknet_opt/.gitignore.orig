@@ -16,7 +16,7 @@ decaf/
 submission/
 cfg/
 darknet
-*.weights
+yolo.weights
 .fuse*
 
 # OS Generated #
