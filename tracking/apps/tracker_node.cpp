@@ -53,10 +53,13 @@
 #include <fstream>
 #include <string.h>
 
+#include <message_filters/subscriber.h>
+#include <message_filters/time_sequencer.h>
 #include <open_ptrack/opt_utils/conversions.h>
 #include <open_ptrack/detection/detection.h>
 #include <open_ptrack/detection/detection_source.h>
 #include <open_ptrack/tracking/tracker.h>
+#include <opt_msgs/Association.h>
 #include <opt_msgs/Detection.h>
 #include <opt_msgs/DetectionArray.h>
 #include <opt_msgs/TrackArray.h>
@@ -91,6 +94,7 @@ ros::Publisher pointcloud_pub;
 ros::Publisher detection_marker_pub;
 ros::Publisher detection_trajectory_pub;
 ros::Publisher alive_ids_pub;
+ros::Publisher association_result_pub;
 size_t starting_index;
 size_t detection_insert_index;
 tf::Transform camera_frame_to_world_transform;
@@ -365,6 +369,8 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
 //      ROS_WARN_STREAM("Track time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
 
       // Create a TrackingResult message with the output of the tracking process
+      opt_msgs::TrackArray::Ptr tracking_results_msg(new opt_msgs::TrackArray);
+
       if(output_tracking_results)
       {
         opt_msgs::TrackArray::Ptr tracking_results_msg(new opt_msgs::TrackArray);
@@ -405,6 +411,13 @@ detection_cb(const opt_msgs::DetectionArray::ConstPtr& msg)
       alive_ids_msg->header.frame_id = world_frame_id;
       tracker->getAliveIDs (alive_ids_msg);
       alive_ids_pub.publish (alive_ids_msg);
+
+      // Publish the data assocition result:
+      opt_msgs::Association::Ptr association_msg(new opt_msgs::Association());
+      association_msg->header = msg->header;
+      tracker->getAssociationResult (association_msg);
+      association_msg->tracks = *tracking_results_msg;
+      association_result_pub.publish (association_msg);
 
       // Show the pose of each tracked object with a 3D marker (to be visualized with ROS RViz)
       if(output_markers)
@@ -591,7 +604,10 @@ main(int argc, char** argv)
   ros::NodeHandle nh("~");
 
   // Subscribers/Publishers:
-  ros::Subscriber input_sub = nh.subscribe("input", 5, detection_cb);
+  message_filters::Subscriber<opt_msgs::DetectionArray> input_sub(nh, "input", 5);
+  message_filters::TimeSequencer<opt_msgs::DetectionArray> input_seq(input_sub, ros::Duration(0.5), ros::Duration(0.01), 512);
+  input_seq.registerCallback(boost::function<void(const opt_msgs::DetectionArrayConstPtr&)>(detection_cb));
+  //ros::Subscriber input_sub = nh.subscribe("input", 5, detection_cb);
   marker_pub_tmp = nh.advertise<visualization_msgs::Marker>("/tracker/markers", 1);
   marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/tracker/markers_array", 1);
   pointcloud_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/tracker/history", 1);
@@ -599,6 +615,7 @@ main(int argc, char** argv)
   detection_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("/detector/markers_array", 1);
   detection_trajectory_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBA> >("/detector/history", 1);
   alive_ids_pub = nh.advertise<opt_msgs::IDArray>("/tracker/alive_ids", 1);
+  association_result_pub = nh.advertise<opt_msgs::Association>("/tracker/association_result", 1);
 
   // Dynamic reconfigure
   boost::recursive_mutex config_mutex_;

@@ -63,7 +63,7 @@ add_library(${PROJECT_NAME}
   src/multiple_objects_detection/roi_zz.cpp
   src/skeleton_detection.cpp
   )
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_gencpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 add_executable(multiple_objects_detection_node apps/multiple_objects_detection_node.cpp)
@@ -80,6 +80,7 @@ target_link_libraries(ground_based_people_detector_sr ${PROJECT_NAME} ${catkin_L
 
 add_library(haar_disp_ada src/haardispada.cpp apps/haardispada_nodelet.cpp)
 target_link_libraries(haar_disp_ada ${catkin_LIBRARIES})
+add_dependencies(haar_disp_ada ${PROJECT_NAME}_gencpp)
 
 add_executable(HaarDispAda174 apps/haardispada_node.cpp)
 target_link_libraries(HaarDispAda174 haar_disp_ada ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS} boost_system boost_signals)

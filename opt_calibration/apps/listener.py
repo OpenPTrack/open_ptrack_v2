@@ -357,19 +357,18 @@ class Listener :
 
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
-      if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
+      if request.people_detector == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
         file.write('        <include file="$(find yolo_detector)/launch/detector_yolo_zed.launch">\n')
         if request.id_num != '':
           file.write('              <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
         file.write('                    <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
         file.write('        </include>\n')
       else:
-        file.write('          <include file="$(find detection)/launch/detector_zed.launch">\n')
+        file.write('  	    <include file="$(find open_ptrack_yolo_detector)/launch/detector_yolo_zed.launch">\n')
         if request.id_num != '':
-          file.write('          <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
-        file.write('                  <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
-        file.write('                  <arg name="ground_from_calibration" value="true" />\n')
-        file.write('    </include>\n')
+          file.write('              <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+        file.write('    	        <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+        file.write('  	    </include>\n')
       file.write('  </group>\n\n')
 
       
