@@ -581,7 +581,7 @@ private:
       }
     }
 
-    detection_pub.publish(detection_array_msg);		 // publish message
+    detection_pub.publish(detection_array_msg);    // publish message
   }
 
   void show_2D_tracks_on_image()//show track points on 2D image

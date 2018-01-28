@@ -25,8 +25,8 @@ bool set_object_names;//if to use this detector to set the object names
 
 //Parms for use_background_removal
 bool use_background_removal;
-int background_calculate_frames;
-int threshold_4_detecting_foreground;//threshold of depth difference,use the difference to ditinguish the background and foreground
+//int background_calculate_frames;
+int threshold_4_shadow;//threshold of depth difference,use the difference to ditinguish the background and foreground
 
 bool show_2D_tracks;//show 2d tracks or not
 
@@ -59,7 +59,7 @@ int main(int argc, char** argv){
     }
 
     nh.param("use_background_removal",use_background_removal,false);
-    nh.param("background_calculate_frames",background_calculate_frames,100);
+//    nh.param("background_calculate_frames",background_calculate_frames,100);
     nh.param("threshold_4_shadow",threshold_4_shadow,240);
     nh.param("show_2D_track",show_2D_tracks,false);
     int number_of_frames_for_static_bs;
