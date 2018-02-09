@@ -384,7 +384,7 @@ SkeletonTrack::createMarker(visualization_msgs::MarkerArray::Ptr& msg,
     visualization_msgs::Marker joint_marker;
     joint_marker.header.frame_id = frame_id_;
     joint_marker.header.stamp = now;
-    joint_marker.ns = "joints_raw";
+    joint_marker.ns = "joints_raw_" + raw_joints_tmp_[i].header.frame_id;
     joint_marker.id = i + id_ * SkeletonJoints::SIZE * 2
         + SkeletonJoints::SIZE;
     joint_marker.type = visualization_msgs::Marker::CUBE;
@@ -429,7 +429,7 @@ SkeletonTrack::createMarker(visualization_msgs::MarkerArray::Ptr& msg,
       visualization_msgs::Marker line_marker;
       line_marker.header.frame_id = frame_id_;
       line_marker.header.stamp = now;
-      line_marker.ns = "links_raw";
+      line_marker.ns = "links_raw_" + p1.header.frame_id;
       line_marker.id = (it - SkeletonLinks::LINKS.begin())
           + (id_ - 1) * SkeletonLinks::LINKS.size() * 2 + SkeletonLinks::LINKS.size();
       line_marker.type = visualization_msgs::Marker::LINE_STRIP;
