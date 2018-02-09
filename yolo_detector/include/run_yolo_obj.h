@@ -17,6 +17,7 @@ typedef struct boxInfo
 {
 	adjBox* boxes;
 	int num;
+	int classID;  // jb  
 	//IplImage* im;
 } boxInfo;
 

@@ -281,7 +281,16 @@ void callback(const Image::ConstPtr& rgb_image,
 				detection_msg.bottom.y = 0;
 				detection_msg.bottom.z = 0;
 			
+			    // jb 
+			    // 
+			    // Add for objects 
+			    // 
+			    string object_name(names[boxes->boxes[i].classID]);  
+ 			    detection_msg.object_name=object_name; 
+				// end add
+				
 				detection_array_msg->detections.push_back(detection_msg);
+				
 			}
 		}
 		
@@ -307,7 +316,7 @@ int main(int argc, char** argv)
 	std::string rgb_image_topic;
 	nh.param("rgb_image_topic", rgb_image_topic, std::string("/camera/depth_registered/points"));
 	std::string output_topic;
-	nh.param("output_topic", output_topic, std::string("/ground_based_people_detector/detections"));
+	nh.param("output_topic", output_topic, std::string("/object_detector/detections"));  // jb per https://github.com/OpenPTrack/open_ptrack_v2/blob/master/detection/apps/multiple_objects_detection_node.cpp#L67
 	std::string camera_info_topic;
 	nh.param("camera_info_topic", camera_info_topic, std::string("/camera/rgb/camera_info"));
 	
