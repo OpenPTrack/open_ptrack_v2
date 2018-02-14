@@ -97,9 +97,12 @@ void camera_info_cb (const CameraInfo::ConstPtr & msg)
 void dynamic_callback(yolo_detector::open_ptrack_yoloConfig &config, uint32_t level) 
 {
 	std::cout << "Adjusting Parameters" <<  std::endl;
-	thresh = (float)config.Thresh;
-	hier_thresh = (float)config.Hier_Thresh; 
-	median_factor = (float)config.Median_Factor;
+	thresh = (float)config.ObjectThresh;
+	hier_thresh = (float)config.ObjectHier_Thresh; 
+	median_factor = (float)config.ObjectMedian_Factor;
+		std::cout << "thresh:" << thresh << " hier_thresh:" << hier_thresh << " median_factor:" <<median_factor<<  std::endl; 
+	
+	
 }
 
 image ipl_to_image(IplImage* src)
@@ -169,22 +172,22 @@ void callback(const Image::ConstPtr& rgb_image,
                                                                    enc::BGR8);
     if((pub.getNumSubscribers() > 0 || detection_pub.getNumSubscribers()) && camera_info_available_flag)
     {
-		std::cout<<"Run Yolo"<<std::endl;
+	//	std::cout<<"Run Yolo"<<std::endl;
 		ros::Time begin = ros::Time::now();
 		image im = convert_image(cv_ptr_rgb,0,0);
 		
-		std::cout << "START CREATE BOX INFO" << std::endl;
+		//std::cout << "START CREATE BOX INFO" << std::endl;
 		boxInfo* boxes = (boxInfo*)calloc(1, sizeof(boxInfo));
 		boxes->num = 200;
 		boxes->boxes = (adjBox*)calloc(200, sizeof(adjBox));
 		
-		std::cout << "ENTER C CODE" << std::endl;
+		//std::cout << "ENTER C CODE" << std::endl;
 		run_yolo_detection_obj(im, net, boxes_y, probs, thresh,  hier_thresh, names, boxes);
 		
-		printf( "Num of object here = %d\n", boxes->num);
+		printf( "Yolo object count = %d\n", boxes->num);
 		double duration = ros::Time::now().toSec() - begin.toSec();
 
-		std::cout << "Time Duration: " << duration<< std::endl;
+		std::cout << "Yolo detection time: " << duration<< std::endl;
 		
     	
     	//Get Depth Image
@@ -234,8 +237,10 @@ void callback(const Image::ConstPtr& rgb_image,
 			float medianDepth = median(_depth_image(rect)) / mm_factor;
 			//float medianDepth = _depth_image.at<float>(medianY, medianX) / 1000.0f;
 			
+			std::string object_name(names[boxes->boxes[i].classID]);  
+				    
 			std::stringstream ss;
-			ss << medianDepth << " " << mm_factor;
+			ss << object_name << ":" << medianDepth; //  << " " << mm_factor;
 			
 			
 			if(pub.getNumSubscribers() > 0)
@@ -243,7 +248,7 @@ void callback(const Image::ConstPtr& rgb_image,
 				cv::rectangle(image, cv::Point( newX, newY ), cv::Point( newX+ newWidth, newY+ newHeight), cv::Scalar( 0, 255, 0 ), 4);
 				cv::rectangle(image, cv::Point( boxes->boxes[i].x, boxes->boxes[i].y ), 
 									 cv::Point( boxes->boxes[i].x+ boxes->boxes[i].w, boxes->boxes[i].y+ boxes->boxes[i].h), cv::Scalar( 255, 0, 255 ), 10);
-				//cv::putText(image, ss.str(), cv::Point(30,30), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cv::Scalar(200,200,250), 1, CV_AA);
+				cv::putText(image, ss.str(), cv::Point(boxes->boxes[i].x+10,boxes->boxes[i].y+20), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.6, cv::Scalar(200,200,250), 1, CV_AA);
 			}
 			
 			float mx =  (medianX - _cx) * medianDepth * _constant_x;
@@ -287,10 +292,8 @@ void callback(const Image::ConstPtr& rgb_image,
 			    // Add for objects 
 			    // 
 			
-
-			    std::string object_name(names[boxes->boxes[i].classID]);  
  			    detection_msg.object_name=object_name; 
-				std::cout << object_name << std::endl; 
+				//std::cout << object_name << std::endl; 
 				// end add
 				
 				detection_array_msg->detections.push_back(detection_msg);
@@ -305,7 +308,7 @@ void callback(const Image::ConstPtr& rgb_image,
 			pub.publish(msg);
     	}
 		
-		std::cout << "publishing " << detection_array_msg << std::endl; 
+		//std::cout << "publishing " << detection_array_msg << std::endl; 
 		detection_pub.publish(detection_array_msg);
     }
 }
@@ -355,21 +358,30 @@ int main(int argc, char** argv)
 	
 	double thresh_;
 	double hier_thresh_;
+	double median_factor_; 
 	median_factor = 0.1;
 	camera_info_available_flag = false;
 	
+	// These have defaults set in too many places. 
+	// Here, then in the config file, then in the dynamic config file.  The dynamic configuration is always called, so set there and then rebuild :(
 	nh.param("thresh", thresh_, 0.25);
-	nh.param("heir_thresh", hier_thresh_, 0.5);
+	nh.param("hier_thresh", hier_thresh_, 0.5);
+		nh.param("median_factor", median_factor_, 0.1);
+	
 	
 	thresh = (float)thresh_;
 	hier_thresh = (float)hier_thresh_;
+	median_factor = (float)median_factor_;
 	
-	std::string datacfg;
+std::string datacfg;
 	nh.param("data_cfg", datacfg, std::string("cfg/coco.data"));// overridden
 	std::string cfgfile;
 	nh.param("yolo_cfg", cfgfile, std::string("cfg/yolo.cfg"));  // overridden
 	std::string weightfile;
 	nh.param("weight_file", weightfile, std::string("yolo.weights"));// overridden
+		std::string namefile;
+	nh.param("name_file", namefile, std::string("data/coco.names"));// overridden
+	
 	
 	std::string root_str;
 	nh.param("root", root_str, std::string("home"));
@@ -389,11 +401,12 @@ int main(int argc, char** argv)
 	boxes_y = init_boxes_obj(net);
 	probs = init_probs_obj(net);
 	
-	list *options = read_data_cfg((char*)datacfg.c_str() );
-    char *name_list = option_find_str(options, "names",  "data/coco.names"); // "data/open_ptrack_object.names");// not overridden to do
-    
-    std::string name_list_str(name_list);
-    name_list_str = root_str + "/" + name_list_str;
+	// jb - there was a problem with parsing this, and we may not need rest of config file, so put here - 
+	// list *options = read_data_cfg((char*)datacfg.c_str() );
+//     char *name_list = option_find_str(options, "names",  "data/coco.names"); // "data/open_ptrack_object.names");// not overridden to do
+//     
+    std::string name_list_str(namefile);
+//    name_list_str = root_str + "/" + name_list_str;
     
     std::string data_list_str = root_str + "/data";
     std::cout<<data_list_str<<std::endl;
@@ -403,6 +416,8 @@ int main(int argc, char** argv)
     image **alphabet = load_alphabet_obj_((char*)data_list_str.c_str());
 
 	std::cout<<"YOLO Set UP - objects"<<std::endl;
+		std::cout << "thresh:" << thresh << " hier_thresh" << hier_thresh << std::endl; 
+	
 	
 	image_transport::ImageTransport it(nh);
     pub = it.advertise("yolo_object_detector/image", 1);
