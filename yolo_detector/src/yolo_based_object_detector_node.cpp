@@ -385,7 +385,7 @@ int main(int argc, char** argv)
 	probs = init_probs_obj(net);
 	
 	list *options = read_data_cfg((char*)datacfg.c_str() );
-    char *name_list = option_find_str(options, "names", "data/names.list");
+    char *name_list = option_find_str(options, "names", "data/open_ptrack_object.names");
     
     std::string name_list_str(name_list);
     name_list_str = root_str + "/" + name_list_str;
