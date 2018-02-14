@@ -285,7 +285,7 @@ void callback(const Image::ConstPtr& rgb_image,
 			    // 
 			    // Add for objects 
 			    // 
-			    string object_name(names[boxes->boxes[i].classID]);  
+			    std::string object_name(names[boxes->boxes[i].classID]);  
  			    detection_msg.object_name=object_name; 
 				// end add
 				

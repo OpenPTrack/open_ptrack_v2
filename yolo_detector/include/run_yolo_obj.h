@@ -11,13 +11,14 @@ typedef struct adjBox
 	int y;
 	int w;
 	int h;
+	int classID;  // jb  
+
 } adjBox;
 
 typedef struct boxInfo
 {
 	adjBox* boxes;
 	int num;
-	int classID;  // jb  
 	//IplImage* im;
 } boxInfo;
 
