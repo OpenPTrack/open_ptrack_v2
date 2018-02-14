@@ -22,8 +22,13 @@
     <param name="camera_info_topic"                 value="/$(arg sensor_name)/rgb_lowres/camera_info"/>
     <param name="thresh"                              value="0.25"/>  
     <param name="heir_thresh"                     value="0.5"/>  
+    
+        <param name="data_cfg"                   value="$(find yolo_detector)/darknet_opt/cfg/coco.data"/>
+    <param name="yolo_cfg"                  value="$(find yolo_detector)/darknet_opt/cfg/yolo.cfg"/>
+<!--
     <param name="data_cfg"                   value="$(find yolo_detector)/darknet_opt/cfg/open_ptrack_object.data"/>
     <param name="yolo_cfg"                  value="$(find yolo_detector)/darknet_opt/cfg/open_ptrack_yolo-object-test.cfg"/>
+-->
     <param name="weight_file"                      value="$(find yolo_detector)/darknet_opt/yolo-opt-object.weights"/>
     <param name="encoding_type"                      value="32FC1"/>
     <param name="in_mm"                      value="1"/>

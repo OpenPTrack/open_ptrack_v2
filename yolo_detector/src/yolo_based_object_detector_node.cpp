@@ -360,11 +360,11 @@ int main(int argc, char** argv)
 	hier_thresh = (float)hier_thresh_;
 	
 	std::string datacfg;
-	nh.param("data_cfg", datacfg, std::string("cfg/coco.data"));
+	nh.param("data_cfg", datacfg, std::string("cfg/coco.data"));// overridden
 	std::string cfgfile;
-	nh.param("yolo_cfg", cfgfile, std::string("cfg/yolo.cfg"));
+	nh.param("yolo_cfg", cfgfile, std::string("cfg/yolo.cfg"));  // overridden
 	std::string weightfile;
-	nh.param("weight_file", weightfile, std::string("yolo.weights"));
+	nh.param("weight_file", weightfile, std::string("yolo.weights"));// overridden
 	
 	std::string root_str;
 	nh.param("root", root_str, std::string("home"));
@@ -385,7 +385,7 @@ int main(int argc, char** argv)
 	probs = init_probs_obj(net);
 	
 	list *options = read_data_cfg((char*)datacfg.c_str() );
-    char *name_list = option_find_str(options, "names", "data/open_ptrack_object.names");
+    char *name_list = option_find_str(options, "names",  "data/coco.names"); // "data/open_ptrack_object.names");// not overridden to do
     
     std::string name_list_str(name_list);
     name_list_str = root_str + "/" + name_list_str;
