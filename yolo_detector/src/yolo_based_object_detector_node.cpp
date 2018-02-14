@@ -251,6 +251,7 @@ void callback(const Image::ConstPtr& rgb_image,
 			
 			if(std::isfinite(medianDepth) && std::isfinite(mx) && std::isfinite(my))
 			{
+				
 				Detection detection_msg;
 			
 				detection_msg.box_3D.p1.x = mx;
@@ -285,8 +286,11 @@ void callback(const Image::ConstPtr& rgb_image,
 			    // 
 			    // Add for objects 
 			    // 
+			
+
 			    std::string object_name(names[boxes->boxes[i].classID]);  
  			    detection_msg.object_name=object_name; 
+				std::cout << object_name << std::endl; 
 				// end add
 				
 				detection_array_msg->detections.push_back(detection_msg);
@@ -301,6 +305,7 @@ void callback(const Image::ConstPtr& rgb_image,
 			pub.publish(msg);
     	}
 		
+		std::cout << "publishing " << detection_array_msg << std::endl; 
 		detection_pub.publish(detection_array_msg);
     }
 }

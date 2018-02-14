@@ -4,6 +4,8 @@
   <include file="$(find yolo_detector)/launch/detector_yolo_object_kinect.launch"/>
 
 
+
+
   <arg name="object_input_topic" value="/objects_detector/detections" />
   
   <!-- Object tracking -->
@@ -27,7 +29,7 @@
   <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
 
   <!-- Visualization -->
-  <include file="$(find opt_utils)/launch/visualization_kinect2.launch"/>
+  <include file="$(find opt_utils)/launch/yolo-object-visualization-kinect2.launch"/>
 
 
   
