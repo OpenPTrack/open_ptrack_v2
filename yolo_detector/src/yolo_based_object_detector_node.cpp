@@ -316,7 +316,7 @@ int main(int argc, char** argv)
 	std::string rgb_image_topic;
 	nh.param("rgb_image_topic", rgb_image_topic, std::string("/camera/depth_registered/points"));
 	std::string output_topic;
-	nh.param("output_topic", output_topic, std::string("/object_detector/detections"));  // jb per https://github.com/OpenPTrack/open_ptrack_v2/blob/master/detection/apps/multiple_objects_detection_node.cpp#L67
+	nh.param("output_topic", output_topic, std::string("/objects_detector/detections"));  // jb per https://github.com/OpenPTrack/open_ptrack_v2/blob/master/detection/apps/multiple_objects_detection_node.cpp#L67
 	std::string camera_info_topic;
 	nh.param("camera_info_topic", camera_info_topic, std::string("/camera/rgb/camera_info"));
 	
