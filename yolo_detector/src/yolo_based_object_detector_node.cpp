@@ -169,22 +169,22 @@ void callback(const Image::ConstPtr& rgb_image,
                                                                    enc::BGR8);
     if((pub.getNumSubscribers() > 0 || detection_pub.getNumSubscribers()) && camera_info_available_flag)
     {
-		//std::cout<<"Run Yolo"<<std::endl;
-		//ros::Time begin = ros::Time::now();
+		std::cout<<"Run Yolo"<<std::endl;
+		ros::Time begin = ros::Time::now();
 		image im = convert_image(cv_ptr_rgb,0,0);
 		
-		//std::cout << "START CREATE BOX INFO" << std::endl;
+		std::cout << "START CREATE BOX INFO" << std::endl;
 		boxInfo* boxes = (boxInfo*)calloc(1, sizeof(boxInfo));
 		boxes->num = 200;
 		boxes->boxes = (adjBox*)calloc(200, sizeof(adjBox));
 		
-		//std::cout << "ENTER C CODE" << std::endl;
+		std::cout << "ENTER C CODE" << std::endl;
 		run_yolo_detection_obj(im, net, boxes_y, probs, thresh,  hier_thresh, names, boxes);
 		
-		//printf( "Num of people here = %d\n", boxes->num);
-		//double duration = ros::Time::now().toSec() - begin.toSec();
+		printf( "Num of object here = %d\n", boxes->num);
+		double duration = ros::Time::now().toSec() - begin.toSec();
 
-		//std::cout << "Time Duration: " << duration<< std::endl;
+		std::cout << "Time Duration: " << duration<< std::endl;
 		
     	
     	//Get Depth Image
