@@ -1,0 +1,53 @@
+enable_people_tracking: true
+enable_pose: true
+enable_object: true
+# Camera network parameters
+network:
+  - pc: "cm-opt-1"
+    sensors:
+      - type: kinect2
+        id: "Kinect_1"
+        people_detector: hog 
+  - pc: "cm-opt-2"
+    sensors:
+      - type: kinect2
+        id: "Kinect_2"
+        people_detector: hog 
+  - pc: "cm-opt-3"
+    sensors:
+      - type: kinect2
+        id: "Kinect_3"
+        people_detector: hog 
+  - pc: "cm-opt-4"
+    sensors:
+      - type: kinect2
+        id: "Kinect_4"
+        people_detector: hog 
+  - pc: "cm-opt-5"
+    sensors:
+      - type: kinect2
+        id: "Kinect_5"
+        people_detector: hog 
+  - pc: "cm-opt-6"
+    sensors:
+      - type: kinect2
+        id: "Kinect_6"
+        people_detector: hog 
+  - pc: "cm-opt-7"
+    sensors:
+      - type: kinect2
+        id: "Kinect_7"
+        people_detector: hog 
+  - pc: "cm-opt-8"
+    sensors:
+      - type: kinect2
+        id: "Kinect_8" 
+        people_detector: hog        
+        
+# Checkerboard parameters
+checkerboard:
+  rows: 6
+  cols: 5
+  cell_width: 0.115 #0.145
+  cell_height: 0.115 #0.145
+
