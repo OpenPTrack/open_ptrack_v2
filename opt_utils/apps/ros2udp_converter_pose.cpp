@@ -231,7 +231,7 @@ synchronizedCallback(
   // jb
   // send remaining buffer
   if (not buffer.empty())
-    sendpacket(buffer);
+    sendPacket(buffer);
 }
 
 
