@@ -24,8 +24,6 @@ find_package(CUDA QUIET REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 include_directories( ${EIGEN_INCLUDE_DIRS})
-
-
 SET(DARKNET_SRC_DIR "darknet_opt")
 
 file(GLOB SRC_LIST "${DARKNET_SRC_DIR}/src/*.c")
@@ -51,15 +49,16 @@ link_directories(/usr/local/cuda/lib64) #for CuDNN, CuBLAS, CuRAND
 
 set(
     CUDA_NVCC_FLAGS
-      "-gencode arch=compute_20,code=[sm_20,sm_21] -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_50,code=[sm_50,compute_50] -gencode arch=compute_52,code=[sm_52,compute_52] -DGPU -I/usr/local/cuda/include/ -DCUDNN  --compiler-options \"-Wall -Wfatal-errors  -Ofast -DOPENCV -DGPU -DCUDNN\""
+      "-gencode arch=compute_20,code=[sm_20,sm_21] -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_50,code=[sm_50,compute_50] -gencode arch=compute_52,code=[sm_52,compute_52] -DGPU -I/usr/local/cuda/include/ -DCUDNN  --compiler-options \"-Wall -Wfatal-errors  -Ofast -DOPENCV -DGPU -DCUDNN -fPIC\""
 )
+
 
 
 cuda_add_library(yolo_cuda_lib ${CUDA_SRC_LIST})
 
 add_library(yolo_lib ${H_LIST} ${SRC_LIST} include/run_yolo.h include/run_yolo.c include/run_yolo_obj.h include/run_yolo_obj.c)
 
-set_target_properties(yolo_lib PROPERTIES COMPILE_FLAGS "-DOPENCV -DGPU -I/usr/local/cuda/include/ -DCUDNN  -Ofast")
+set_target_properties(yolo_lib PROPERTIES COMPILE_FLAGS "-DOPENCV -DGPU -I/usr/local/cuda/include/ -DCUDNN  -Ofast -fPIC")
 target_link_libraries(yolo_lib ${CUDA_LIBRARIES} cudnn cublas curand)
 
 add_executable(open_ptrack_yolo_detector_node src/yolo_based_people_detector_node.cpp )

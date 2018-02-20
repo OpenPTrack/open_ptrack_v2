@@ -7,6 +7,7 @@
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
 
+#include "darknet.h"
 #include "network.h"
 #include "detection_layer.h"
 #include "region_layer.h"
@@ -187,8 +188,12 @@ void run_yolo_detection(image im, network net, box *boxes, float **probs, float 
     float *X = sized.data;
     
     
-    network_predict(net, X);
-    get_region_boxes(l, 1, 1, thresh, probs, boxes, 0, 0, hier_thresh);
+    network_predict(&net, X);
+    
+    // revised to new api
+// void get_region_boxes(layer l, int w, int h, int netw, int neth, float thresh, float **probs, box *boxes, float **masks, int only_objectness, int *map, float tree_thresh, int relative);
+
+    get_region_boxes(l, 1, 1, net.w, net.h, thresh, probs, boxes, 0, 0, 0, hier_thresh,0 );
 
     if (l.softmax_tree && nms) 
     {

@@ -1,3 +1,4 @@
+#include "darknet.h"
 #include "network.h"
 #include "box.h"
 #include "image.h"

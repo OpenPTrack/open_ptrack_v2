@@ -360,7 +360,7 @@ int main(int argc, char** argv)
 	std::string root_str;
 	nh.param("root", root_str, std::string("home"));
 	
-    net = parse_network_cfg( (char*)cfgfile.c_str() );
+    net = *parse_network_cfg( (char*)cfgfile.c_str() );
 	char *arr = (char*)((void*) &(net.layers[0]));
 
 	printf("exit");
