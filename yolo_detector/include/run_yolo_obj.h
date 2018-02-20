@@ -25,11 +25,11 @@ typedef struct boxInfo
 
 // Hack: adding _obj to avoid name collision
 // 
-box* init_boxes_obj(network net);
-float** init_probs_obj(network net);
+box* init_boxes_obj(network* net);
+float** init_probs_obj(network* net);
 
 image **load_alphabet_obj_(char* path);
 void extratObject(int imW, int imH, int num, float thresh, box *boxes, float **probs, char **names, int classes, boxInfo *result);
 
-void run_yolo_detection_obj(image im, network net, box *boxes, float **probs, float thresh, float hier_thresh, char **names, boxInfo *result);
+void run_yolo_detection_obj(image im, network *net, box *boxes, float **probs, float thresh, float hier_thresh, char **names, boxInfo *result);
 
