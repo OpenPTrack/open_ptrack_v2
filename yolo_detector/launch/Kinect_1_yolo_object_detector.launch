@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-  <arg name="sensor_name" default="kinect2" />
+  <arg name="sensor_name" default="Kinect_1" />
   <arg name="standalone" default="true" />
   <arg name="training_set" default="coco" />
 

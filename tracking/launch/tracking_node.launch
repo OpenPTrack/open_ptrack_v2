@@ -21,9 +21,10 @@
 
   <group if="$(arg enable_object)">
   <!-- Object Tracking -->
-  <node pkg="opt_gui" type="opt_gui" name="opt_gui" output="screen">
+ <!-- <node pkg="opt_gui" type="opt_gui" name="opt_gui" output="screen">
     <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" />
   </node>
+--> 
   <include file="$(find tracking)/launch/object_tracker_network.launch" />
   </group>
 
@@ -31,5 +32,5 @@
   <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
 
   <!-- Visualization -->
-  <include file="$(find opt_utils)/launch/multicamera_visualization.launch"/>
+  <include file="$(find opt_utils)/launch/multicamera_visualization_pose.launch"/>
 </launch>
