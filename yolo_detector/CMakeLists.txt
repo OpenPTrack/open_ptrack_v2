@@ -39,6 +39,7 @@ include_directories(
 	${catkin_INCLUDE_DIRS}
 	${OpenCV_INCLUDE_DIRS}
 	${CUDA_INCLUDE_DIRS}
+	${DARKNET_SRC_DIR}/include
 	${DARKNET_SRC_DIR}/src
 	/usr/local/cuda/include #for CuDNN, CuBLAS, CuRAND
 )
