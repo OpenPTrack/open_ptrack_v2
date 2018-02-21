@@ -3,6 +3,7 @@ project(yolo_detector)
 
 #SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 
+
 find_package(catkin REQUIRED
     COMPONENTS dynamic_reconfigure 
     		   message_filters 
