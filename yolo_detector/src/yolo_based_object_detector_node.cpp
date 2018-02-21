@@ -172,16 +172,16 @@ void callback(const Image::ConstPtr& rgb_image,
                                                                    enc::BGR8);
     if((pub.getNumSubscribers() > 0 || detection_pub.getNumSubscribers()) && camera_info_available_flag)
     {
-		std::cout<<"Run Yolo"<<std::endl;
+	//	std::cout<<"Run Yolo"<<std::endl;
 		ros::Time begin = ros::Time::now();
 		image im = convert_image(cv_ptr_rgb,0,0);
 		
-		std::cout << "START CREATE BOX INFO" << std::endl;
+		//std::cout << "START CREATE BOX INFO" << std::endl;
 		boxInfo* boxes = (boxInfo*)calloc(1, sizeof(boxInfo));
 		boxes->num = 200;
 		boxes->boxes = (adjBox*)calloc(200, sizeof(adjBox));
 		
-		std::cout << "ENTER C CODE" << std::endl;
+		//std::cout << "ENTER C CODE" << std::endl;
 		run_yolo_detection_obj(im, net, boxes_y, probs, thresh,  hier_thresh, names, boxes);
 		
 		printf( "Yolo object count = %d\n", boxes->num);
@@ -381,15 +381,10 @@ std::string datacfg;
 	nh.param("weight_file", weightfile, std::string("yolo.weights"));// overridden
 		std::string namefile;
 	nh.param("name_file", namefile, std::string("data/coco.names"));// overridden
-
+	
+	
 	std::string root_str;
 	nh.param("root", root_str, std::string("home"));
-
-    std::cout << "YOLO Data File" << datacfg << std::endl;
-    std::cout << "YOLO Config File" << cfgfile << std::endl;
-    std::cout << "YOLO Weight File" << weightfile << std::endl;
-    std::cout << "YOLO Name File" << namefile << std::endl;
-    std::cout << "YOLO Root str" << root_str << std::endl;
 	
     net = parse_network_cfg( (char*)cfgfile.c_str() );
 	char *arr = (char*)((void*) &(net.layers[0]));

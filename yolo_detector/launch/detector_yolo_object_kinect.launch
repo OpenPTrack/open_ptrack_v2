@@ -1,15 +1,14 @@
 <?xml version="1.0"?>
 <launch>
 
-  <arg name="sensor_name" default="kinect2" />
+  <arg name="sensor_name" default="kinect2_head" />
   <arg name="standalone" default="true" />
-  <arg name="training_set" default="coco" />
 
   <group if="$(arg standalone)" >
     <!-- Start the Kinect -->
     <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
-      <arg name="sensor_name" value="$(arg sensor_name)" />
-      <arg name="publish_frame" value="true" />
+      <param name="sensor_name" value="$(arg sensor_name)" />
+          <arg name="publish_frame"       value="true" />
     </include>
   </group>  
   
@@ -24,15 +23,15 @@
     <param name="output_topic"                      value="/objects_detector/detections"/>
     <param name="camera_info_topic"                 value="/$(arg sensor_name)/rgb_lowres/camera_info"/>
     
-<!-- These thresholds are overriden by dyanmic configuration. EDIT DEFAULTS in cfg/open_ptrack_2olo.cfg -->
+<!-- These thresholds are overriden by dyanmic configuration. EDIT DEFAULTS in cfg/open_ptrack_yolo.cfg -->
     <param name="thresh"                              value="0.4"/>  
     <param name="hier_thresh"                     value="0.5"/>  
     <param name="median_factor"                 value="0.3"/>
     
-        <param name="data_cfg"                   value="$(find yolo_detector)/darknet_opt/cfg/$(arg training_set).data"/>
-    <param name="yolo_cfg"                  value="$(find yolo_detector)/darknet_opt/cfg/$(arg training_set)-test.cfg"/>
-    <param name="weight_file"                      value="$(find yolo_detector)/darknet_opt/$(arg training_set).weights"/>
-        <param name="name_file"                      value="$(find yolo_detector)/data/$(arg training_set).names"/>
+        <param name="data_cfg"                   value="$(find yolo_detector)/darknet_opt/cfg/coco.data"/>
+    <param name="yolo_cfg"                  value="$(find yolo_detector)/darknet_opt/cfg/yolo.cfg"/>
+    <param name="weight_file"                      value="$(find yolo_detector)/darknet_opt/yolo.weights"/>
+        <param name="name_file"                      value="$(find yolo_detector)/data/coco.names"/>
     <param name="encoding_type"                      value="32FC1"/>
     <param name="in_mm"                      value="1"/>
     
