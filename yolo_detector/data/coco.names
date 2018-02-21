@@ -1,80 +1,22 @@
-person
-bicycle
-car
-motorbike
-aeroplane
-bus
-train
-truck
-boat
-traffic light
-fire hydrant
-stop sign
-parking meter
-bench
-bird
-cat
-dog
-horse
-sheep
-cow
-elephant
-bear
-zebra
-giraffe
-backpack
-umbrella
-handbag
-tie
-suitcase
-frisbee
-skis
-snowboard
-sports ball
-kite
-baseball bat
-baseball glove
-skateboard
-surfboard
-tennis racket
-bottle
-wine glass
-cup
-fork
-knife
-spoon
-bowl
-banana
-apple
-sandwich
-orange
-broccoli
-carrot
-hot dog
-pizza
-donut
-cake
-chair
-sofa
-pottedplant
-bed
-diningtable
-toilet
-tvmonitor
-laptop
-mouse
-remote
-keyboard
-cell phone
-microwave
-oven
-toaster
-sink
-refrigerator
-book
-clock
-vase
-scissors
-teddy bear
-hair drier
-toothbrush
+yellow_orange_cube
+green_orange_cube
+red_blue_rectangle
+blue_green_box
+blue_duct_rectangle
+red_duct_rectangle
+yellow_duct_cube
+purple_duct_cube
+green_duct_cube
+blue_duct_box
+green_umbrella
+blue_umbrella
+red_umbrella
+pink_flat_flower
+white_flat_flower
+purple_flat_flower
+orange_flat_flower
+yellow_tall_flower
+red_tall_flower
+blue_tall_flower
+purple_tall_flower
+rainbow_tall_flower
