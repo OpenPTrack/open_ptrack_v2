@@ -54,7 +54,7 @@ typedef sensor_msgs::Image Image;
 
 namespace enc = sensor_msgs::image_encodings;
 
-network net;
+network* net;
 char **names;
 image **alphabet;
 box *boxes_y;
@@ -386,16 +386,17 @@ std::string datacfg;
 	std::string root_str;
 	nh.param("root", root_str, std::string("home"));
 	
+	// revise to new API 
     net = parse_network_cfg( (char*)cfgfile.c_str() );
-	char *arr = (char*)((void*) &(net.layers[0]));
+	char *arr = (char*)((void*) &(net->layers[0]));
 
 	printf("exit");
     //printf( "detect layer  w = %d h = %d n = %d max = %d\n",  ((layer)arr[(net.n - 1)*sizeof_layer()]).w, net.layers[net.n-1].h, net.layers[net.n-1].n, net.layers[net.n-1].w*net.layers[net.n-1].h*net.layers[net.n-1].n );
 	//printf( "detect layer  w = %d h = %d n = %d max = %d\n",  layers.w, layers.h, layers.n, layers.w*layers.h*layers.n );
-    load_weights( &net, (char*)weightfile.c_str() );
+    load_weights( net, (char*)weightfile.c_str() );
     
     
-    set_batch_network( &net, 1 );
+    set_batch_network( net, 1 );
 	srand(2222222);
 	
 	boxes_y = init_boxes_obj(net);
@@ -441,5 +442,6 @@ std::string datacfg;
 
     ros::spin();
 
+    free(net);
     return 0;
 }
