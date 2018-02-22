@@ -3,7 +3,7 @@
 
   <arg name="sensor_name" default="kinect2" />
   <arg name="standalone" default="false" />
-  <arg name="training_set" default="coco" />
+  <arg name="training_set" default="$(optenv OPT_OBJECT_TRAINING coco)" />
 
   <group if="$(arg standalone)" >
     <!-- Start the Kinect -->
