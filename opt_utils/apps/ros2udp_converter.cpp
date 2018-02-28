@@ -39,7 +39,7 @@
 #include <ros/ros.h>
 #include <opt_msgs/TrackArray.h>
 #include <opt_msgs/IDArray.h>
-#include <opt_msgs/Association.h>
+#include <opt_msgs/NameArray.h>
 #include <opt_msgs/SkeletonTrackArray.h>
 #include <opt_msgs/StandardSkeletonTrackArray.h>
 #include <opt_msgs/PoseRecognitionArray.h>
@@ -160,15 +160,59 @@ void peopletracksCallback(const opt_msgs::TrackArray::ConstPtr& association_mess
   }
   root.Add("face_people_tracks", tracks);
 
-  /***Jzon::Array folks;
-  for (unsigned int i = 0; i < association_message->detection_ids.size(); i++)
+  /// Convert JSON object to string:
+  Jzon::Format message_format = Jzon::StandardFormat;
+  message_format.indentSize = json_indent_size;
+  message_format.newline = json_newline;
+  message_format.spacing = json_spacing;
+  message_format.useTabs = json_use_tabs;
+  Jzon::Writer writer(root, message_format);
+  writer.Write();
+  std::string json_string = writer.GetResult();
+  //  std::cout << "String sent: " << json_string << std::endl;
+
+  /// Copy string to message buffer:
+  udp_data.si_num_byte_ = json_string.length()+1;
+  char buf[udp_data.si_num_byte_];
+  for (unsigned int i = 0; i < udp_data.si_num_byte_; i++)
+  {
+    buf[i] = 0;
+  }
+  sprintf(buf, "%s", json_string.c_str());
+  udp_data.pc_pck_ = buf;         // buffer where the message is written
+
+  /// Send message:
+  udp_messaging.sendFromSocketUDP(&udp_data);
+}
+
+void peoplenamesCallback(const opt_msgs::NameArray::ConstPtr& association_message)
+{
+    /// Create JSON-formatted message:
+  Jzon::Object root, header, stamp;
+
+  /// Add header (84 characters):
+  header.Add("seq", int(association_message->header.seq));
+  stamp.Add("sec", int(association_message->header.stamp.sec));
+  stamp.Add("nsec", int(association_message->header.stamp.nsec));
+  header.Add("stamp", stamp);
+  std::string camera_name = association_message->header.frame_id;
+    if (strcmp(camera_name.substr(0,1).c_str(), "/") == 0)  // Remove bar at the beginning
+    {
+      camera_name = camera_name.substr(1, camera_name.size() - 1);
+    }
+  header.Add("frame_id", camera_name);
+  root.Add("header", header);
+
+  Jzon::Array folks;
+  for (unsigned int i = 0; i < association_message->ids.size(); i++)
   {
     Jzon::Object current_id;
-    current_id.Add("detection_id", association_message->detection_ids[i]);
+    current_id.Add("id", association_message->ids[i]);
+    current_id.Add("name", association_message->names[i]);
 
     folks.Add(current_id);
   }
-  root.Add("detection_ids", folks);***/
+  root.Add("associations", folks);
 
   /// Convert JSON object to string:
   Jzon::Format message_format = Jzon::StandardFormat;
@@ -194,6 +238,7 @@ void peopletracksCallback(const opt_msgs::TrackArray::ConstPtr& association_mess
   /// Send message:
   udp_messaging.sendFromSocketUDP(&udp_data);
 }
+
 
 void
 aliveIDsCallback(const opt_msgs::IDArray::ConstPtr& alive_ids_msg)
@@ -293,7 +338,7 @@ main(int argc, char **argv)
   ros::Subscriber alive_ids_sub = nh.subscribe<opt_msgs::IDArray>
       ("alive_ids_topic", 1, aliveIDsCallback);
   ros::Subscriber people_tracks_sub = nh.subscribe<opt_msgs::TrackArray>("people_tracks_topic", 1, peopletracksCallback);
-
+  ros::Subscriber people_names_sub = nh.subscribe<opt_msgs::NameArray>("people_names_topic", 1, peoplenamesCallback);
 
   // Initialize UDP parameters:
   char buf[0];
