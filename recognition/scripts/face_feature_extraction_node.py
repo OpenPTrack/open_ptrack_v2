@@ -115,8 +115,6 @@ class FaceFeatureExtractionNode:
 		top = max(0, int(box_2d.y - box_2d.height * half_scale))
 		bottom = min(rgb_image.shape[0], int(box_2d.y + box_2d.height * (1 + half_scale)))
 
-		print left, right, top, bottom
-
 		face_roi = rgb_image[top:bottom, left:right]
 		if face_roi.shape[0] < self.image_dim_for_dlib:
 			face_roi = cv2.resize(face_roi, (self.image_dim_for_dlib, self.image_dim_for_dlib))

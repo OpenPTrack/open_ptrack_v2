@@ -129,7 +129,6 @@ class FaceDetectionNode:
 
 		t2 = rospy.Time.now()
 
-		print "test"
 
 		if self.visualization:
 			self.visualize(rgb_image, rois, faces, (t2 - t1).to_sec())
@@ -220,7 +219,6 @@ class FaceDetectionNode:
 			return None
 
 		# detection
-		print "test2"
 		roi = gray_image[roi_rect[1]:roi_rect[3], roi_rect[0]:roi_rect[2]]
 		# roi = roi.reshape(roi.shape[0], roi.shape[1]).astype(numpy.uint8)
 

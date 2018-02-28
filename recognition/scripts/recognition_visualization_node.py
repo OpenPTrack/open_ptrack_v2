@@ -195,7 +195,6 @@ class RecognitionVisualizationNode:
 		self.face_visible_trackers_lock.acquire()
 		for track, face_tracker in zip(tracker_track_msg.tracks, face_track_msg.tracks):
 			p = numpy.dot(self.world2map, (track.x, track.y, track.height, 1)).astype(numpy.int32)
-			print(face_tracker.id, track.x, track.y, track.height)
 			p = (p[0], p[1])
 
 			tracker_id = track.id
