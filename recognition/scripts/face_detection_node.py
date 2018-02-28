@@ -115,6 +115,8 @@ class FaceDetectionNode:
 		# calculate ROIs and then run the 2D face detector
 		rois = self.calc_rois(rgb_info_msg, detection_msg)
 		faces = map(lambda x: self.detect_face(gray_image, x), rois)
+		#print(len(faces))
+		#print(faces)
 
 		# publish the face detection result
 		for face, detection in zip(faces, detection_msg.detections):
@@ -126,6 +128,8 @@ class FaceDetectionNode:
 		self.pub_local.publish(detection_msg)
 
 		t2 = rospy.Time.now()
+
+		print "test"
 
 		if self.visualization:
 			self.visualize(rgb_image, rois, faces, (t2 - t1).to_sec())
@@ -216,6 +220,7 @@ class FaceDetectionNode:
 			return None
 
 		# detection
+		print "test2"
 		roi = gray_image[roi_rect[1]:roi_rect[3], roi_rect[0]:roi_rect[2]]
 		# roi = roi.reshape(roi.shape[0], roi.shape[1]).astype(numpy.uint8)
 

@@ -48,8 +48,6 @@ include_directories(include
   ${EIGEN_INCLUDE_DIRS}
 )
 
-if(FALSE)
-
 add_executable(opt_calibration
   src/opt_calibration.cpp              include/open_ptrack/opt_calibration/opt_calibration.h
   src/opt_calibration_node.cpp         include/open_ptrack/opt_calibration/opt_calibration_node.h
@@ -94,5 +92,3 @@ target_link_libraries(opt_define_reference_frame
   ${PCL_LIBRARIES}
   ${OpenCV_LIBS}
 )
-
-endif()

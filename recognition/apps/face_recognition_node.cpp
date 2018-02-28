@@ -46,7 +46,7 @@ public:
       track_pub(nh.advertise<opt_msgs::TrackArray>("/face_recognition/people_tracks", 10)),
       names_pub(nh.advertise<opt_msgs::NameArray>("/face_recognition/people_names", 10)),
       names_pub_timer(nh.createTimer(ros::Duration(1.0), &FaceRecognitionNode::publish_names, this)),
-      track_sub(nh.subscribe("/tracker/people_tracks", 10, &FaceRecognitionNode::track_callback, this)),
+      track_sub(nh.subscribe("/tracker/tracks", 10, &FaceRecognitionNode::track_callback, this)),
       association_sub(nh, "/tracker/association_result", 10),
       detections_sub(nh, "/face_detector/detections", 10),
       feature_vector_sub(nh, "/face_feature_extractor/features", 10),
@@ -183,6 +183,8 @@ private:
    * @brief updates the face recognizer with the data in the buffer and then clears the buffer
    */
   void flush_features_buffer() {
+    std::cout << "testupdate" << std::endl;
+
     std::unordered_map<int, std::vector<std::shared_ptr<Eigen::VectorXf>>> fmap;
     for(const auto& features : features_buffer) {
       fmap[std::get<1>(features)].push_back(std::get<2>(features));
@@ -202,7 +204,7 @@ private:
    * @return
    */
   bool set_predefined_faces(recognition::OPTSetPredefinedFaces::Request& req, recognition::OPTSetPredefinedFaces::Response& res) {
-    std::cout << "received faces" << std::endl;
+    std::cout << "received faces here" << std::endl;
 
     std::vector<std::tuple<std::string, cv::Mat, Eigen::VectorXf>> predefined_faces(req.faces.size());
    for(int i=0; i<req.faces.size(); i++) {
@@ -213,6 +215,7 @@ private:
 
     std::lock_guard<std::mutex> lock(recognizer_mutex);
     recognizer->setPredefinedFaces(predefined_faces);
+    std::cout << "true" << std::endl;
     return true;
   }
 

@@ -28,6 +28,8 @@ class Camera:
 		self.grabbed = False
 		self.image_width = image_width
 		self.camera_name = camera_name
+		self.cv_bridge = cv_bridge.CvBridge()
+
 
 		self.refresh_span = refresh_span
 		self.prev_time = rospy.Time.now()
@@ -130,7 +132,7 @@ class RecognitionVisualizationNode:
 		self.names_sub = rospy.Subscriber('/face_recognition/people_names', NameArray, self.names_callback, queue_size=1, buff_size=2**10)
 
 		self.track_subscribers = [
-			message_filters.Subscriber('/tracker/people_tracks', TrackArray),
+			message_filters.Subscriber('/tracker/tracks', TrackArray),
 # 			message_filters.Subscriber('/tracker/people_tracks', TrackArray),
 			message_filters.Subscriber('/face_recognition/people_tracks', TrackArray)
 		]
@@ -193,6 +195,7 @@ class RecognitionVisualizationNode:
 		self.face_visible_trackers_lock.acquire()
 		for track, face_tracker in zip(tracker_track_msg.tracks, face_track_msg.tracks):
 			p = numpy.dot(self.world2map, (track.x, track.y, track.height, 1)).astype(numpy.int32)
+			print(face_tracker.id, track.x, track.y, track.height)
 			p = (p[0], p[1])
 
 			tracker_id = track.id

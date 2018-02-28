@@ -32,6 +32,7 @@ public:
    * @todo it's too long, need to split this function
    */
   void update(const std::unordered_map<int, std::vector<std::shared_ptr<Eigen::VectorXf>>>& fmap) override {
+    std::cout << "test" << std::endl;
     for(const auto& fset : fmap) {
       int tracker_id = fset.first;
 
@@ -44,6 +45,8 @@ public:
         continue;
       }
 
+          std::cout << "test2" << std::endl;
+
       // add the observed faces to the tracker
       auto& tracker_status = tracker_status_map[tracker_id];
       if(tracker_status == nullptr) {
@@ -54,12 +57,16 @@ public:
       }
     }
 
+        std::cout << "test3" << std::endl;
+
     // sort the unassociated faces by id
     std::sort(unassociated_faces.begin(), unassociated_faces.end(),
       [=](const RegisteredFace::Ptr& lhs, const RegisteredFace::Ptr& rhs) {
         return lhs->getFaceId() < rhs->getFaceId();
       }
     );
+
+    std::cout << "test4" << std::endl;
 
     Eigen::VectorXi face_ids(unassociated_faces.size() + 1);
     face_ids[0] = -1;
@@ -72,6 +79,7 @@ public:
     std::transform(tracker_status_map.begin(), tracker_status_map.end(), trackers.begin(),
       [=](const std::pair<int, TrackerStatusBayes::Ptr>& p) { return p.second; }
     );
+    std::cout << "test5" << std::endl;
 
     // create tables of observation counts and probabilities
     auto tables = createCountProbabilityTables(trackers, unassociated_faces, face_ids);
@@ -95,10 +103,13 @@ public:
           likelihoods[i+1] = (*pos_pdf)(dist);
 
           prob_table.row(row).array() *= likelihoods;
+          std::cout << prob_table.row(row).array() << std::endl;
         }
       }
       count_table.row(row).array() += fset.second.size();
     }
+
+        std::cout << "test6" << std::endl;
 
     shinkhornNormalization(prob_table);
 
@@ -120,8 +131,8 @@ public:
       }
     }
 
-    // std::cout << "--- count_table ---\n" << count_table << std::endl;
-    // std::cout << "--- prob_table ---\n" << prob_table << std::endl;
+    std::cout << "--- count_table ---\n" << count_table << std::endl;
+    std::cout << "--- prob_table ---\n" << prob_table << std::endl;
 
     // assign the face IDs to the trackers according to the associations
     for(const auto& assoc : associations) {
@@ -157,6 +168,7 @@ public:
     int predefined_recognition_num_test_images = 5;
     double predefined_recognition_fp_thresh = 0.65;
 
+
     for(const auto& face : associated_faces) {
       if(face.second->size() < predefined_recognition_min_images) {
         continue;
@@ -185,6 +197,8 @@ public:
       associated_predefined_faces[face.second->getFaceId()] = closest_predefined;
       unassociated_predefined_faces.erase(std::find(unassociated_predefined_faces.begin(), unassociated_predefined_faces.end(), closest_predefined));
     }
+
+    std::cout << "updatedPredefined" << std::endl;
   }
 
 
@@ -244,6 +258,7 @@ public:
       unassociated_predefined_faces.back().reset(new RegisteredFace(std::get<0>(face)));
       unassociated_predefined_faces.back()->addFace(std::get<2>(face));
     }
+    std::cout << "setPredefinedFaces" << std::endl;
   }
 
   /**

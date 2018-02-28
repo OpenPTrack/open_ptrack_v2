@@ -40,7 +40,7 @@ class FaceSaverNode:
 			self.syncs[-1].registerCallback(self.callback)
 
 		self.subscribers2 = [
-			message_filters.Subscriber('/tracker/people_tracks', TrackArray),
+			message_filters.Subscriber('/tracker/tracks', TrackArray),
 			message_filters.Subscriber('/face_recognition/people_tracks', TrackArray)
 		]
 		self.sync2 = message_filters.TimeSynchronizer(self.subscribers2, 1024)
