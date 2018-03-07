@@ -1,61 +1,53 @@
-# Camera network parameters
-# Supported sensor types: 
-#  * Kinect 1st version (type: kinect1)
-#  * Kinect 2nd version (type: kinect2)
-#  * ZED camera (type: zed)
-#  * Custom stereo pair composed of PointGrey (e.g. BlackFly) cameras (type: stereo_pg)
-#enable_people_tracking: true
-#enable_pose: false
-#enable_object: false
-#network:
-#  - pc: "Cassiopea"
-#    sensors:
-#      - type: kinect1
-#        id: "Kinect_v1_0"
-#        people_detector: munaro 
-#      - type: kinect2
-#        id: "Kinect_v2"
-#        people_detector: munaro
-#      - type: zed
-#        id: "ZED_Camera"
-#        people_detector: yolo
-#  - pc: "pc_2"
-#    sensors:
-#      - type: kinect1
-#        id: "Kinect_v1_1"
-#        people_detector: munaro
-#        serial: "A00364820345039A"
-#      - type: stereo_pg
-#        id: "blackfly_stereo"
-#        serial_left: "13310958"
-#        people_detector: munaro
-#        serial_right: "13310959"
 enable_people_tracking: true
-enable_object: false
-enable_pose: false
+enable_pose: true
+enable_object: true
+# Camera network parameters
 network:
-  - pc: "PC1-tv3"
+  - pc: "cm-opt-1"
     sensors:
       - type: kinect2
-        id: "kinect_01"
-        use_hog: true
-        people_detector: munaro
-  - pc: "PC2-tv3"
+        id: "Kinect_1"
+        people_detector: hog 
+  - pc: "cm-opt-2"
     sensors:
       - type: kinect2
-        id: "kinect_02"
-        use_hog: true
-        people_detector: munaro
-  - pc: "PC3-tv3"
+        id: "Kinect_2"
+        people_detector: hog 
+  - pc: "cm-opt-3"
     sensors:
       - type: kinect2
-        id: "kinect_03"
-        use_hog: true
-        people_detector: munaro
-
+        id: "Kinect_3"
+        people_detector: hog 
+  - pc: "cm-opt-4"
+    sensors:
+      - type: kinect2
+        id: "Kinect_4"
+        people_detector: hog 
+  - pc: "cm-opt-5"
+    sensors:
+      - type: kinect2
+        id: "Kinect_5"
+        people_detector: hog 
+  - pc: "cm-opt-6"
+    sensors:
+      - type: kinect2
+        id: "Kinect_6"
+        people_detector: hog 
+  - pc: "cm-opt-7"
+    sensors:
+      - type: kinect2
+        id: "Kinect_7"
+        people_detector: hog 
+  - pc: "cm-opt-8"
+    sensors:
+      - type: kinect2
+        id: "Kinect_8" 
+        people_detector: hog        
+       
 # Checkerboard parameters
 checkerboard:
   rows: 6
   cols: 5
-  cell_width: 0.07
-  cell_height: 0.07
+  cell_width: 0.115 #0.145
+  cell_height: 0.115 #0.145
+

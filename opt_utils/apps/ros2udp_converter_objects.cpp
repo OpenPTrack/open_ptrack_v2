@@ -209,7 +209,7 @@ main(int argc, char **argv)
     // Read input parameters:
     nh.param("udp/port", udp_port, 21234);
     nh.param("udp/hostip", hostip, std::string("127.0.0.1"));
-    nh.param("udp/buffer_length", udp_buffer_length, 2048);
+    nh.param("udp/buffer_length", udp_buffer_length, 4096);  //temporary  fix until we can convert to the other approach
     nh.param("json/indent_size", json_indent_size, 0);
     nh.param("json/newline", json_newline, false);
     nh.param("json/spacing", json_spacing, false);

@@ -295,7 +295,10 @@ class Listener :
       file.write('  <arg name="sensor_name" default="' + request.id + '" />\n\n')
       file.write('  <!-- true  = Munaro Based OPT Detection -->\n')
       file.write('  <!-- false = YOLO Based Detection (Must Have YOLO installed to use)-->\n')
-      file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
+      if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
+        file.write('  <arg name="munaro_detection_enabled"         default="false" />\n\n')
+      else:
+        file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
       file.write('  <!-- Launch the sensor -->\n')
       file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">\n')
       if request.serial != '':
@@ -321,6 +324,7 @@ class Listener :
       if request.id_num != '':
         file.write('    	<arg name="sensor_id"               value="$(arg sensor_id)" />\n')
       file.write('    	        <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+      file.write('    	        <arg name="standalone"              value="false" />\n')
       file.write('  	    </include>\n')
       file.write('      </group>\n')
       file.write('  </group>\n\n')

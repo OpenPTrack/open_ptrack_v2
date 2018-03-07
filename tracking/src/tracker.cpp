@@ -259,6 +259,10 @@ Tracker::createNewTrack(open_ptrack::detection::Detection& detection)
 {
   if(detection.getConfidence() < min_confidence_)
     return -1;
+  
+  if (detection.getWorldCentroid().hasNaN()){
+    return -1;    
+  }
 
   open_ptrack::tracking::Track* t;
   t = new open_ptrack::tracking::Track(

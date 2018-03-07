@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<!-- SESSION ID: 1505919046 -->
+<!-- SESSION ID: 1520043678 -->
 <launch>
 
   <arg name="enable_people_tracking" default="true" />
   <arg name="enable_pose" default="true" />
-  <arg name="enable_object" default="false" />
+  <arg name="enable_object" default="true" />
   <!-- Load calibration results -->
   <include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/>
 
@@ -22,9 +22,6 @@
 
   <group if="$(arg enable_object)">
   <!-- Object Tracking -->
-  <node pkg="opt_gui" type="opt_gui" name="opt_gui" output="screen">
-    <rosparam command="load" file="$(find opt_calibration)/conf/camera_network.yaml" />
-  </node>
   <include file="$(find tracking)/launch/object_tracker_network.launch" />
   </group>
 
@@ -32,5 +29,5 @@
   <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
 
   <!-- Visualization -->
-  <include file="$(find opt_utils)/launch/multicamera_visualization.launch"/> 
+  <include file="$(find opt_utils)/launch/multicamera_visualization.launch"/>
 </launch>

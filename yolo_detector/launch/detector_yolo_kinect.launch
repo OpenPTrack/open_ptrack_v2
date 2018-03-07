@@ -1,14 +1,18 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="sensor_name" default="kinect2_head" />
-  <!-- Start the Kinect -->
-  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
-     <param name="sensor_name" value="$(arg sensor_name)" />
-  </include>  
+  <arg name="standalone" default="true" />
+
+  <group if="$(arg standalone)" >
+    <!-- Start the Kinect -->
+    <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
+      <param name="sensor_name" value="$(arg sensor_name)" />
+    </include>
+  </group>  
   
   <!-- Launch ground based people detection node -->
   <node pkg="yolo_detector" type="open_ptrack_yolo_detector_node"
-        name="yolo_detector_node" output="screen" respawn="false">
+        name="$(arg sensor_name)_yolo_detector_node" output="screen" respawn="false">
         
     <param name="depth_image_topic"                   value="/$(arg sensor_name)/depth_lowres/image"/>
     <param name="rgb_image_topic"                  value="/$(arg sensor_name)/rgb_lowres/image"/>
