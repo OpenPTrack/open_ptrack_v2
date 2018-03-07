@@ -95,6 +95,7 @@ Tracker::newFrame(const std::vector<open_ptrack::detection::Detection>& detectio
   unassociated_detections_.clear();
   lost_tracks_.clear();
   new_tracks_.clear();
+  associations_.assign(detections.size(), NULL);
   detections_ = detections;
 
   ros::Time current_detections_time = detections_[0].getSource()->getTime();
@@ -207,6 +208,17 @@ Tracker::toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id)
       // For publishing all tracks:
       msg->tracks.push_back(track);
     }
+  }
+}
+
+void
+Tracker::getAssociationResult(opt_msgs::Association::Ptr& msg)
+{
+  msg->detection_ids.resize(associations_.size());
+  msg->track_ids.resize(associations_.size());
+  for(int i=0; i<associations_.size(); i++) {
+    msg->detection_ids[i] = i;
+    msg->track_ids[i] = associations_[i] == NULL ? -1 : associations_[i]->getId();
   }
 }
 
@@ -403,6 +415,7 @@ Tracker::updateDetectedTracks()
         {
           // Update track with the associated detection:
           bool first_update = false;
+          associations_[measure] = t;
           t->update(d.getWorldCentroid()(0), d.getWorldCentroid()(1), d.getWorldCentroid()(2),d.getHeight(),
                     d.getDistance(), distance_matrix_(track, measure),
                     d.getConfidence(), min_confidence_, min_confidence_detections_,
