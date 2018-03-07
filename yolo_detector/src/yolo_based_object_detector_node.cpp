@@ -235,7 +235,11 @@ void callback(const Image::ConstPtr& rgb_image,
 			
 			cv::Rect rect(newX, newY, newWidth, newHeight);
 			float medianDepth = median(_depth_image(rect)) / mm_factor;
-			//float medianDepth = _depth_image.at<float>(medianY, medianX) / 1000.0f;
+			if (medianDepth > 6.25) {
+				std::cout << "mediandepth " << medianDepth << " rejecting" << std::endl;
+				continue;
+			}			
+//float medianDepth = _depth_image.at<float>(medianY, medianX) / 1000.0f;
 			
 			std::string object_name(names[boxes->boxes[i].classID]);  
 				    
