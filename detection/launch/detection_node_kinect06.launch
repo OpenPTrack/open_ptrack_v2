@@ -3,9 +3,9 @@
 <launch>
 
   <arg name="enable_people_tracking" default="true" />
-  <arg name="enable_pose" default="true" />
-  <arg name="enable_object" default="true" />
-  <arg name="sensor_name" default="Kinect_1" />
+  <arg name="enable_pose" default="false" />
+  <arg name="enable_object" default="false" />
+  <arg name="sensor_name" default="kinect05" />
 
   <!-- true  = Munaro Based OPT Detection -->
   <!-- false = YOLO Based Detection (Must Have YOLO installed to use)-->
@@ -44,10 +44,11 @@
 
   <!-- Object Detection node -->
   <group if="$(arg enable_object)">
+  <!-- Object Detection node -->
+  <group if="$(arg enable_object)">
     <include file="$(find yolo_detector)/launch/detect_yolo_object_kinect_network.launch">
       <arg name="sensor_name"             value="$(arg sensor_name)" />
     </include>
+   </group>
 
-  </group>
 
-</launch>

@@ -69,6 +69,7 @@ class FaceDetectionNode:
 		self.ts.registerCallback(self.callback)
 
 		self.reset_time_sub = rospy.Subscriber('/reset_time', Empty, self.reset_time)
+		print("init complete")
 
 	# callback for dynamic configure
 	def cfg_callback(self, config, level):
@@ -99,6 +100,7 @@ class FaceDetectionNode:
 
 	# callback
 	def callback(self, rgb_image_msg, rgb_info_msg, detection_msg):
+	
 		if detection_msg.header.frame_id != self.sensor_name + '_ir_optical_frame':
 			print 'frame_ids not matched'
 			return
@@ -129,9 +131,8 @@ class FaceDetectionNode:
 
 		t2 = rospy.Time.now()
 
-
-		if self.visualization:
-			self.visualize(rgb_image, rois, faces, (t2 - t1).to_sec())
+		#if self.visualization:
+		#	self.visualize(rgb_image, rois, faces, (t2 - t1).to_sec())
 
 	# visualizes the detection result
 	def visualize(self, rgb_image, rois, faces, processing_time):
@@ -151,7 +152,7 @@ class FaceDetectionNode:
 		cv2.putText(rgb_image, text, (10, 15), cv2.FONT_HERSHEY_PLAIN, 0.8, (255, 255, 255))
 
 		cv2.imshow('rgb_image', rgb_image)
-		cv2.waitKey(2)
+		cv2.waitKey(30)
 
 	# calculate ROIs from the top positions of human clusters
 	def calc_rois(self, rgb_info_msg, detection_msg):

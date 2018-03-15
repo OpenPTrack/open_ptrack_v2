@@ -140,7 +140,6 @@ public:
         associated_faces[tracker->getTrackerId()] = unassociated_faces[std::get<1>(assoc) - 1];
         unassociated_faces.erase(unassociated_faces.begin() + std::get<1>(assoc) - 1);
       }
-
       auto& face = associated_faces[tracker->getTrackerId()];
       for(const auto& feature : tracker->getFeatures()) {
         face->addFace(*feature);
@@ -149,6 +148,10 @@ public:
       auto found = std::find_if(tracker_status_map.begin(), tracker_status_map.end(),
         [&](const std::pair<int, TrackerStatusBayes::Ptr>& p) { return p.second == tracker; }
       );
+      if(found == tracker_status_map.end()){
+        std::cout << "trackerstatusmapend!!" << std::endl;
+        continue;
+      }
       tracker_status_map.erase(found);
     }
   }

@@ -27,7 +27,7 @@ class EvalReidNode:
 
 		subs = [
 			message_filters.Subscriber('/face_recognition/people_tracks', TrackArray),
-			message_filters.Subscriber('/tracker/tracks', TrackArray)
+			message_filters.Subscriber('/tracker/tracks_smoothed', TrackArray)
 		]
 		self.sync = message_filters.TimeSynchronizer(subs, 100)
 		self.sync.registerCallback(self.callback)

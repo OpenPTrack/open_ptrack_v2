@@ -65,7 +65,13 @@ public:
   double calcDistance(const Eigen::VectorXf& face) const {
     double dist = std::numeric_limits<double>::max();
     for(const auto& f : faces) {
-      dist = std::min<double>( dist, (f - face).squaredNorm() );
+      if(f.rows() == face.rows() && f.cols() == face.cols()){
+        dist = std::min<double>( dist, (f - face).squaredNorm() );
+      }
+      else{
+        std::cout << "row/col comparison failed" << std::endl;
+        return 0;
+      }
     }
     return std::sqrt(dist);
   }

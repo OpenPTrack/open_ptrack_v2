@@ -13,6 +13,8 @@ float64 confidence
 
 uint8 visibility
 
+int32 face_id
+
 opt_msgs/BoundingBox2D box_2D
 
 string object_name

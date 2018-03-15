@@ -1,36 +1,27 @@
 <?xml version="1.0"?>
-<!-- SESSION ID: 1511909115 -->
+<!-- SESSION ID: 1521024881 -->
 <launch>
 
   <!-- Calibration parameters -->
   <rosparam command="load" file="$(find opt_calibration)/conf/camera_poses.yaml" />
 
   <!-- Network parameters -->
-  <arg name="num_sensors"   default="8" />
+  <arg name="num_sensors"   default="5" />
 
-  <arg name="sensor_0_id"   default="Kinect_1" />
+  <arg name="sensor_0_id"   default="kinect01" />
   <arg name="sensor_0_name" default="$(arg sensor_0_id)" />
 
-  <arg name="sensor_1_id"   default="Kinect_2" />
+  <arg name="sensor_1_id"   default="kinect02" />
   <arg name="sensor_1_name" default="$(arg sensor_1_id)" />
 
-  <arg name="sensor_2_id"   default="Kinect_3" />
+  <arg name="sensor_2_id"   default="kinect03" />
   <arg name="sensor_2_name" default="$(arg sensor_2_id)" />
 
-  <arg name="sensor_3_id"   default="Kinect_4" />
+  <arg name="sensor_3_id"   default="kinect04" />
   <arg name="sensor_3_name" default="$(arg sensor_3_id)" />
 
-  <arg name="sensor_4_id"   default="Kinect_5" />
+  <arg name="sensor_4_id"   default="kinect05" />
   <arg name="sensor_4_name" default="$(arg sensor_4_id)" />
-
-  <arg name="sensor_5_id"   default="Kinect_6" />
-  <arg name="sensor_5_name" default="$(arg sensor_5_id)" />
-
-  <arg name="sensor_6_id"   default="Kinect_7" />
-  <arg name="sensor_6_name" default="$(arg sensor_6_id)" />
-
-  <arg name="sensor_7_id"   default="Kinect_8" />
-  <arg name="sensor_7_name" default="$(arg sensor_7_id)" />
 
   <!-- Launching calibration -->
   <node pkg="opt_calibration" type="opt_define_reference_frame" name="opt_define_reference_frame" output="screen">
@@ -62,21 +53,6 @@
     <param name="sensor_4/type"         value="pinhole_rgb" />
     <remap from="~sensor_4/image"       to="/$(arg sensor_4_name)/rgb_rect/image" />
     <remap from="~sensor_4/camera_info" to="/$(arg sensor_4_name)/rgb_rect/camera_info" />
-
-    <param name="sensor_5/name"         value="/$(arg sensor_5_name)" />
-    <param name="sensor_5/type"         value="pinhole_rgb" />
-    <remap from="~sensor_5/image"       to="/$(arg sensor_5_name)/rgb_rect/image" />
-    <remap from="~sensor_5/camera_info" to="/$(arg sensor_5_name)/rgb_rect/camera_info" />
-
-    <param name="sensor_6/name"         value="/$(arg sensor_6_name)" />
-    <param name="sensor_6/type"         value="pinhole_rgb" />
-    <remap from="~sensor_6/image"       to="/$(arg sensor_6_name)/rgb_rect/image" />
-    <remap from="~sensor_6/camera_info" to="/$(arg sensor_6_name)/rgb_rect/camera_info" />
-
-    <param name="sensor_7/name"         value="/$(arg sensor_7_name)" />
-    <param name="sensor_7/type"         value="pinhole_rgb" />
-    <remap from="~sensor_7/image"       to="/$(arg sensor_7_name)/rgb_rect/image" />
-    <remap from="~sensor_7/camera_info" to="/$(arg sensor_7_name)/rgb_rect/camera_info" />
 
   </node>
 

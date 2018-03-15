@@ -1,63 +1,42 @@
 <?xml version="1.0"?>
-<!-- CALIBRATION ID: 1511910422 -->
+<!-- CALIBRATION ID: 1521025812 -->
 <launch>
 
   <!-- Network parameters -->
 
-  <!-- pc: cm-opt-7 -->
-  <!-- sensor: Kinect_7 -->
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_7_broadcaster"
-        args="-5.1219 2.40941 3.01053 -0.537815 0.657601 -0.414603 0.32622 /world /Kinect_7 100" />
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_7_broadcaster_2"
-        args="0 0 0 1.57 -1.57 0 /Kinect_7 /Kinect_7_link 100" />
+  <!-- pc: opt2-chela-05 -->
+  <!-- sensor: kinect05 -->
+  <node pkg="tf" type="static_transform_publisher" name="kinect05_broadcaster"
+        args="3.35165 3.19763 1.34062 0.314578 0.662172 -0.624943 -0.268358 /world /kinect05 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect05_broadcaster_2"
+        args="0 0 0 1.57 -1.57 0 /kinect05 /kinect05_link 100" />
 
-  <!-- pc: cm-opt-6 -->
-  <!-- sensor: Kinect_6 -->
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_6_broadcaster"
-        args="-2.08072 5.19464 3.00932 -0.25336 0.804802 -0.52207 0.124682 /world /Kinect_6 100" />
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_6_broadcaster_2"
-        args="0 0 0 1.57 -1.57 0 /Kinect_6 /Kinect_6_link 100" />
+  <!-- pc: opt2-chela-04 -->
+  <!-- sensor: kinect04 -->
+  <node pkg="tf" type="static_transform_publisher" name="kinect04_broadcaster"
+        args="-3.36473 3.87853 2.73014 -0.297266 0.830941 -0.455538 0.116854 /world /kinect04 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect04_broadcaster_2"
+        args="0 0 0 1.57 -1.57 0 /kinect04 /kinect04_link 100" />
 
-  <!-- pc: cm-opt-5 -->
-  <!-- sensor: Kinect_5 -->
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_5_broadcaster"
-        args="6.56864 3.1098 2.96934 0.253165 0.810336 -0.502836 -0.16254 /world /Kinect_5 100" />
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_5_broadcaster_2"
-        args="0 0 0 1.57 -1.57 0 /Kinect_5 /Kinect_5_link 100" />
+  <!-- pc: opt2-chela-01 -->
+  <!-- sensor: kinect01 -->
+  <node pkg="tf" type="static_transform_publisher" name="kinect01_broadcaster"
+        args="2.94347 4.11128 2.74463 0.276312 0.855375 -0.4167 -0.135448 /world /kinect01 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect01_broadcaster_2"
+        args="0 0 0 1.57 -1.57 0 /kinect01 /kinect01_link 100" />
 
-  <!-- pc: cm-opt-4 -->
-  <!-- sensor: Kinect_4 -->
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_4_broadcaster"
-        args="11.8319 0.822233 3.13792 0.558057 0.666818 -0.392835 -0.299345 /world /Kinect_4 100" />
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_4_broadcaster_2"
-        args="0 0 0 1.57 -1.57 0 /Kinect_4 /Kinect_4_link 100" />
+  <!-- pc: opt2-chela-03 -->
+  <!-- sensor: kinect03 -->
+  <node pkg="tf" type="static_transform_publisher" name="kinect03_broadcaster"
+        args="-3.70893 -2.6992 2.68423 0.864452 -0.261748 0.131951 -0.408411 /world /kinect03 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect03_broadcaster_2"
+        args="0 0 0 1.57 -1.57 0 /kinect03 /kinect03_link 100" />
 
-  <!-- pc: cm-opt-3 -->
-  <!-- sensor: Kinect_3 -->
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_3_broadcaster"
-        args="9.72096 -4.09581 2.92484 -0.749637 -0.334264 0.240095 0.51833 /world /Kinect_3 100" />
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_3_broadcaster_2"
-        args="0 0 0 1.57 -1.57 0 /Kinect_3 /Kinect_3_link 100" />
-
-  <!-- pc: cm-opt-2 -->
-  <!-- sensor: Kinect_2 -->
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_2_broadcaster"
-        args="7.60631 -4.73765 2.83873 -0.727306 -0.384213 0.259926 0.505812 /world /Kinect_2 100" />
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_2_broadcaster_2"
-        args="0 0 0 1.57 -1.57 0 /Kinect_2 /Kinect_2_link 100" />
-
-  <!-- pc: cm-opt-1 -->
-  <!-- sensor: Kinect_1 -->
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_1_broadcaster"
-        args="1.12701 -6.53152 2.90781 0.878469 -0.0179712 -0.0100892 -0.477355 /world /Kinect_1 100" />
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_1_broadcaster_2"
-        args="0 0 0 1.57 -1.57 0 /Kinect_1 /Kinect_1_link 100" />
-
-  <!-- pc: cm-opt-8 -->
-  <!-- sensor: Kinect_8 -->
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_8_broadcaster"
-        args="-4.75069 -4.53466 3.10426 0.728236 -0.389873 0.286401 -0.485434 /world /Kinect_8 100" />
-  <node pkg="tf" type="static_transform_publisher" name="Kinect_8_broadcaster_2"
-        args="0 0 0 1.57 -1.57 0 /Kinect_8 /Kinect_8_link 100" />
+  <!-- pc: opt2-chela-02 -->
+  <!-- sensor: kinect02 -->
+  <node pkg="tf" type="static_transform_publisher" name="kinect02_broadcaster"
+        args="3.95929 -2.25254 2.69455 0.823932 0.359132 -0.19379 -0.3932 /world /kinect02 100" />
+  <node pkg="tf" type="static_transform_publisher" name="kinect02_broadcaster_2"
+        args="0 0 0 1.57 -1.57 0 /kinect02 /kinect02_link 100" />
 
 </launch>

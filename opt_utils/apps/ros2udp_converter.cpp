@@ -50,6 +50,7 @@
 #include <open_ptrack/opt_utils/json.h>
 
 // Global variables:
+int facetracksflag;
 int udp_buffer_length;  // UDP message buffer length
 int udp_port;           // UDP port
 std::string hostip;     // UDP host
@@ -67,6 +68,10 @@ using namespace open_ptrack::bpe;
 void
 trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
 {
+  if (facetracksflag == 1)
+  {
+    return;
+  }
   /// Create JSON-formatted message:
   Jzon::Object root, header, stamp;
 
@@ -125,9 +130,16 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
   udp_messaging.sendFromSocketUDP(&udp_data);
 }
 
-void peopletracksCallback(const opt_msgs::TrackArray::ConstPtr& association_message)
+
+void peopleTracksCallback(const opt_msgs::TrackArray::ConstPtr& association_message)
 {
-    /// Create JSON-formatted message:
+  
+  //if (facetracksflag==0)
+  //{
+  //  return;
+  //}
+  
+  
   Jzon::Object root, header, stamp;
 
   /// Add header (84 characters):
@@ -155,6 +167,7 @@ void peopletracksCallback(const opt_msgs::TrackArray::ConstPtr& association_mess
     current_track.Add("height", association_message->tracks[i].height);
     current_track.Add("age", association_message->tracks[i].age);
     current_track.Add("confidence", association_message->tracks[i].confidence);
+    current_track.Add("face_id", association_message->tracks[i].face_id);
 
     tracks.Add(current_track);
   }
@@ -184,6 +197,7 @@ void peopletracksCallback(const opt_msgs::TrackArray::ConstPtr& association_mess
   /// Send message:
   udp_messaging.sendFromSocketUDP(&udp_data);
 }
+
 
 void peoplenamesCallback(const opt_msgs::NameArray::ConstPtr& association_message)
 {
@@ -332,12 +346,14 @@ main(int argc, char **argv)
   nh.param("json/use_tabs", json_use_tabs, false);
   nh.param("json/heartbeat_interval", heartbeat_interval, 0.25);
 
+  facetracksflag = 0;
+
   // ROS subscriber:
   ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>
       ("input_topic", 1, trackingCallback);
   ros::Subscriber alive_ids_sub = nh.subscribe<opt_msgs::IDArray>
       ("alive_ids_topic", 1, aliveIDsCallback);
-  ros::Subscriber people_tracks_sub = nh.subscribe<opt_msgs::TrackArray>("people_tracks_topic", 1, peopletracksCallback);
+  ros::Subscriber people_tracks_sub = nh.subscribe<opt_msgs::TrackArray>("people_tracks_topic", 1, peopleTracksCallback);
   ros::Subscriber people_names_sub = nh.subscribe<opt_msgs::NameArray>("people_names_topic", 1, peoplenamesCallback);
 
   // Initialize UDP parameters:

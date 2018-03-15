@@ -1,53 +1,44 @@
+
 enable_people_tracking: true
-enable_pose: true
-enable_object: true
+enable_pose: false
+enable_object: false
 # Camera network parameters
 network:
-  - pc: "cm-opt-1"
+  - pc: "opt2-chela-01"
     sensors:
       - type: kinect2
-        id: "Kinect_1"
-        people_detector: hog 
-  - pc: "cm-opt-2"
+        id: "kinect01"
+        people_detector: hog
+  - pc: "opt2-chela-02"
     sensors:
       - type: kinect2
-        id: "Kinect_2"
-        people_detector: hog 
-  - pc: "cm-opt-3"
+        id: "kinect02"
+        people_detector: hog
+  - pc: "opt2-chela-03"
     sensors:
       - type: kinect2
-        id: "Kinect_3"
-        people_detector: hog 
-  - pc: "cm-opt-4"
+        id: "kinect03"
+        people_detector: hog
+  - pc: "opt2-chela-04"
     sensors:
       - type: kinect2
-        id: "Kinect_4"
-        people_detector: hog 
-  - pc: "cm-opt-5"
+        id: "kinect04"
+        people_detector: hog
+  - pc: "opt2-chela-05"
     sensors:
       - type: kinect2
-        id: "Kinect_5"
-        people_detector: hog 
-  - pc: "cm-opt-6"
-    sensors:
-      - type: kinect2
-        id: "Kinect_6"
-        people_detector: hog 
-  - pc: "cm-opt-7"
-    sensors:
-      - type: kinect2
-        id: "Kinect_7"
-        people_detector: hog 
-  - pc: "cm-opt-8"
-    sensors:
-      - type: kinect2
-        id: "Kinect_8" 
-        people_detector: hog        
-       
+        id: "kinect05"
+        people_detector: hog
+#  - pc: "opt2-chela-master"
+#    sensors:
+#      - type: kinect2
+#        id: "kinect06"
+#        people_detector: hog
+
 # Checkerboard parameters
 checkerboard:
   rows: 6
   cols: 5
-  cell_width: 0.115 #0.145
-  cell_height: 0.115 #0.145
+  cell_width: 0.12
+  cell_height: 0.12
 

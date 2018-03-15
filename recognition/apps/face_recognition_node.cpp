@@ -45,8 +45,9 @@ public:
       load_registered_faces_service(nh.advertiseService("/face_recognition/load_registered_faces", &FaceRecognitionNode::load_registered_faces, this)),
       track_pub(nh.advertise<opt_msgs::TrackArray>("/face_recognition/people_tracks", 10)),
       names_pub(nh.advertise<opt_msgs::NameArray>("/face_recognition/people_names", 10)),
+//      id_pub(nh.advertise<opt_msgs::TrackArray>()),
       names_pub_timer(nh.createTimer(ros::Duration(1.0), &FaceRecognitionNode::publish_names, this)),
-      track_sub(nh.subscribe("/tracker/tracks", 10, &FaceRecognitionNode::track_callback, this)),
+      track_sub(nh.subscribe("/tracker/tracks_smoothed", 10, &FaceRecognitionNode::track_callback, this)),
       association_sub(nh, "/tracker/association_result", 10),
       detections_sub(nh, "/face_detector/detections", 10),
       feature_vector_sub(nh, "/face_feature_extractor/features", 10),
@@ -86,7 +87,7 @@ private:
     std::unique_lock<std::mutex> lock(recognizer_mutex);
     for(auto& track : recognized_msg->tracks) {
       recognizer->collectGarbage(track_msg);
-      track.id = recognizer->convertID(track.id);
+      track.face_id = recognizer->convertID(track.id);
     }
     lock.unlock();
 
@@ -140,8 +141,12 @@ private:
     features_with_id_msg->ids.reserve(feature_vector_msg->vectors.size());
     features_with_id_msg->vectors.reserve(feature_vector_msg->vectors.size());
 
+int count = feature_vector_msg->vectors.size(); //jb
+
+
     for(int i=0; i<feature_vector_msg->vectors.size(); i++) {
       if(feature_vector_msg->vectors[i].data.empty()) {
+	count--;
         continue;
       }
 
@@ -149,13 +154,15 @@ private:
       Eigen::Vector3f pos(detection.centroid.x, detection.centroid.y, detection.centroid.z);
       if (pos.norm() > 7.5) {
         std::cout << "TOO FAR!!" << std::endl;
+	count--;
         continue;
       }
       features_with_id_msg->ids.push_back(association_msg->track_ids[i]);
       features_with_id_msg->vectors.push_back(feature_vector_msg->vectors[i]);
     }
-
+if (count > 0) { //jb 
     face_sequenced_callback(features_with_id_msg);
+}
 //    seq.add(features_with_id_msg);
   }
 

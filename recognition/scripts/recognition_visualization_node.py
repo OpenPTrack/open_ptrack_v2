@@ -36,11 +36,11 @@ class Camera:
 
 		print 'waiting for transform'
 		self.camera2world = recutils.lookupTransform(tf_listener, '/%s_rgb_optical_frame' % camera_name, 'world', 10.0, rospy.Time(0))
-		try:
-			rospy.client.wait_for_message('/%s/rgb/image' % camera_name, Image, 1.0)
-			self.sub = rospy.Subscriber('/%s/rgb/image' % camera_name, Image, self.image_callback, queue_size=1, buff_size=2**24)
-		except:
-			self.sub = rospy.Subscriber('/%s/rgb/image/compressed' % camera_name, CompressedImage, self.image_callback, queue_size=1)
+		#try:
+			#rospy.client.wait_for_message('/%s/rgb/image' % camera_name, Image, 1.0)
+			#self.sub = rospy.Subscriber('/%s/rgb/image' % camera_name, Image, self.image_callback, queue_size=1, buff_size=2**24)
+		#except:
+			#self.sub = rospy.Subscriber('/%s/rgb/image/compressed' % camera_name, CompressedImage, self.image_callback, queue_size=1)
 
 	def image_callback(self, image_msg):
 		if abs((rospy.Time.now() - self.prev_time).to_sec()) < self.refresh_span:
@@ -132,7 +132,7 @@ class RecognitionVisualizationNode:
 		self.names_sub = rospy.Subscriber('/face_recognition/people_names', NameArray, self.names_callback, queue_size=1, buff_size=2**10)
 
 		self.track_subscribers = [
-			message_filters.Subscriber('/tracker/tracks', TrackArray),
+			message_filters.Subscriber('/tracker/tracks_smoothed', TrackArray),
 # 			message_filters.Subscriber('/tracker/people_tracks', TrackArray),
 			message_filters.Subscriber('/face_recognition/people_tracks', TrackArray)
 		]
@@ -198,7 +198,7 @@ class RecognitionVisualizationNode:
 			p = (p[0], p[1])
 
 			tracker_id = track.id
-			face_id = face_tracker.id
+			face_id = face_tracker.face_id
 			if tracker_id in self.face_visible_trackers:
 				cv2.circle(canvas, p, 8, (0, 128, 255), -1)
 
