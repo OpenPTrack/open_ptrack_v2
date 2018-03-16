@@ -46,7 +46,7 @@ public:
       track_pub(nh.advertise<opt_msgs::TrackArray>("/face_recognition/people_tracks", 10)),
       names_pub(nh.advertise<opt_msgs::NameArray>("/face_recognition/people_names", 10)),
 //      id_pub(nh.advertise<opt_msgs::TrackArray>()),
-      names_pub_timer(nh.createTimer(ros::Duration(1.0), &FaceRecognitionNode::publish_names, this)),
+      names_pub_timer(nh.createTimer(ros::Duration(0.034), &FaceRecognitionNode::publish_names, this)),
       track_sub(nh.subscribe("/tracker/tracks_smoothed", 10, &FaceRecognitionNode::track_callback, this)),
       association_sub(nh, "/tracker/association_result", 10),
       detections_sub(nh, "/face_detector/detections", 10),
@@ -87,7 +87,7 @@ private:
     std::unique_lock<std::mutex> lock(recognizer_mutex);
     for(auto& track : recognized_msg->tracks) {
       recognizer->collectGarbage(track_msg);
-      track.face_id = recognizer->convertID(track.id);
+      track.stable_id = recognizer->convertID(track.id);
     }
     lock.unlock();
 
