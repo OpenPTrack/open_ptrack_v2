@@ -1,4 +1,3 @@
-# Auto generated file.
 calibration_id: 1511910422
 
 # Poses w.r.t. the "world" reference frame
@@ -166,3 +165,4 @@ inverse_poses:
       y: -0.389873
       z: 0.286401
       w: 0.485434
+

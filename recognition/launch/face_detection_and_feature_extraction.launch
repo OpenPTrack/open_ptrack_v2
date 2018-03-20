@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Sensor parameters -->
+  <arg name="sensor_name" default="kinect2_far" />
+
+  <node pkg="recognition" name="face_feature_extraction_$(arg sensor_name)" type="face_feature_extraction_node.py" args="$(arg sensor_name)"/>
+  <node pkg="recognition" name="face_detection_$(arg sensor_name)" type="face_detection_node.py" output="screen" args="$(arg sensor_name)"/>
+</launch>

@@ -43,7 +43,7 @@ network:
       - type: kinect2
         id: "Kinect_8" 
         people_detector: hog        
-        
+       
 # Checkerboard parameters
 checkerboard:
   rows: 6

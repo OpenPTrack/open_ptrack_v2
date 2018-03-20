@@ -17,7 +17,7 @@ Panels:
       - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
-    Splitter Ratio: 0.588679
+    Splitter Ratio: 0.588679016
   - Class: rviz/Views
     Expanded:
       - /Current View1
@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: Image
 Visualization Manager:
   Class: ""
   Displays:
@@ -37,7 +37,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: false
       Line Style:
-        Line Width: 0.03
+        Line Width: 0.0299999993
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -54,9 +54,45 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        checkerboard_0:
+        checkerboard_view_kinect_02:
           Value: true
-        kinect:
+        checkerboard_view_kinect_03:
+          Value: true
+        kinect_01:
+          Value: true
+        kinect_01_ir_frame:
+          Value: true
+        kinect_01_ir_optical_frame:
+          Value: true
+        kinect_01_link:
+          Value: true
+        kinect_01_rgb_frame:
+          Value: true
+        kinect_01_rgb_optical_frame:
+          Value: true
+        kinect_02:
+          Value: true
+        kinect_02_ir_frame:
+          Value: true
+        kinect_02_ir_optical_frame:
+          Value: true
+        kinect_02_link:
+          Value: true
+        kinect_02_rgb_frame:
+          Value: true
+        kinect_02_rgb_optical_frame:
+          Value: true
+        kinect_03:
+          Value: true
+        kinect_03_ir_frame:
+          Value: true
+        kinect_03_ir_optical_frame:
+          Value: true
+        kinect_03_link:
+          Value: true
+        kinect_03_rgb_frame:
+          Value: true
+        kinect_03_rgb_optical_frame:
           Value: true
         world:
           Value: true
@@ -67,9 +103,26 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          kinect:
-            checkerboard_0:
+          kinect_03:
+            checkerboard_view_kinect_03:
               {}
+            kinect_02:
+              checkerboard_view_kinect_02:
+                {}
+              kinect_02_link:
+                kinect_02_ir_frame:
+                  kinect_02_ir_optical_frame:
+                    {}
+                kinect_02_rgb_frame:
+                  kinect_02_rgb_optical_frame:
+                    {}
+            kinect_03_link:
+              kinect_03_ir_frame:
+                kinect_03_ir_optical_frame:
+                  {}
+              kinect_03_rgb_frame:
+                kinect_03_rgb_optical_frame:
+                  {}
       Update Interval: 0
       Value: true
     - Class: rviz/Marker
@@ -79,6 +132,42 @@ Visualization Manager:
       Namespaces:
         checkerboard: true
       Queue Size: 100
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /kinect_01/rgb/image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /kinect_02/rgb/image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /kinect_03/mono_lowres/image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -104,17 +193,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.19566
+      Distance: 4.19566011
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.0599999987
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
       Focal Point:
         X: 0
         Y: 0
         Z: 0
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.0500000007
+      Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.01
-      Pitch: -1.0148
+      Near Clip Distance: 0.00999999978
+      Pitch: -1.01479995
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.87175
+      Yaw: 4.87674999
     Saved: ~
 Window Geometry:
   Displays:
@@ -122,7 +219,9 @@ Window Geometry:
   Height: 1056
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000013c00000396fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000002800000396000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000396fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000002800000396000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f0000003efc0100000002fb0000000800540069006d006501000000000000073f000002f600fffffffb0000000800540069006d00650100000000000004500000000000000000000004e80000039600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Image:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a00000396fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000002800000396000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000021c00000396fc0200000006fb0000000a0049006d0061006700650100000028000001080000001600fffffffb0000000a0049006d0061006700650100000136000001400000001600fffffffb0000000a0049006d006100670065010000027c000001420000001600fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000002800000396000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f0000003efc0100000002fb0000000800540069006d006501000000000000073f0000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000003ad0000039600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:

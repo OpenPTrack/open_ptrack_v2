@@ -32,6 +32,9 @@ add_message_files(FILES
   ObjectName.msg
   ObjectNameArray.msg
   Image2D_roi_file.msg
+  FeatureVectorArray.msg 
+  Association.msg 
+  NameArray.msg
   )
 
 add_service_files(FILES OPTSensor.srv OPTTransform.srv)

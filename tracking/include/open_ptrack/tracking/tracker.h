@@ -46,6 +46,7 @@
 #include <opt_msgs/TrackArray.h>
 #include <opt_msgs/IDArray.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <opt_msgs/Association.h>
 
 namespace open_ptrack
 {
@@ -66,6 +67,10 @@ namespace open_ptrack
 
         /** \brief List of current detections */
         std::vector<open_ptrack::detection::Detection> detections_;
+
+        /** \brief List of associations between current detections and trackers */
+        /** detections[i] is associated with associations_[i] */
+        std::vector<open_ptrack::tracking::Track*> associations_;
 
         /** \brief List of current detections not associated to any track */
         std::list<open_ptrack::detection::Detection> unassociated_detections_;
@@ -211,6 +216,15 @@ namespace open_ptrack
          */
         virtual void
         toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id);
+
+        /**
+         * \brief Writes the data association result into a Association message.
+         *
+         * \param[in] msg The Association message to fill.
+         */
+        void
+        getAssociationResult(opt_msgs::Association::Ptr& msg);
+
 
         /**
          * \brief Writes the ID of each alive track into an IDArray message.
