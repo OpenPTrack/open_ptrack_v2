@@ -1,0 +1,6 @@
+Makefile
+*.swp
+*.save
+devel/*
+gtest/*
+
