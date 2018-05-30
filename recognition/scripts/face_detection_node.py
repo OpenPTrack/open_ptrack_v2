@@ -2,6 +2,7 @@
 import cv2
 import sys
 import dlib
+import datetime
 import numpy
 import cProfile
 import multiprocessing
@@ -21,6 +22,8 @@ from recognition.cfg import FaceDetectionConfig
 
 import recognition_utils as recutils
 
+def timestampMs():
+    return float((datetime.datetime.utcnow() - datetime.datetime(1970,1,1)).total_seconds() * 1000)
 
 # this node performs 2D face detection on the ROIs calculated from the people detection result
 # it replaces the DetectionArray/detections/box_2D with the detected face regions while do not change the other members of the DetectionArray
@@ -190,7 +193,7 @@ class FaceDetectionNode:
 		Sr = numpy.clip(Sr, 0, 1)
 
 		comb = numpy.dstack((Sb, Sg, Sr))
-		out = 1 - comb #[11:sz[0]+10, 11:sz[1]+10, :]
+		out = np.uint8((1 - comb)255.999) #[11:sz[0]+10, 11:sz[1]+10, :]
 
 		return out
 
@@ -303,6 +306,34 @@ class FaceDetectionNode:
 			int(scaling_factor * detected[0].bottom()) + roi_rect[1]
 		)
 
+	def improve_faster(rgb_image): #but worse
+		B = rgb_image[:,:,0]
+		G = rgb_image[:,:,1]
+		R = rgb_image[:,:,2]
+		
+		im_max = np.amax(rgb_image)
+
+		sh = rgb_image.shape
+		mean = np.sum(.114*B + .587*G + .299*R) / (sh[0] * sh[1])
+		p0 = mean * .035 #1.6
+		if p0 < 2:
+			p0 = 2
+
+		p1 = -0.018
+		alph = p0 + p1 * mean
+
+		B_int = 160.4 / (im_max + 15.81)
+		B_imp = alph * B_int * Ib
+
+		G_int = 179.3 / (im_max + 15.42)
+		G_imp = alph * G_int * Ig
+
+		R_int = 170.7 / (im_max + 15.49)
+		R_imp = alph * R_int * Ir
+
+		out = np.dstack((B_imp, G_imp, R_imp))
+
+		return out
 
 def main():
 	sensor_name = '/kinect2_head' if len(sys.argv) < 2 else '/' + sys.argv[1]
