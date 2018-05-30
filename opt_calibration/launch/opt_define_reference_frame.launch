@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
-<!-- SESSION ID: 1521024881 -->
+<!-- SESSION ID: 1527702287 -->
 <launch>
 
   <!-- Calibration parameters -->
   <rosparam command="load" file="$(find opt_calibration)/conf/camera_poses.yaml" />
 
   <!-- Network parameters -->
-  <arg name="num_sensors"   default="5" />
+  <arg name="num_sensors"   default="3" />
 
   <arg name="sensor_0_id"   default="kinect01" />
   <arg name="sensor_0_name" default="$(arg sensor_0_id)" />
@@ -16,12 +16,6 @@
 
   <arg name="sensor_2_id"   default="kinect03" />
   <arg name="sensor_2_name" default="$(arg sensor_2_id)" />
-
-  <arg name="sensor_3_id"   default="kinect04" />
-  <arg name="sensor_3_name" default="$(arg sensor_3_id)" />
-
-  <arg name="sensor_4_id"   default="kinect05" />
-  <arg name="sensor_4_name" default="$(arg sensor_4_id)" />
 
   <!-- Launching calibration -->
   <node pkg="opt_calibration" type="opt_define_reference_frame" name="opt_define_reference_frame" output="screen">
@@ -43,16 +37,6 @@
     <param name="sensor_2/type"         value="pinhole_rgb" />
     <remap from="~sensor_2/image"       to="/$(arg sensor_2_name)/rgb_rect/image" />
     <remap from="~sensor_2/camera_info" to="/$(arg sensor_2_name)/rgb_rect/camera_info" />
-
-    <param name="sensor_3/name"         value="/$(arg sensor_3_name)" />
-    <param name="sensor_3/type"         value="pinhole_rgb" />
-    <remap from="~sensor_3/image"       to="/$(arg sensor_3_name)/rgb_rect/image" />
-    <remap from="~sensor_3/camera_info" to="/$(arg sensor_3_name)/rgb_rect/camera_info" />
-
-    <param name="sensor_4/name"         value="/$(arg sensor_4_name)" />
-    <param name="sensor_4/type"         value="pinhole_rgb" />
-    <remap from="~sensor_4/image"       to="/$(arg sensor_4_name)/rgb_rect/image" />
-    <remap from="~sensor_4/camera_info" to="/$(arg sensor_4_name)/rgb_rect/camera_info" />
 
   </node>
 

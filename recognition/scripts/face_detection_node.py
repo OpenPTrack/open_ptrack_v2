@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import cv2
-import sys
+import sys, math
 import dlib
 import datetime
 import numpy
@@ -137,10 +137,10 @@ class FaceDetectionNode:
 		#if self.visualization:
 		#	self.visualize(rgb_image, rois, faces, (t2 - t1).to_sec())
 
-	def improve(rgb_image):
+	def improve(self, rgb_image):
 		if numpy.amax(rgb_image) > 1:
-        	info = numpy.iinfo(rgb_image.dtype) 
-        	rgb_image = rgb_image.astype(numpy.float) / info.max
+			info = numpy.iinfo(rgb_image.dtype)
+			rgb_image = rgb_image.astype(numpy.float) / info.max
 		"""
 		sz = rgb_image.shape
 		B = rgb_image[:,:,0]
@@ -155,13 +155,13 @@ class FaceDetectionNode:
 		w = 0.8
 
 		Inv = 1 - rgb_image
-		B = R[:,:,0]
-		G = R[:,:,1]
-		R = R[:,:,2]
+		B = Inv[:,:,0]
+		G = Inv[:,:,1]
+		R = Inv[:,:,2]
 
-		B1 = numpy.ravel(Ib)
-		G1 = numpy.ravel(Ig)
-		R1 = numpy.ravel(Ir)
+		B1 = numpy.ravel(B)
+		G1 = numpy.ravel(G)
+		R1 = numpy.ravel(R)
 
 		I = (B1 + G1 + R1) / 3
 
@@ -174,7 +174,7 @@ class FaceDetectionNode:
 
 		dc = numpy.minimum(numpy.minimum(numpy.ravel(Be), numpy.ravel(Ge)), numpy.ravel(Re))
 		i = numpy.argsort(-dc)
-		tmp = I[i[0:N]]
+		tmp = I[i[0:int(N)]]
 		j = numpy.argsort(-tmp)
 
 		Ab = B1[i[j[0]]]
@@ -193,7 +193,8 @@ class FaceDetectionNode:
 		Sr = numpy.clip(Sr, 0, 1)
 
 		comb = numpy.dstack((Sb, Sg, Sr))
-		out = np.uint8((1 - comb)255.999) #[11:sz[0]+10, 11:sz[1]+10, :]
+		out = numpy.uint8((1 - comb)*255.999) #[11:sz[0]+10, 11:sz[1]+10, :]
+		cv2.imwrite('improved.png', out)
 
 		return out
 
@@ -283,17 +284,17 @@ class FaceDetectionNode:
 			return None
 
 		# detection
-		roi = gray_image[roi_rect[1]:roi_rect[3], roi_rect[0]:roi_rect[2]]
+		roi = gray_image[roi_rect[1]:roi_rect[3], roi_rect[0]:roi_rect[2], :]
 		# roi = roi.reshape(roi.shape[0], roi.shape[1]).astype(numpy.uint8)
+
+		roi = self.improve(roi)
+		roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
 		scaling_factor = 1.0
 		width = roi_rect[2] - roi_rect[0]
 		if width < self.upscale_minsize:
 			scaling_factor = float(width) / self.upscale_minsize
 			roi = cv2.resize(roi, (self.upscale_minsize, self.upscale_minsize))
-
-		roi = self.improve(roi)
-		roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
 		detected, scores, idx = self.detector.run(roi, 0, self.confidence_thresh)
 		if len(detected) <= 0:
@@ -306,15 +307,15 @@ class FaceDetectionNode:
 			int(scaling_factor * detected[0].bottom()) + roi_rect[1]
 		)
 
-	def improve_faster(rgb_image): #but worse
+	def improve_faster(self, rgb_image): #but worse
 		B = rgb_image[:,:,0]
 		G = rgb_image[:,:,1]
 		R = rgb_image[:,:,2]
 		
-		im_max = np.amax(rgb_image)
+		im_max = numpy.amax(rgb_image)
 
 		sh = rgb_image.shape
-		mean = np.sum(.114*B + .587*G + .299*R) / (sh[0] * sh[1])
+		mean = numpy.sum(.114*B + .587*G + .299*R) / (sh[0] * sh[1])
 		p0 = mean * .035 #1.6
 		if p0 < 2:
 			p0 = 2
@@ -331,7 +332,7 @@ class FaceDetectionNode:
 		R_int = 170.7 / (im_max + 15.49)
 		R_imp = alph * R_int * Ir
 
-		out = np.dstack((B_imp, G_imp, R_imp))
+		out = numpy.dstack((B_imp, G_imp, R_imp))
 
 		return out
 

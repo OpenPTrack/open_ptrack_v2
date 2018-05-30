@@ -198,7 +198,7 @@ class RecognitionVisualizationNode:
 			p = (p[0], p[1])
 
 			tracker_id = track.id
-			face_id = face_tracker.face_id
+			face_id = face_tracker.stable_id
 			if tracker_id in self.face_visible_trackers:
 				cv2.circle(canvas, p, 8, (0, 128, 255), -1)
 

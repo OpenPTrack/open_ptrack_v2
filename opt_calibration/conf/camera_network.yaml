@@ -4,31 +4,22 @@ enable_pose: false
 enable_object: false
 # Camera network parameters
 network:
-  - pc: "opt2-chela-01"
+  - pc: "PC1"
     sensors:
       - type: kinect2
         id: "kinect01"
         people_detector: hog
-  - pc: "opt2-chela-02"
+  - pc: "PC2"
     sensors:
       - type: kinect2
         id: "kinect02"
         people_detector: hog
-  - pc: "opt2-chela-03"
+  - pc: "PC3"
     sensors:
       - type: kinect2
         id: "kinect03"
         people_detector: hog
-  - pc: "opt2-chela-04"
-    sensors:
-      - type: kinect2
-        id: "kinect04"
-        people_detector: hog
-  - pc: "opt2-chela-05"
-    sensors:
-      - type: kinect2
-        id: "kinect05"
-        people_detector: hog
+
 #  - pc: "opt2-chela-master"
 #    sensors:
 #      - type: kinect2
@@ -39,6 +30,6 @@ network:
 checkerboard:
   rows: 6
   cols: 5
-  cell_width: 0.12
-  cell_height: 0.12
+  cell_width: 0.07
+  cell_height: 0.07
 
