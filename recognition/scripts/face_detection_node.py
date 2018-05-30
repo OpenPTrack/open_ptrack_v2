@@ -194,7 +194,7 @@ class FaceDetectionNode:
 
 		comb = numpy.dstack((Sb, Sg, Sr))
 		out = numpy.uint8((1 - comb)*255.999) #[11:sz[0]+10, 11:sz[1]+10, :]
-		cv2.imwrite('improved.png', out)
+		#cv2.imwrite('improved.png', out)
 
 		return out
 
