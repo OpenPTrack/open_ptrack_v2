@@ -112,11 +112,11 @@ class FaceDetectionNode:
 			rgb_image = recutils.decompress(rgb_image_msg)
 		else:
 			rgb_image = self.cv_bridge.imgmsg_to_cv2(rgb_image_msg)
-		gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2GRAY)
+		#gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2GRAY)
 
 		# calculate ROIs and then run the 2D face detector
 		rois = self.calc_rois(rgb_info_msg, detection_msg)
-		faces = map(lambda x: self.detect_face(gray_image, x), rois)
+		faces = map(lambda x: self.detect_face(rgb_image, x), rois)
 		#print(len(faces))
 		#print(faces)
 
@@ -133,6 +133,66 @@ class FaceDetectionNode:
 
 		#if self.visualization:
 		#	self.visualize(rgb_image, rois, faces, (t2 - t1).to_sec())
+
+	def improve(rgb_image):
+		if numpy.amax(rgb_image) > 1:
+        	info = numpy.iinfo(rgb_image.dtype) 
+        	rgb_image = rgb_image.astype(numpy.float) / info.max
+		"""
+		sz = rgb_image.shape
+		B = rgb_image[:,:,0]
+		G = rgb_image[:,:,1]
+		R = rgb_image[:,:,2]
+		B = numpy.pad(B, (10,), 'edge')
+		G = numpy.pad(G, (10,), 'edge')
+		R = numpy.pad(R, (10,), 'edge')
+		rgb_image = numpy.dstack((B, G, R))
+		"""
+
+		w = 0.8
+
+		Inv = 1 - rgb_image
+		B = R[:,:,0]
+		G = R[:,:,1]
+		R = R[:,:,2]
+
+		B1 = numpy.ravel(Ib)
+		G1 = numpy.ravel(Ig)
+		R1 = numpy.ravel(Ir)
+
+		I = (B1 + G1 + R1) / 3
+
+		n = I.size
+		N = math.floor(n * 0.002)
+
+		Be = cv2.erode(B, numpy.ones((7,7), numpy.uint8), 1)
+		Ge = cv2.erode(G, numpy.ones((7,7), numpy.uint8), 1)
+		Re = cv2.erode(R, numpy.ones((7,7), numpy.uint8), 1)
+
+		dc = numpy.minimum(numpy.minimum(numpy.ravel(Be), numpy.ravel(Ge)), numpy.ravel(Re))
+		i = numpy.argsort(-dc)
+		tmp = I[i[0:N]]
+		j = numpy.argsort(-tmp)
+
+		Ab = B1[i[j[0]]]
+		Ag = G1[i[j[0]]]
+		Ar = R1[i[j[0]]]
+
+		t = numpy.maximum(1 - w * numpy.minimum(numpy.minimum(Re/Ar, Ge/Ag), Be/Ab), 10**(-7))
+		lc = t < 0.5
+		t[lc] = 2 * t[lc]**2
+
+		Sb = (B - Ab) / t + Ab
+		Sg = (G - Ag) / t + Ag
+		Sr = (R - Ar) / t + Ar
+		Sb = numpy.clip(Sb, 0, 1)
+		Sg = numpy.clip(Sg, 0, 1)
+		Sr = numpy.clip(Sr, 0, 1)
+
+		comb = numpy.dstack((Sb, Sg, Sr))
+		out = 1 - comb #[11:sz[0]+10, 11:sz[1]+10, :]
+
+		return out
 
 	# visualizes the detection result
 	def visualize(self, rgb_image, rois, faces, processing_time):
@@ -228,6 +288,10 @@ class FaceDetectionNode:
 		if width < self.upscale_minsize:
 			scaling_factor = float(width) / self.upscale_minsize
 			roi = cv2.resize(roi, (self.upscale_minsize, self.upscale_minsize))
+
+		roi = self.improve(roi)
+		roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+
 		detected, scores, idx = self.detector.run(roi, 0, self.confidence_thresh)
 		if len(detected) <= 0:
 			return None
