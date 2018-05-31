@@ -35,7 +35,7 @@ class Camera:
 		self.prev_time = rospy.Time.now()
 
 		print 'waiting for transform'
-		self.camera2world = recutils.lookupTransform(tf_listener, '/%s_rgb_optical_frame' % camera_name, 'world', 10.0, rospy.Time(0))
+		#self.camera2world = recutils.lookupTransform(tf_listener, '/%s_rgb_optical_frame' % camera_name, 'world', 10.0, rospy.Time(0))
 		#try:
 		#	rospy.client.wait_for_message('/%s/rgb/image' % camera_name, Image, 1.0)
 		#	self.sub = rospy.Subscriber('/%s/rgb/image' % camera_name, Image, self.image_callback, queue_size=1, buff_size=2**24)
@@ -118,11 +118,11 @@ class Camera:
 
 class RecognitionVisualizationNode:
 	def __init__(self):
-		self.cameras = []
+		#self.cameras = []
 		self.cfg_server = Server(RecognitionVisualizationConfig, self.cfg_callback)
 		self.cv_bridge = cv_bridge.CvBridge()
 		self.tf_listener = tf.TransformListener()
-		self.find_cameras()
+		#self.find_cameras()
 
 		self.names = {}
 		self.face_visible_trackers = {}
@@ -161,13 +161,13 @@ class RecognitionVisualizationNode:
 		self.image_refresh_span = config.image_refresh_span
 
 		self.world2map = numpy.zeros((2, 4), dtype=numpy.float32)
-		self.world2map[0, 0] = -self.map_size_pix / self.map_size_m
-		self.world2map[1, 1] = self.map_size_pix / self.map_size_m
-		self.world2map[0, 3] = self.map_size_pix / 2
-		self.world2map[1, 3] = self.map_size_pix / 2
+		self.world2map[1, 3] = -self.map_size_pix / self.map_size_m #00
+		self.world2map[0, 0] = self.map_size_pix / self.map_size_m #11
+		self.world2map[1, 1] = self.map_size_pix / 2 #03
+		self.world2map[0, 3] = self.map_size_pix / 2 #13
 
-		for camera in self.cameras:
-			camera.refresh_span = config.image_refresh_span
+		#for camera in self.cameras:
+		#	camera.refresh_span = config.image_refresh_span
 
 		return config
 
@@ -189,8 +189,8 @@ class RecognitionVisualizationNode:
 		self.prev_time = rospy.Time.now()
 
 		canvas = numpy.ones((self.map_size_pix, self.map_size_pix, 3), dtype=numpy.uint8) * 255
-		for camera in self.cameras:
-			camera.draw(canvas, self.world2map, self.image_width)
+		#for camera in self.cameras:
+		#	camera.draw(canvas, self.world2map, self.image_width)
 
 		self.face_visible_trackers_lock.acquire()
 		for track, face_tracker in zip(tracker_track_msg.tracks, face_track_msg.tracks):
