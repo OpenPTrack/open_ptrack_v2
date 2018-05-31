@@ -37,10 +37,10 @@ class Camera:
 		print 'waiting for transform'
 		self.camera2world = recutils.lookupTransform(tf_listener, '/%s_rgb_optical_frame' % camera_name, 'world', 10.0, rospy.Time(0))
 		#try:
-			#rospy.client.wait_for_message('/%s/rgb/image' % camera_name, Image, 1.0)
-			#self.sub = rospy.Subscriber('/%s/rgb/image' % camera_name, Image, self.image_callback, queue_size=1, buff_size=2**24)
+		#	rospy.client.wait_for_message('/%s/rgb/image' % camera_name, Image, 1.0)
+		#	self.sub = rospy.Subscriber('/%s/rgb/image' % camera_name, Image, self.image_callback, queue_size=1, buff_size=2**24)
 		#except:
-			#self.sub = rospy.Subscriber('/%s/rgb/image/compressed' % camera_name, CompressedImage, self.image_callback, queue_size=1)
+		#	self.sub = rospy.Subscriber('/%s/rgb/image/compressed' % camera_name, CompressedImage, self.image_callback, queue_size=1)
 
 	def image_callback(self, image_msg):
 		if abs((rospy.Time.now() - self.prev_time).to_sec()) < self.refresh_span:

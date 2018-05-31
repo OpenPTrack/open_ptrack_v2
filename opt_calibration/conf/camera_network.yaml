@@ -1,7 +1,7 @@
 
 enable_people_tracking: true
-enable_pose: false
-enable_object: false
+enable_pose: true
+enable_object: true
 # Camera network parameters
 network:
   - pc: "PC1"

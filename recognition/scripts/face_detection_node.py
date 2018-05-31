@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 import cv2
 import sys, math
 import dlib
@@ -291,10 +292,10 @@ class FaceDetectionNode:
 		roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
 		scaling_factor = 1.0
-		width = roi_rect[2] - roi_rect[0]
-		if width < self.upscale_minsize:
-			scaling_factor = float(width) / self.upscale_minsize
-			roi = cv2.resize(roi, (self.upscale_minsize, self.upscale_minsize))
+		#width = roi_rect[2] - roi_rect[0]
+		#if width < self.upscale_minsize:
+		#	scaling_factor = float(width) / self.upscale_minsize
+		#	roi = cv2.resize(roi, (self.upscale_minsize, self.upscale_minsize))
 
 		detected, scores, idx = self.detector.run(roi, 0, self.confidence_thresh)
 		if len(detected) <= 0:
