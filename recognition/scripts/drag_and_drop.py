@@ -4,7 +4,7 @@ import csv
 import sys
 import cv2
 import dlib
-import numpy
+import numpy, math
 import requests
 from PyQt4 import QtGui
 
@@ -205,7 +205,7 @@ class Widget(QtGui.QWidget):
 				if img is None:
 					print 'failed to open the image'
 					continue
-
+				img = self.improve(img)
 				face_widget = FaceAndNameWidget(img, name)
 				self.face_widgets.append(face_widget)
 				self.faces_layout.addWidget(self.face_widgets[-1])
