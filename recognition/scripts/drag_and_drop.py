@@ -205,6 +205,7 @@ class Widget(QtGui.QWidget):
 				if img is None:
 					print 'failed to open the image'
 					continue
+				
 				img = self.improve(img)
 				face_widget = FaceAndNameWidget(img, name)
 				self.face_widgets.append(face_widget)
