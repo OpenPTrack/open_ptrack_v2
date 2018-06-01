@@ -175,6 +175,7 @@ if (count > 0) { //jb
       const auto& vector = feature_vector_msg->vectors[i];
       Eigen::Map<Eigen::MatrixXf> map(const_cast<float*>(vector.data.data()), vector.layout.dim[0].size, 1);
       std::shared_ptr<Eigen::VectorXf> v( new Eigen::VectorXf(map) );
+      std::cout << "test facesequencedcallback" << std::endl;
       features_buffer.push_back( std::tuple<ros::Time, int, std::shared_ptr<Eigen::VectorXf>>( feature_vector_msg->header.stamp, feature_vector_msg->ids[i], v ) );
     }
     flush_features_buffer();

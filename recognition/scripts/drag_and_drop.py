@@ -4,7 +4,7 @@ import csv
 import sys
 import cv2
 import dlib
-import numpy
+import numpy, math
 import requests
 from PyQt4 import QtGui
 
@@ -205,7 +205,8 @@ class Widget(QtGui.QWidget):
 				if img is None:
 					print 'failed to open the image'
 					continue
-
+				
+				#img = self.improve(img)
 				face_widget = FaceAndNameWidget(img, name)
 				self.face_widgets.append(face_widget)
 				self.faces_layout.addWidget(self.face_widgets[-1])
@@ -240,7 +241,7 @@ class Widget(QtGui.QWidget):
 			return
 
 		self.setProgress(100, 'done')
-		print 'send images to the face reocognition node'
+		print 'sent images to the face reocognition node'
 
 	# reads an image from the url
 	# url : the location to the image (string, like 'http://www.*.jpg' or 'file:///home/*/.jpg'
@@ -256,12 +257,74 @@ class Widget(QtGui.QWidget):
 
 		return img
 
+	def improve(self, rgb_image):
+		if numpy.amax(rgb_image) > 1:
+			info = numpy.iinfo(rgb_image.dtype)
+			rgb_image = rgb_image.astype(numpy.float) / info.max
+		"""
+		sz = rgb_image.shape
+		B = rgb_image[:,:,0]
+		G = rgb_image[:,:,1]
+		R = rgb_image[:,:,2]
+		B = numpy.pad(B, (10,), 'edge')
+		G = numpy.pad(G, (10,), 'edge')
+		R = numpy.pad(R, (10,), 'edge')
+		rgb_image = numpy.dstack((B, G, R))
+		"""
+
+		w = 0.8
+
+		Inv = 1 - rgb_image
+		B = Inv[:,:,0]
+		G = Inv[:,:,1]
+		R = Inv[:,:,2]
+
+		B1 = numpy.ravel(B)
+		G1 = numpy.ravel(G)
+		R1 = numpy.ravel(R)
+
+		I = (B1 + G1 + R1) / 3
+
+		n = I.size
+		N = math.floor(n * 0.002)
+
+		Be = cv2.erode(B, numpy.ones((7,7), numpy.uint8), 1)
+		Ge = cv2.erode(G, numpy.ones((7,7), numpy.uint8), 1)
+		Re = cv2.erode(R, numpy.ones((7,7), numpy.uint8), 1)
+
+		dc = numpy.minimum(numpy.minimum(numpy.ravel(Be), numpy.ravel(Ge)), numpy.ravel(Re))
+		i = numpy.argsort(-dc)
+		tmp = I[i[0:int(N)]]
+		j = numpy.argsort(-tmp)
+
+		Ab = B1[i[j[0]]]
+		Ag = G1[i[j[0]]]
+		Ar = R1[i[j[0]]]
+
+		t = numpy.maximum(1 - w * numpy.minimum(numpy.minimum(Re/Ar, Ge/Ag), Be/Ab), 10**(-7))
+		lc = t < 0.5
+		t[lc] = 2 * t[lc]**2
+
+		Sb = (B - Ab) / t + Ab
+		Sg = (G - Ag) / t + Ag
+		Sr = (R - Ar) / t + Ar
+		Sb = numpy.clip(Sb, 0, 1)
+		Sg = numpy.clip(Sg, 0, 1)
+		Sr = numpy.clip(Sr, 0, 1)
+
+		comb = numpy.dstack((Sb, Sg, Sr))
+		out = numpy.uint8((1 - comb)*255.999) #[11:sz[0]+10, 11:sz[1]+10, :]
+		#cv2.imwrite('improved.png', out)
+
+		return out
+
 	# detects a face in the image
 	# img : the input image
 	def detectFace(self, img):
 		# the img is upscaled so that it become larger than 512 pix
 		upscale = 512 / max(img.shape[0], img.shape[1])
 		print 'detecting', upscale, img.shape
+		#img = self.improve(img)
 		detected = self.detector(img, upscale)
 		if len(detected) == 0:
 			return None

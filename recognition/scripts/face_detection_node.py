@@ -281,6 +281,7 @@ class FaceDetectionNode:
 	# return None if no face is detected
 	def detect_face(self, gray_image, roi_rect):
 		# check if the ROI is valid
+		print(roi_rect)
 		if roi_rect[2] <= roi_rect[0] or roi_rect[3] <= roi_rect[1]:
 			return None
 
