@@ -372,7 +372,7 @@ namespace open_ptrack
         else
         {
           vx = mahalanobis_map4d_[vIndex].x;
-          vy = mahalanobis_map4d_[vIndex].x;
+          vy = mahalanobis_map4d_[vIndex].y;
         }
 
 //        std::cout << "vx: " << vx << ", vy: " << vy<< std::endl;

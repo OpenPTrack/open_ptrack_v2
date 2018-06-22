@@ -368,7 +368,7 @@ TrackObject::getMahalanobisDistance(double x, double y, const ros::Time& when)
     else
     {
       vx = mahalanobis_map4d_[vIndex].x;
-      vy = mahalanobis_map4d_[vIndex].x;
+      vy = mahalanobis_map4d_[vIndex].y;
     }
 
     //        std::cout << "vx: " << vx << ", vy: " << vy<< std::endl;
