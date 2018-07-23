@@ -1,0 +1,168 @@
+# Auto generated file.
+calibration_id: 1506733371
+
+# Poses w.r.t. the "world" reference frame
+poses:
+  Kinect_1:
+    translation:
+      x: 5.5228
+      y: -4.27573
+      z: 2.84657
+    rotation:
+      x: 0.540582
+      y: 0.683967
+      z: -0.356305
+      w: -0.336164
+  Kinect_2:
+    translation:
+      x: 3.20187
+      y: 4.10387
+      z: 2.82639
+    rotation:
+      x: 0.258961
+      y: 0.784498
+      z: -0.539848
+      w: -0.161449
+  Kinect_3:
+    translation:
+      x: 2.61357
+      y: 6.19869
+      z: 2.89035
+    rotation:
+      x: 0.311742
+      y: 0.765154
+      z: -0.531478
+      w: -0.186781
+  Kinect_4:
+    translation:
+      x: -2.16694
+      y: 8.43214
+      z: 2.93133
+    rotation:
+      x: -0.059143
+      y: 0.864227
+      z: -0.494806
+      w: 0.0691426
+  Kinect_5:
+    translation:
+      x: -4.63463
+      y: 3.14166
+      z: 2.72833
+    rotation:
+      x: -0.361098
+      y: 0.706802
+      z: -0.541251
+      w: 0.277643
+  Kinect_6:
+    translation:
+      x: -6.72558
+      y: -5.5218
+      z: 2.88905
+    rotation:
+      x: 0.739439
+      y: -0.398058
+      z: 0.284016
+      w: -0.462726
+  Kinect_7:
+    translation:
+      x: -4.46316
+      y: -8.67778
+      z: 2.83606
+    rotation:
+      x: -0.83483
+      y: 0.128724
+      z: -0.0918962
+      w: 0.5273
+  Kinect_8:
+    translation:
+      x: 2.86894
+      y: -8.54469
+      z: 2.95391
+    rotation:
+      x: -0.784911
+      y: -0.231639
+      z: 0.125021
+      w: 0.560917
+
+# Inverse poses
+inverse_poses:
+  Kinect_1:
+    translation:
+      x: 5.0204
+      y: 0.352117
+      z: 5.61764
+    rotation:
+      x: 0.540582
+      y: 0.683967
+      z: -0.356305
+      w: 0.336164
+  Kinect_2:
+    translation:
+      x: 0.296999
+      y: 0.726112
+      z: 5.87084
+    rotation:
+      x: 0.258961
+      y: 0.784498
+      z: -0.539848
+      w: 0.161449
+  Kinect_3:
+    translation:
+      x: -2.13301
+      y: 0.467446
+      z: 6.98858
+    rotation:
+      x: 0.311742
+      y: 0.765154
+      z: -0.531478
+      w: 0.186781
+  Kinect_4:
+    translation:
+      x: -0.513355
+      y: -1.78647
+      z: 8.99634
+    rotation:
+      x: -0.059143
+      y: 0.864227
+      z: -0.494806
+      w: -0.0691426
+  Kinect_5:
+    translation:
+      x: -0.159243
+      y: 1.18009
+      z: 6.11357
+    rotation:
+      x: -0.361098
+      y: 0.706802
+      z: -0.541251
+      w: -0.277643
+  Kinect_6:
+    translation:
+      x: -1.34193
+      y: -0.96851
+      z: 9.0184
+    rotation:
+      x: 0.739439
+      y: -0.398058
+      z: 0.284016
+      w: 0.462726
+  Kinect_7:
+    translation:
+      x: 1.48366
+      y: -1.52729
+      z: 9.93646
+    rotation:
+      x: 0.83483
+      y: -0.128724
+      z: 0.0918962
+      w: 0.5273
+  Kinect_8:
+    translation:
+      x: 1.64628
+      y: -0.119682
+      z: 9.34042
+    rotation:
+      x: 0.784911
+      y: 0.231639
+      z: -0.125021
+      w: 0.560917

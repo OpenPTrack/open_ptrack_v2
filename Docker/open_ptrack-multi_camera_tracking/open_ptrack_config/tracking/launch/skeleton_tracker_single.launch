@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="skeletons_enabled" default="true" />
+  <arg name="input_topic" default="/detector/skeletons" />
+    
+  <!-- Launch the tracking node -->
+  <node pkg="tracking" type="tracking_skeleton_tracker_node" name="skeleton_tracker_node" output="screen">
+    <remap from="~input" to="$(arg input_topic)" />
+    <remap from="~output" to="/tracker/skeleton_tracks" />
+    <remap from="~markers" to="/tracker/skeleton_markers" />
+    <remap from="~markers_array" to="/tracker/skeleton_markers_array" />
+    <rosparam command="load" file="$(find tracking)/conf/skeleton_tracker_single.yaml" />
+    <rosparam command="load" file="$(find detection)/conf/haar_disp_ada_detector.yaml" /> 
+  </node>
+
+</launch>

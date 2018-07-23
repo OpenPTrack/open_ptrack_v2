@@ -1,0 +1,77 @@
+############################
+## multiple_objects_detection ##
+############################
+
+output_detection_topic: /objects_detector/detections
+
+#if you want to see the tracks result on the image, set show_2D_track to true
+show_2D_track: false
+
+
+###########For choose on which camera to set the object names###########
+set_object_names: true
+###########For choose on which camera to set the object names###########
+
+
+############################
+## Background removal ##
+############################
+
+use_background_removal: true
+
+threshold_4_shadow: 250
+
+number_of_frames_to_compute_the_static_background: 20
+
+##############################################
+## object_detector parameters ##
+##############################################
+
+
+########for the HSV mask######
+#set a mask(filter) to gain a better performance(set SMin or VMin smaller to get a larger range, also more noise)
+HMin: 0
+HMax: 360
+
+SMin: 80
+SMax: 256
+
+VMin: 50
+VMax: 256
+########for the HSV mask#######
+
+
+###########For camshift########
+#for the hue backrojection hist ,divide (HMin,HMax) to "h_bins" parts,
+h_bins: 9
+s_bins: 9
+
+#for the depth, transfer the depth from (1000,9000) into (0, 255), than divide them into "d_bins" parts
+d_bins: 100
+
+# Three options : H HS HSD : 
+# if the objects are in different color, choose HS which is faster, or choose HSD.
+Backprojection_Mode: HS
+###########For camshift#########
+
+
+
+###########For camshift recover from occlusion###########
+
+##for camshift, for the window in backproject image,the value represent the similirity with the ROI. the value of the pixel is equal to 255*percentage ,the percentage come from the histogram(problility)
+## QUALITY_TOLERANCE here means the TOLERANCE of sum of the window in backproject image,it represent the quality of the window.
+## DENSITY_TOLORENCE here means the TOLERANCE of the DENSITY,DENSITY=QUALITY/window.area();
+## AREA_TOLERANCE here means the TOLERANCE of the x,y ,window.it means the objects maybe apprear in the next frame ,in the window which increase it's size by AREA_TOLERANCE every frame.so the bigger AREA_TOLERANCE,the objects can move faster.
+## if the QUALITY<QUALITY_TOLERANCE, the object is "totally occluded",
+## then when QUALITY<QUALITY_TOLERANCE, it will appeare, but at first ,not totaly appear,the window may be much bigger then the size of object,
+## then we calculate the DENSITY,if DENSITY<DENSITY_TOLORENCE.it means the window not just included the object,and the objects are "half occluded"
+## then the camshift will decrese the size of the window,untill DENSITY>DENSITY_TOLORENCE,it will be "not occluded";
+AREA_TOLERANCE: 20  ##AREA_TOLERANCE is also used to create the position_maks
+QUALITY_TOLERANCE: 20000
+DENSITY_TOLORENCE: 2.0
+###########For camshift recover from occlusion###########
+
+
+
+
+

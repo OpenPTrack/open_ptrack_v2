@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+ 
+ <!-- People and object tracking -->
+  <include file="$(find tracking)/launch/tracker_single.launch"/>
+
+  <!-- opt_gui -->
+  <node pkg="opt_gui" type="opt_gui" name="opt_gui" output="screen">
+  </node>
+
+  <!-- Launch sensor -->
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">
+    <arg name="publish_frame"       value="true" />
+  </include>
+
+  <!-- Launch ground based people detection node -->
+   <node pkg="detection" type="multiple_objects_detection_node" name="multiple_objects_detection" output="screen" required="true">
+     <rosparam command="load"                        file="$(find detection)/conf/multiple_objects_detection.yaml" />    
+   </node>
+
+  <!-- UDP messaging -->
+  <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
+
+  <!-- Visualization -->
+  <include file="$(find opt_utils)/launch/multicamera_visualization.launch"/>
+
+</launch>
+

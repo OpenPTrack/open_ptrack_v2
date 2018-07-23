@@ -1,0 +1,28 @@
+<launch>
+
+  <arg name="skeletons_enabled" default="true" />
+  <arg name="sensor_name" default="kinect2" />
+
+  <!-- Kinect2 -->
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
+     <arg name="sensor_name" value="$(arg sensor_name)" />
+  </include>
+
+  <!-- Skeleton detection -->
+  <include file="$(find detection)/launch/skeleton_detector.launch">
+     <arg name="skeletons_enabled" value="$(arg skeletons_enabled)" />
+  </include>
+
+  <!-- Skeleton tracking -->
+  <include file="$(find tracking)/launch/skeleton_tracker_single.launch">
+     <arg name="skeletons_enabled" value="$(arg skeletons_enabled)" />
+     <arg name="input_topic" value="/detector/skeletons" />
+  </include>
+
+  <!-- UDP messaging -->
+  <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
+
+  <!-- Visualization -->
+  <include file="$(find opt_utils)/launch/visualization_kinect2.launch"/>
+
+</launch>

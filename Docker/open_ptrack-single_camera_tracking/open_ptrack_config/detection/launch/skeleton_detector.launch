@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Camera parameters -->
+  <arg name="sensor_id"               default="" />
+  <arg name="sensor_name"             default="kinect2" />
+  <arg name="rgb_camera_info_url"     default="" />
+  <arg name="intermediate_topic"      default="/detector/skeletons" />
+  <arg name="ground_from_calibration" default="false" />
+  <arg name="skeletons_enabled"	      default="true" />
+  <arg name="use_coco"                default="true" />
+  <!-- Launch ground based people detection node -->
+  <group if="$(arg skeletons_enabled)" >
+  <node pkg="rtpose_wrapper" type="rtpose"
+        name="rtpose_$(arg sensor_name)" output="screen" respawn="true">
+
+    <rosparam command="load"                        file="$(find rtpose_wrapper)/conf/kinect2_params.yaml" />
+
+    <!-- COCO -->
+      <param name="caffe_model" value="$(find rtpose_wrapper)/model/mpi/pose_iter_150000.caffemodel"
+      if="$(arg use_coco)"/>
+      <param name="caffe_proto" value="$(find rtpose_wrapper)/model/mpi/pose_deploy_linevec_64.prototxt" if="$(arg use_coco)"/>
+
+    <!-- MPI -->
+      <param name="caffe_model" value="$(find rtpose_wrapper)/model/mpi/pose_iter_160000.caffemodel"
+      unless="$(arg use_coco)"/>
+      <param name="head_joint_enhancement" value="true"
+      unless="$(arg use_coco)"/>
+      <param name="caffe_proto" value="$(find rtpose_wrapper)/model/mpi/pose_deploy_linevec.prototxt"
+      unless="$(arg use_coco)"/>
+
+    <param name="rgb_topic"                  value="/$(arg sensor_name)/rgb_lowres/image"/>
+    <param name="depth_topic"		     value="/$(arg sensor_name)/depth_lowres/image"/>
+    <param name="camera_info_topic"          value="/$(arg sensor_name)/rgb_lowres/camera_info" />
+    <remap from="/detector/skeletons"	     to="$(arg intermediate_topic)" />
+    <remap from="/detector/skeleton_image"   to="/$(arg sensor_name)/skeleton_image" />
+    <remap from="/detector/skeletons_depth_image" to="/$(arg sensor_name)/skeleton_depth_image" />
+    
+
+  </node>
+  </group>
+
+</launch>
