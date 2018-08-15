@@ -3,7 +3,7 @@ open_ptrack
 
 http://openptrack.org/
 
-*Waiting for the wiki to be updated, please follow these instructions: https://docs.google.com/document/d/1iagy-zU1cbV92YQI6EJhieM5-09BGrVsVmmz0QjK0XA/edit
+The recommended installation method to get up and running quickly is to use the Docker container.  Instructions are here: https://github.com/OpenPTrack/open_ptrack_v2/wiki/Docker-Images
 
 OpenPTrack is an open source project launched in 2013 to create a scalable, multi-camera solution for person tracking that specifically aims to support applications in education, art, and culture.
 
