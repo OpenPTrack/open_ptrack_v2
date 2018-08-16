@@ -137,14 +137,9 @@ RUN  /bin/bash -c "source /root/.bashrc    \
     && cd rtpose_wrapper     \ 
     && git checkout integration-1604     \ 
     && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev     \ 
-    && make all -j8"  
+    && make all -j8"
 
-RUN  apt-get install ntp -y  \ 
-    && rm -rf /var/lib/apt/lists/*
-
-RUN  /bin/bash -c "cd \ 
-    && source /root/.bashrc \ 
-    && git clone https://github.com/torch/distro.git ~/torch --recursive \ 
+RUN  /bin/bash -c "git clone https://github.com/torch/distro.git ~/torch --recursive \ 
     && cd ~/torch \ 
     && bash install-deps \ 
     && ./install.sh -b \ 
@@ -152,3 +147,22 @@ RUN  /bin/bash -c "cd \
     && cd install/bin \ 
     && ./luarocks install dpnn \ 
     && ./luarocks install csvigo"
+
+RUN /bin/bash -c "cd /tmp \
+    && git clone https://github.com/cmusatyalab/openface.git \
+    && cd openface \
+    && sudo python setup.py install"
+
+RUN /bin/bash -c "cd /tmp \
+    && rm -rf dlib \
+    && git clone https://github.com/davisking/dlib.git \
+    && cd dlib \
+    && git checkout v19.4 \
+    && mkdir python_examples/build \
+    && cd python_examples/build \
+    && cmake ../../tools/python -DUSE_AVX_INSTRUCTIONS=ON \
+    && cmake --build . --config Release \
+    && sudo cp dlib.so /usr/local/lib/python2.7/dist-packages"
+
+RUN apt-get install ntp -y  \ 
+    && rm -rf /var/lib/apt/lists/*
