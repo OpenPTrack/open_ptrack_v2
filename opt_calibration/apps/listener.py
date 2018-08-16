@@ -341,7 +341,7 @@ class Listener :
       
       file.write('  <!-- Object Detection node -->\n')
       file.write('  <group if="$(arg enable_object)">\n')
-      file.write('    <include file="$(find detection)/launch/object_detector.launch">\n')
+      file.write('    <include file="$(find yolo_detector)/launch/detect_yolo_object_kinect_network.launch">\n')
       if request.serial != '':
         file.write('      <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
       file.write('      <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
