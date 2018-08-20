@@ -12,7 +12,7 @@ With the advent of commercially available consumer depth sensors, and continued 
 The project contains numerous state-of-the-art algorithms for RGB and/or depth tracking, and has been created on top of a modular node based architecture, to support the addition and removal of different sensor streams online.
 
 OpenPTrack is led by UCLA REMAP and Open Perception. Key collaborators include the University of Padova and Electroland. Code is available under a BSD license.  Portions of the work are supported by the National Science Foundation (IIS-1323767).
-
+Note that the OpenPose library used in pose recognition does not allow commercial repackaging of OpenPTrack pose recognition capabilities; please contact the CMU OpenPose team for a license.
 
 If you use this code, please cite:
 
@@ -24,5 +24,11 @@ M. Munaro and E. Menegatti. Fast RGB-D people tracking for service robots. Journ
 [PoseEstimation and PoseRecognition]
 M. Carraro, M. Munaro, J. Burke and E. Menegatti. Real-time marker-less multi-person 3D pose estimation in RGB-Depth camera networks. arXiv preprint arXiv:1710.06235, 2017.
 
+Z. Cao, T. Simon, S. E. Wei, and Y. Sheikh, 2016. Realtime multi-person 2d pose estimation using part affinity fields. arXiv preprint arXiv:1611.08050.
+
+T. Simon, H. Joo, I. A. Matthews, and Y. Sheikh, 2017, July. Hand Keypoint Detection in Single Images Using Multiview Bootstrapping. In CVPR (Vol. 1, p. 2).
+
 [ObjectTracking]
 Y. Zhao, M. Carraro, M. Munaro and E. Menegatti, Fast Multiple Object Tracking in RGB-D Camera Networks, in Intelligent Robots and Systems (IROS), 2017 IEEE/RSJ International Conference on, IEEE, 2017.
+
+
