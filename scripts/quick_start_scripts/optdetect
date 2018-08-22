@@ -1,0 +1,34 @@
+#!/bin/bash
+
+pose="enable_pose:=false"
+object="enable_object:=false"
+tracking="enable_people_tracking:=true"
+kill="true"
+
+while getopts "pon" opt; do
+  case $opt in
+    p)
+      echo "ENABLING POSE RECOGNITION"
+      pose="enable_pose:=true"
+      ;;
+    o)
+      echo "ENABLING OBJECT DETECTION"
+      object="enable_object:=true"
+      ;;
+    n)
+      echo "DISABLE PEOPLE TRACKING"
+      tracking="enable_people_tracking:=false"
+      ;;
+     k)
+      echo "KEEPING PROCESSES" 
+      kill="false"
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" 
+      ;;
+  esac
+done
+
+
+roslaunch detection detection_node_$ROS_KINECT_NAME.launch $tracking $pose $object
+

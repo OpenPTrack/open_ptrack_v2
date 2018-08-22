@@ -1,0 +1,5 @@
+#!/bin/bash
+echo "Killing existing processes" 
+pkill -f "/opt/ros"
+pkill -f "/workspace/ros"
+
