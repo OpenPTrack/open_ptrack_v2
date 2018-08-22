@@ -31,7 +31,7 @@ RUN  add-apt-repository -y ppa:danielrichter2007/grub-customizer     \
     && apt-add-repository -y ppa:graphics-drivers/ppa     \ 
     && add-apt-repository -y ppa:yannubuntu/boot-repair     \ 
     && apt-get update     \ 
-    && apt-get install -y sublime-text grub-customizer exfat-fuse exfat-utils vim terminator gitg cmake-qt-gui cmake-curses-gui gparted meld cowsay fortune gimp synaptic libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev ncdu filezilla p7zip-full openssh-client openssh-server boot-repair     
+    && apt-get install -y sublime-text grub-customizer exfat-fuse exfat-utils vim terminator gitg cmake-curses-gui gparted meld cowsay fortune gimp synaptic libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev ncdu filezilla p7zip-full openssh-client openssh-server boot-repair
 
 RUN  sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'     \ 
     && apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116     \ 
@@ -43,11 +43,8 @@ RUN  sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main
 RUN  /bin/bash -c "echo 'source /opt/ros/kinetic/setup.bash' >> /root/.bashrc \ 
     && source /root/.bashrc"      
 
-RUN add-apt-repository -y ppa:levi-armstrong/qt-libraries-xenial     \ 
-    && add-apt-repository -y ppa:levi-armstrong/ppa     \ 
-    && apt-get update     \ 
-    && apt-get install -y qt57creator-plugin-ros     \ 
-    && grep -rnw "exit 0" /etc/rc.local |cut -f1 -d: | tail -1 | sed -i '$ i echo 0 | tee /proc/sys/kernel/yama/ptrace_scope' /etc/rc.local                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+RUN add-apt-repository -y ppa:levi-armstrong/ppa     \ 
+    && apt-get update
 
 RUN  /bin/bash -c "source /opt/ros/kinetic/setup.bash     \ 
     && cd     \ 

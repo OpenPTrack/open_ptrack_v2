@@ -8,8 +8,6 @@ RUN /bin/bash -c "source /opt/ros/kinetic/setup.bash \
     && git clone https://github.com/openptrack/open_ptrack_v2 open_ptrack \
     && cd open_ptrack \
     && git checkout $branch \
-    && apt-get update && apt-get install -y ros-kinetic-qt-build qml-module-qtquick-controls \
-    && rm -rf /var/lib/apt/lists/* \
     && source /root/.bashrc \
     && cd ../..  \
     && LD_LIBRARY_PATH=/root/workspace/ros/devel/lib:/opt/ros/kinetic/lib:/opt/ros/kinetic/lib/x86_64-linux-gnu:/usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu:/usr/local/cuda/lib64:/usr/local/opencv3/lib \
