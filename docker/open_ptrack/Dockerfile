@@ -4,9 +4,8 @@ LABEL maintainer "Samir Tabriz"
 ARG branch=docker
 
 RUN /bin/bash -c "source /opt/ros/kinetic/setup.bash \
-    && cd ~/workspace/ros/src \
-    && git clone https://github.com/openptrack/open_ptrack_v2 open_ptrack \
-    && cd open_ptrack \
+    && git clone https://github.com/openptrack/open_ptrack_v2 ~/workspace/ros/src/open_ptrack \
+    && cd ~/workspace/ros/src/open_ptrack \
     && git checkout $branch \
     && cd ../..  \
     && LD_LIBRARY_PATH=/root/workspace/ros/devel/lib:/opt/ros/kinetic/lib:/opt/ros/kinetic/lib/x86_64-linux-gnu:/usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu:/usr/local/cuda/lib64:/usr/local/opencv3/lib \
