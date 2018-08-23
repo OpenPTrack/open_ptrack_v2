@@ -1,7 +1,7 @@
 FROM openptrack/open_ptrack-dep
 LABEL maintainer "Samir Tabriz"
 
-ARG branch=master
+ARG branch=docker
 
 RUN /bin/bash -c "source /opt/ros/kinetic/setup.bash \
     && cd ~/workspace/ros/src \
