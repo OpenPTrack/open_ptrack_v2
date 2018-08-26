@@ -95,6 +95,7 @@ Tracker::newFrame(const std::vector<open_ptrack::detection::Detection>& detectio
   unassociated_detections_.clear();
   lost_tracks_.clear();
   new_tracks_.clear();
+  associations_.assign(detections.size(), NULL);
   detections_ = detections;
 
   ros::Time current_detections_time = detections_[0].getSource()->getTime();
@@ -211,6 +212,17 @@ Tracker::toMsg(opt_msgs::TrackArray::Ptr& msg, std::string& source_frame_id)
 }
 
 void
+Tracker::getAssociationResult(opt_msgs::Association::Ptr& msg)
+{
+  msg->detection_ids.resize(associations_.size());
+  msg->track_ids.resize(associations_.size());
+  for(int i=0; i<associations_.size(); i++) {
+    msg->detection_ids[i] = i;
+    msg->track_ids[i] = associations_[i] == NULL ? -1 : associations_[i]->getId();
+  }
+}
+
+void
 Tracker::getAliveIDs (opt_msgs::IDArray::Ptr& msg)
 {
   for(std::list<open_ptrack::tracking::Track*>::iterator it = tracks_.begin(); it != tracks_.end(); it++)
@@ -247,6 +259,10 @@ Tracker::createNewTrack(open_ptrack::detection::Detection& detection)
 {
   if(detection.getConfidence() < min_confidence_)
     return -1;
+  
+  if (detection.getWorldCentroid().hasNaN()){
+    return -1;    
+  }
 
   open_ptrack::tracking::Track* t;
   t = new open_ptrack::tracking::Track(
@@ -399,6 +415,7 @@ Tracker::updateDetectedTracks()
         {
           // Update track with the associated detection:
           bool first_update = false;
+          associations_[measure] = t;
           t->update(d.getWorldCentroid()(0), d.getWorldCentroid()(1), d.getWorldCentroid()(2),d.getHeight(),
                     d.getDistance(), distance_matrix_(track, measure),
                     d.getConfidence(), min_confidence_, min_confidence_detections_,

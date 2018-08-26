@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="sensor_name" default="kinect2_head" />
+  <arg name="standalone" default="true" />
+
+  <group if="$(arg standalone)" >
+    <!-- Start the Kinect -->
+    <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
+      <param name="sensor_name" value="$(arg sensor_name)" />
+          <arg name="publish_frame"       value="true" />
+    </include>
+  </group>  
+  
+  
+  <!-- Launch object detection node -->
+  <node pkg="yolo_detector" type="open_ptrack_yolo_object_detector_node"
+        name="$(arg sensor_name)_yolo_object_detector_node" output="screen" respawn="false">
+        
+    <param name="world_frame_id"            value="/world"/>
+    <param name="depth_image_topic"                   value="/$(arg sensor_name)/depth_lowres/image"/>
+    <param name="rgb_image_topic"                  value="/$(arg sensor_name)/rgb_lowres/image"/>
+    <param name="output_topic"                      value="/objects_detector/detections"/>
+    <param name="camera_info_topic"                 value="/$(arg sensor_name)/rgb_lowres/camera_info"/>
+    
+<!-- These thresholds are overriden by dyanmic configuration. EDIT DEFAULTS in cfg/open_ptrack_yolo.cfg -->
+    <param name="thresh"                              value="0.4"/>  
+    <param name="hier_thresh"                     value="0.5"/>  
+    <param name="median_factor"                 value="0.3"/>
+    
+        <param name="data_cfg"                   value="$(find yolo_detector)/darknet_opt/cfg/coco.data"/>
+    <param name="yolo_cfg"                  value="$(find yolo_detector)/darknet_opt/cfg/yolo.cfg"/>
+    <param name="weight_file"                      value="$(find yolo_detector)/darknet_opt/yolo.weights"/>
+        <param name="name_file"                      value="$(find yolo_detector)/data/coco.names"/>
+    <param name="encoding_type"                      value="32FC1"/>
+    <param name="in_mm"                      value="1"/>
+    
+    <param name="root"                      value="$(find yolo_detector)"/>
+
+  </node>
+
+</launch>
+

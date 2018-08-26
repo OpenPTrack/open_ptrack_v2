@@ -39,6 +39,7 @@
 #include <ros/ros.h>
 #include <opt_msgs/TrackArray.h>
 #include <opt_msgs/IDArray.h>
+#include <opt_msgs/NameArray.h>
 #include <opt_msgs/SkeletonTrackArray.h>
 #include <opt_msgs/StandardSkeletonTrackArray.h>
 #include <opt_msgs/PoseRecognitionArray.h>
@@ -49,6 +50,7 @@
 #include <open_ptrack/opt_utils/json.h>
 
 // Global variables:
+int facetracksflag;
 int udp_buffer_length;  // UDP message buffer length
 int udp_port;           // UDP port
 std::string hostip;     // UDP host
@@ -61,11 +63,17 @@ open_ptrack::opt_utils::UDPMessaging udp_messaging(udp_data);   // instance of c
 ros::Time last_heartbeat_time;
 double heartbeat_interval;
 
+std::map<int, std::string> namePairs;
+
 using namespace open_ptrack::bpe;
 
 void
 trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
 {
+  if (facetracksflag == 1)
+  {
+    return;
+  }
   /// Create JSON-formatted message:
   Jzon::Object root, header, stamp;
 
@@ -123,6 +131,95 @@ trackingCallback(const opt_msgs::TrackArray::ConstPtr& tracking_msg)
   /// Send message:
   udp_messaging.sendFromSocketUDP(&udp_data);
 }
+
+
+void peopleTracksCallback(const opt_msgs::TrackArray::ConstPtr& association_message)
+{
+  Jzon::Array tracks;
+  if (association_message->tracks.size() != 0){
+    facetracksflag = 1;
+  }
+
+  if (facetracksflag==0){
+    return;
+  }
+  
+  
+  Jzon::Object root, header, stamp;
+
+  /// Add header (84 characters):
+  header.Add("seq", int(association_message->header.seq));
+  stamp.Add("sec", int(association_message->header.stamp.sec));
+  stamp.Add("nsec", int(association_message->header.stamp.nsec));
+  header.Add("stamp", stamp);
+  std::string camera_name = association_message->header.frame_id;
+    if (strcmp(camera_name.substr(0,1).c_str(), "/") == 0)  // Remove bar at the beginning
+    {
+      camera_name = camera_name.substr(1, camera_name.size() - 1);
+    }
+  header.Add("frame_id", camera_name);
+  root.Add("header", header);
+
+  /// Add tracks array:
+  // >50 characters for every track
+  for (unsigned int i = 0; i < association_message->tracks.size(); i++)
+  {
+    Jzon::Object current_track;
+    current_track.Add("id", association_message->tracks[i].id);
+    current_track.Add("x", association_message->tracks[i].x);
+    current_track.Add("y", association_message->tracks[i].y);
+    current_track.Add("height", association_message->tracks[i].height);
+    current_track.Add("age", association_message->tracks[i].age);
+    current_track.Add("confidence", association_message->tracks[i].confidence);
+    current_track.Add("stable_id", association_message->tracks[i].stable_id);
+    
+    if (namePairs.count(association_message->tracks[i].stable_id)) {
+      current_track.Add("face_name", namePairs.at(association_message->tracks[i].stable_id));
+    }
+
+    tracks.Add(current_track);
+  }
+  root.Add("people_tracks", tracks);
+
+  /// Convert JSON object to string:
+  Jzon::Format message_format = Jzon::StandardFormat;
+  message_format.indentSize = json_indent_size;
+  message_format.newline = json_newline;
+  message_format.spacing = json_spacing;
+  message_format.useTabs = json_use_tabs;
+  Jzon::Writer writer(root, message_format);
+  writer.Write();
+  std::string json_string = writer.GetResult();
+  //  std::cout << "String sent: " << json_string << std::endl;
+
+  /// Copy string to message buffer:
+  udp_data.si_num_byte_ = json_string.length()+1;
+  char buf[udp_data.si_num_byte_];
+  for (unsigned int i = 0; i < udp_data.si_num_byte_; i++)
+  {
+    buf[i] = 0;
+  }
+  sprintf(buf, "%s", json_string.c_str());
+  udp_data.pc_pck_ = buf;         // buffer where the message is written
+
+  /// Send message:
+  udp_messaging.sendFromSocketUDP(&udp_data);
+}
+
+
+void 
+peoplenamesCallback(const opt_msgs::NameArray::ConstPtr& association_message)
+{
+  namePairs.clear();
+
+  Jzon::Array names;
+  Jzon::Array ids;
+  for (unsigned int i = 0; i < association_message->ids.size(); i++)
+  {
+    namePairs.insert(std::make_pair(association_message->ids[i], association_message->names[i]));
+  }
+}
+
 
 void
 aliveIDsCallback(const opt_msgs::IDArray::ConstPtr& alive_ids_msg)
@@ -216,12 +313,15 @@ main(int argc, char **argv)
   nh.param("json/use_tabs", json_use_tabs, false);
   nh.param("json/heartbeat_interval", heartbeat_interval, 0.25);
 
+  facetracksflag = 0;
+
   // ROS subscriber:
   ros::Subscriber tracking_sub = nh.subscribe<opt_msgs::TrackArray>
       ("input_topic", 1, trackingCallback);
   ros::Subscriber alive_ids_sub = nh.subscribe<opt_msgs::IDArray>
       ("alive_ids_topic", 1, aliveIDsCallback);
-
+  ros::Subscriber people_tracks_sub = nh.subscribe<opt_msgs::TrackArray>("people_tracks_topic", 1, peopleTracksCallback);
+  ros::Subscriber people_names_sub = nh.subscribe<opt_msgs::NameArray>("people_names_topic", 1, peoplenamesCallback);
 
   // Initialize UDP parameters:
   char buf[0];

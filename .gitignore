@@ -1,0 +1,7 @@
+.DS_Store
+._.DS_Store
+*.weights
+*.o
+*.mp4
+*.bag
+*.avi

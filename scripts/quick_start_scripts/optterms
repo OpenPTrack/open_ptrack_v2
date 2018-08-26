@@ -1,0 +1,15 @@
+#!/bin/bash
+
+
+gnome-terminal --tab -e 'ssh -XC cm-opt-1' --geometry 80x50+15+15 --tab -e 'ssh -XC cm-opt-1'
+gnome-terminal --tab -e 'ssh -XC cm-opt-1' --geometry 80x10+600+15 --tab -e 'ssh -XC cm-opt-1'
+
+gnome-terminal --tab -e 'ssh -XC cm-opt-2' --geometry 80x10+600+215 --tab -e 'ssh -XC cm-opt-2'
+gnome-terminal --tab -e 'ssh -XC cm-opt-3' --geometry 80x10+600+415 --tab -e 'ssh -XC cm-opt-3'
+gnome-terminal --tab -e 'ssh -XC cm-opt-4' --geometry 80x10+600+615 --tab -e 'ssh -XC cm-opt-4'
+gnome-terminal --tab -e 'ssh -XC cm-opt-5' --geometry 80x10+1200+15 --tab -e 'ssh -XC cm-opt-5'
+gnome-terminal --tab -e 'ssh -XC cm-opt-6' --geometry 80x10+1200+215 --tab -e 'ssh -XC cm-opt-6'
+gnome-terminal --tab -e 'ssh -XC cm-opt-7' --geometry 80x10+1200+415 --tab -e 'ssh -XC cm-opt-7'
+gnome-terminal --tab -e 'ssh -XC cm-opt-8' --geometry 80x10+1200+615 --tab -e 'ssh -XC cm-opt-8'
+
+

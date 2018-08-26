@@ -485,9 +485,10 @@ TrackObject::createMarker(visualization_msgs::MarkerArray::Ptr& msg)
   marker.header.frame_id = frame_id_;
   marker.header.stamp = ros::Time::now();
 
-  marker.ns = "people";
+  marker.ns = "objects";
   marker.id = id_;
 
+  
   marker.type = visualization_msgs::Marker::SPHERE;
   marker.action = visualization_msgs::Marker::ADD;
 
@@ -519,16 +520,16 @@ TrackObject::createMarker(visualization_msgs::MarkerArray::Ptr& msg)
   text_marker.header.frame_id = frame_id_;
   text_marker.header.stamp = ros::Time::now();
 
-  text_marker.ns = "numbers";
+  text_marker.ns = "names";
   text_marker.id = id_;
 
   text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   text_marker.action = visualization_msgs::Marker::ADD;
 
-  std::stringstream ss;
-  ss << id_;
-//  text_marker.text = ss.str();
-  text_marker.text = object_name_;
+   std::stringstream ss;
+   ss << id_ << ":" << object_name_;
+  text_marker.text = ss.str();
+ // text_marker.text = object_name_;
 
   text_marker.pose.position.x = _x;
   text_marker.pose.position.y = _y;
