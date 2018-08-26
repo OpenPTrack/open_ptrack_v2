@@ -161,5 +161,9 @@ RUN /bin/bash -c "cd /tmp \
     && cmake --build . --config Release \
     && sudo cp dlib.so /usr/local/lib/python2.7/dist-packages"
 
+RUN apt-get update \
+    && apt-get install -y python-qt4 python-pip \
+    && pip install requests
+
 RUN apt-get install ntp -y  \ 
     && rm -rf /var/lib/apt/lists/*
