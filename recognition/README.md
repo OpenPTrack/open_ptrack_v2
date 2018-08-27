@@ -25,7 +25,7 @@ Usage
 ----------
 For every sensor, launch the face detection and feature extraction nodes:
 ```bash
-roslaunch recognition face_detection_and_feature_extraction.launch sensor_name:="/kinect2_head"
+roslaunch recognition face_detection_and_feature_extraction.launch sensor_name:="kinect2_head"
 ```
 
 Then, start the face recognition node on the master PC.
