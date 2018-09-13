@@ -156,7 +156,7 @@ class CalibrationInitializer :
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/color/image_rect_color" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/color/camera_info" />\n\n')
-      else:
+      else
         rospy.logfatal('Sensor type "' + sensor['type'] + '" not supported yet!');
       index = index + 1
   
