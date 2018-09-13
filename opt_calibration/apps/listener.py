@@ -213,10 +213,6 @@ class Listener :
         file.write('    <arg name="zed_id"           value="$(arg sensor_id)" />\n')
       file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('  </include>\n\n') 
-      
-    file.write('</launch>\n')
-    file.close();
-    rospy.loginfo(file_name + ' created!');
     elif request.type == OPTSensorRequest.TYPE_REALSENSE:
       file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n')
       if request.serial != '':
@@ -237,6 +233,10 @@ class Listener :
 
       # file.write('  <!-- Publish a further transform -->\n')
       # file.write('  <node pkg="tf" type="static_transform_publisher" name="$(arg sensor_name)_broadcaster" args="0 0 0 1.57079 -1.57079 0 /$(arg sensor_name) /$(arg sensor_name)_link  100" />\n\n')     
+
+    file.write('</launch>\n')
+    file.close();
+    rospy.loginfo(file_name + ' created!');
 
     
     return (OPTSensorResponse.STATUS_OK, file_name + ' created!')
