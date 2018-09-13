@@ -274,6 +274,11 @@ class CalibrationInitializer :
           sensor_msg.type = OPTSensorRequest.TYPE_ZED
           if 'id_num' in sensor_item:
             sensor_msg.id_num = sensor_item['id_num']
+        elif sensor_item['type'] == 'realsense':
+          sensor_msg.type = OPTSensorRequest.TYPE_REALSENSE
+          if 'id_num' in sensor_item:
+            sensor_msg.id_num = sensor_item['id_num']
+
         if 'people_detector' in sensor_item:
           if sensor_item['people_detector'] == 'yolo':
             sensor_msg.people_detector_type = OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED
