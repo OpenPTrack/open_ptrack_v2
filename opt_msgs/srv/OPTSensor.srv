@@ -27,9 +27,6 @@ string serial_right
 # if TYPE_ZED
 string id_num
 
-# if TYPE_REALSENSE
-string id_num
-
 bool enable_people_tracking
 bool enable_object
 bool enable_pose
