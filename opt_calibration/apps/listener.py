@@ -217,7 +217,7 @@ class Listener :
     file.write('</launch>\n')
     file.close();
     rospy.loginfo(file_name + ' created!');
-  elif request.type == OPTSensorRequest.TYPE_REALSENSE:
+    elif request.type == OPTSensorRequest.TYPE_REALSENSE:
       file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n')
       if request.serial != '':
         file.write('  <arg name="sensor_id" default="' + request.serial + '" />\n')
