@@ -380,12 +380,6 @@ class Listener :
       else:
         file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
       file.write('  <!-- Launch the sensor -->\n')
-      # file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">\n')
-      # if request.serial != '':
-      #   file.write('  <arg name="sensor_id"           value="$(arg sensor_id)" />\n')
-      # file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
-      # file.write('    <arg name="publish_frame"       value="true" />\n')
-      # file.write('  </include>\n\n')
       file.write('   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/>\n')
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
