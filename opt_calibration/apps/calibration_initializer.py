@@ -154,8 +154,8 @@ class CalibrationInitializer :
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
       elif sensor['type'] == 'realsense':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/camera/color/image_rect_color" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/camera/color/camera_info" />\n\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/color/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/color/camera_info" />\n\n')
       else:
         rospy.logfatal('Sensor type "' + sensor['type'] + '" not supported yet!');
       index = index + 1
@@ -223,8 +223,8 @@ class CalibrationInitializer :
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
       elif sensor['type'] == 'realsense':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/camera/color/image_rect_color" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/camera/color/camera_info" />\n\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/color/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/color/camera_info" />\n\n')
       else:
         rospy.logfatal('Sensor type "' + sensor['type'] + '" not supported yet!');
       index = index + 1
