@@ -58,37 +58,13 @@ RUN  cd ~/workspace/ros     \
     && apt-get install -y ocl-icd-opencl-dev     \ 
     && wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run -O cuda.run     \ 
     && chmod +x cuda.run     \ 
-    && ./cuda.run -silent --toolkit     \ 
+    && ./cuda.run -silent --toolkit --samples --samplespath="/root/workspace/ros/src/"     \ 
     && wget "https://www.dropbox.com/s/cx95583vbf1ifzm/cudnn-8.0-linux-x64-v5.1.tgz?dl%3D0&sa=D&ust=1507541105896000&usg=AFQjCNEU511fT00n547PxPt_P6cfSLPVWw"     \ 
     && tar -zxvf cudnn*     \ 
     && cp cuda/include/* /usr/local/cuda/include     \ 
     && cp cuda/lib64/* /usr/local/cuda/lib64/     \ 
     && echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64' >> ~/.bashrc     \ 
     && echo 'export PATH=$PATH:/usr/local/cuda/bin' >> ~/.bashrc          
-
-RUN  cd     \ 
-    && cd workspace     \ 
-    && git clone https://github.com/openptrack/libfreenect2     \ 
-    && cd libfreenect2     \ 
-    && git checkout 1604     \ 
-    && cd depends/     \ 
-    && apt-get install -y git cmake cmake-curses-gui libxmu-dev libxi-dev libgl1-mesa-dev dos2unix xorg-dev libglu1-mesa-dev libtool automake libudev-dev libgtk2.0-dev pkg-config libjpeg-turbo8-dev libturbojpeg libglewmx-dev     \ 
-    && ./install_ubuntu.sh     \ 
-    && ln -f -s /usr/lib/x86_64-linux-gnu/libturbojpeg.so.0.1.0 /usr/lib/x86_64-linux-gnu/libturbojpeg.so     \ 
-    && cd ../examples/protonect/     \ 
-    && mkdir build \ 
-    && cd build     \ 
-    && /bin/bash -c "source /opt/ros/kinetic/setup.bash    \ 
-    && cmake ..     \ 
-    && make     \ 
-    && make install"     \ 
-    && echo '# ATTR{product}=="Kinect2" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02c4", MODE="0666" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02d8", MODE="0666" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02d9", MODE="0666"' > ~/90-kinect2.rules     \ 
-    && mv ~/90-kinect2.rules /etc/udev/rules.d/90-kinect2.rules     
-
-RUN  cd ~/workspace/ros/src     \ 
-    && git clone https://github.com/openptrack/iai_kinect2     \ 
-    && cd iai_kinect2     \ 
-    && git checkout 1604       
 
 RUN  apt-get install cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev -y --force-yes     \ 
     && mkdir /tmp/ceres_install     \ 
