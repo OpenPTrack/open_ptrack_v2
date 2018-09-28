@@ -10,8 +10,8 @@
   <!--include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/-->
 
   <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">
-    <arg name="publish_frame" value="true" />
-    <arg name="sensor_name" value="$(arg sensor_name)" />
+    <arg name="publish_tf" value="true" />
+    <arg name="base_name" value="$(arg sensor_name)" />
   </include>
 
   <group if="$(arg enable_people_tracking)">
