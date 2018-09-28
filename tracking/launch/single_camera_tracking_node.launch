@@ -9,7 +9,7 @@
   <!-- Load calibration results -->
   <!--include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/-->
 
-  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
     <arg name="publish_tf" value="true" />
     <arg name="base_name" value="$(arg sensor_name)" />
   </include>
