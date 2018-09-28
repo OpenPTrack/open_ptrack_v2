@@ -12,7 +12,7 @@
     <param name="camera_info_topic" value="/$(arg camera_name)/sd/image_ir_rect/camera_info"/>
     <param name="output_topic" value="/detector/detections"/>
     <!--param name="pointcloud_topic" value="/$(arg camera_name)/depth_lowres/points"/-->
-    <param name="pointcloud_topic" value="/$(arg camera_name)/hd/points"/>
+    <param name="pointcloud_topic" value="/$(arg camera_name)/sd/points"/>
     <param name="rate" value="60.0"/>  
   </node>
 
