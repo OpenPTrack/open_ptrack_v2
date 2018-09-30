@@ -14,10 +14,11 @@
   <node pkg="yolo_detector" type="open_ptrack_yolo_detector_node"
         name="$(arg sensor_name)_yolo_detector_node" output="screen" respawn="false">
         
-    <param name="depth_image_topic"                   value="/$(arg sensor_name)/depth_lowres/image"/>
-    <param name="rgb_image_topic"                  value="/$(arg sensor_name)/rgb_lowres/image"/>
+    <param name="depth_image_topic"                   value="/$(arg sensor_name)/sd/image_depth_rect"/>
+    <param name="rgb_image_topic"                  value="/$(arg sensor_name)/sd/image_color_rect"/>
     <param name="output_topic"                      value="/detector/detections"/>
-    <param name="camera_info_topic"                 value="/$(arg sensor_name)/rgb_lowres/camera_info"/>
+    <param name="camera_info_topic"                 value="/$(arg sensor_name)/sd/camera_info" />
+
     <param name="thresh"                              value="0.25"/>  
     <param name="heir_thresh"                     value="0.5"/>  
     <param name="data_cfg"                   value="$(find yolo_detector)/darknet_opt/cfg/coco.data"/>
