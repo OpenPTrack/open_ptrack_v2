@@ -114,9 +114,9 @@ RUN  /bin/bash -c "source /root/.bashrc    \
 
 RUN  cd     \ 
     && cd workspace     \ 
-    && git clone https://github.com/itabr/libfreenect2.git     \ 
+    && git clone https://github.com/OpenPTrack/libfreenect2.git     \ 
     && cd libfreenect2     \ 
-    && git checkout 1606     \ 
+    && git checkout 1605     \ 
     && cd depends/     \ 
     && apt-get install -y git cmake cmake-curses-gui libxmu-dev libxi-dev libgl1-mesa-dev xorg-dev libglu1-mesa-dev libtool automake libudev-dev libgtk2.0-dev pkg-config libjpeg-turbo8-dev libturbojpeg libglewmx-dev     \ 
     && ln -f -s /usr/lib/x86_64-linux-gnu/libturbojpeg.so.0.1.0 /usr/lib/x86_64-linux-gnu/libturbojpeg.so     \ 
@@ -132,7 +132,7 @@ RUN  cd     \
     && cp ~/90-kinect2.rules /etc/udev/rules.d/
 
 RUN  cd ~/workspace/ros/src     \ 
-    && git clone https://github.com/itabr/iai_kinect2.git     \ 
+    && git clone https://github.com/OpenPTrack/iai_kinect2.git     \ 
     && cd iai_kinect2     \ 
     && git checkout 1605       
 
