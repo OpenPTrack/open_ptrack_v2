@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<launch>
+
+	<arg name="name_tag" default="tag_0" />	<!-- Change also in marker_detector.launch -->
+	<arg name="name_file" default="tag_detection_pose.txt" />
+	<arg name="topic_tag" default="/camera_network/tag_detections_pose" /> <!-- Same in marker_detector.launch -->
+
+	<!-- Apriltag detector -->
+	<include file="$(find arcore)/launch/marker_detector.launch"/>
+
+
+	<!-- Server node for mobile comunication -->
+	<include file="$(find file_server)/launch/ros_sharp_communication.launch"/>
+	
+	<!-- Mobile node publisher -->
+	<node name="mobile_receiver" pkg="arcore" type="mobile_receiver" output="screen">
+		<param name="input_topic" value="/arcore/vodom"/>
+		<param name="output_topic" value="/arcore/marker_array"/>
+		<param name="name_tag" value="$(arg name_tag)_arcore"/>
+	</node>
+	
+	<!-- Keep Tag Living  -->
+	<node name="keep_tag_living" pkg="arcore" type="keep_tag_living" output="screen">
+		<param name="file_path" value="$(find arcore)/file/$(arg name_file)"/>
+		<param name="output_name_tag" value="$(arg name_tag)_arcore"/>
+	</node>
+
+
+	<!-- Tag File -->
+	<node name="tag_file" pkg="arcore" type="tag_file" output="screen">
+		<param name="file_path" value="$(find arcore)/file/$(arg name_file)"/>
+		<param name="name_tag" value="$(arg name_tag)"/>
+		<param name="input_topic" value="$(arg topic_tag)"/>
+	</node>
+	
+  
+</launch>
