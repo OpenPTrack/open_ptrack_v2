@@ -163,7 +163,7 @@ RUN /bin/bash -c "cd /tmp \
     && sudo cp dlib.so /usr/local/lib/python2.7/dist-packages"
 
 RUN apt-get update \
-    && apt-get install -y python-qt4 python-pip \
+    && apt-get install -y python-qt4 python-pip ros-kinetic-rosbridge-server \
     && pip install requests
 
 RUN apt-get install ntp -y  \ 
