@@ -207,10 +207,6 @@ add_executable(keep_tag_living src/keep_tag_living.cpp)
 target_link_libraries(keep_tag_living ${catkin_LIBRARIES})
 add_dependencies(keep_tag_living keep_tag_livingcpp)
 
-add_executable(pose src/pose.cpp)
-target_link_libraries(pose ${catkin_LIBRARIES})
-add_dependencies(pose posecpp)
-
 add_executable(tag_file src/tag_file.cpp)
 target_link_libraries(tag_file ${catkin_LIBRARIES})
 add_dependencies(tag_file tag_filecpp)
