@@ -177,7 +177,7 @@ class RecognitionVisualizationNode:
 		print 'waiting for topics'
 		rospy.client.wait_for_message('/tf', TFMessage, 10.0)
 		for topic_name, msg_type in rospy.get_published_topics():
-			match = re.match(r'/(kinect.*)/rgb/image', topic_name)
+			match = re.match(r'/(kinect.*)/hd/image_color', topic_name)
 			if not match:
 				continue
 			self.cameras.append(Camera(match.group(1), self.tf_listener, self.image_width, self.image_refresh_span))

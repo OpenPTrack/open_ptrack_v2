@@ -59,15 +59,15 @@ catkin_package(
 add_library(${PROJECT_NAME}
   src/detection_source.cpp
   src/detection.cpp
-  src/multiple_objects_detection/object_detector.cpp
-  src/multiple_objects_detection/roi_zz.cpp
+#   src/multiple_objects_detection/object_detector.cpp
+#   src/multiple_objects_detection/roi_zz.cpp
   src/skeleton_detection.cpp
   )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
-add_executable(multiple_objects_detection_node apps/multiple_objects_detection_node.cpp)
-target_link_libraries(multiple_objects_detection_node ${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+# add_executable(multiple_objects_detection_node apps/multiple_objects_detection_node.cpp)
+# target_link_libraries(multiple_objects_detection_node ${PROJECT_NAME} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(ground_based_people_detector apps/ground_based_people_detector_node.cpp)
 SET_TARGET_PROPERTIES(ground_based_people_detector PROPERTIES LINK_FLAGS -L${PCL_LIBRARY_DIRS})
