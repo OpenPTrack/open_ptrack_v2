@@ -14,7 +14,7 @@ void publishMarker(std_msgs::Header header, tf::Vector3 tran_input, tf::Quaterni
 {
   visualization_msgs::Marker marker_pose;
   marker_pose.header.frame_id = nameTag;
-  marker_pose.header.stamp = header.stamp;
+  marker_pose.header.stamp = ros::Time::now();
   marker_pose.ns = "mobile_phone";
   marker_pose.id = header.seq;
   marker_pose.type = visualization_msgs::Marker::SPHERE;
@@ -52,7 +52,7 @@ void listenerVodom(const geometry_msgs::PoseStamped::ConstPtr& msg)
     transform.setOrigin( tran_arcore );
     transform.setRotation( quat_arcore );
     
-    br.sendTransform(tf::StampedTransform(transform, msg->header.stamp, nameTag, msg->header.frame_id));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), nameTag, msg->header.frame_id));
         
     publishMarker(msg->header, tran_arcore, quat_arcore);
 
