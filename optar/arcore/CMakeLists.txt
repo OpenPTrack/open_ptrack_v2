@@ -209,3 +209,7 @@ add_dependencies(keep_tag_living keep_tag_livingcpp)
 add_executable(tag_file src/tag_file.cpp)
 target_link_libraries(tag_file ${catkin_LIBRARIES})
 add_dependencies(tag_file tag_filecpp)
+
+add_executable(origin_sender src/origin_sender.cpp)
+target_link_libraries(origin_sender ${catkin_LIBRARIES})
+add_dependencies(origin_sender origin_sendercpp)
