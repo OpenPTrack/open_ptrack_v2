@@ -5,8 +5,8 @@
 #include <tf/transform_listener.h>
 #include "std_msgs/String.h"
 
-static ros::Publisher vis_pub;
-static std::string nameTag;
+ros::Publisher vis_pub;
+std::string nameTag;
 int countClass = 0;
 
 
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
   ROS_WARN("ARCORE -> Got param output_topic: %s", output_topic.c_str());
 
   ros::Subscriber sub = nh_mobile.subscribe(input_topic.c_str(), 1000, listenerVodom);
-  vis_pub = nh_mobile.advertise<visualization_msgs::Marker>(output_topic.c_str(), 0);
+  vis_pub = nh_mobile.advertise<visualization_msgs::Marker>(output_topic.c_str(), 100);
 
   ros::spin();
 

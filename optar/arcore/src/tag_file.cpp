@@ -7,9 +7,9 @@
 #include <tf/transform_broadcaster.h>
 #include "std_msgs/String.h"
 
-static std::string filePath;
-static std::string nameTag;
-static tf::TransformListener* listener;
+std::string filePath;
+std::string nameTag;
+tf::TransformListener* listener;
 int countClass = 0;
 
 void writeToFileTopic(std::string frameParent)

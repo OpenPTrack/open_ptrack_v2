@@ -4,6 +4,7 @@
 	<arg name="name_tag" default="tag_0" />	<!-- Change also in marker_detector.launch -->
 	<arg name="name_file" default="tag_detection_pose.txt" />
 	<arg name="topic_tag" default="/camera_network/tag_detections_pose" /> <!-- Same in marker_detector.launch -->
+	<arg name="output_topic" default="arcore/origin" />
 
 	<!-- Apriltag detector -->
 	<include file="$(find arcore)/launch/marker_detector.launch"/>
@@ -31,6 +32,13 @@
 		<param name="file_path" value="$(find arcore)/file/$(arg name_file)"/>
 		<param name="name_tag" value="$(arg name_tag)"/>
 		<param name="input_topic" value="$(arg topic_tag)"/>
+	</node>
+	
+	<!-- Origin sender -->
+	<node name="origin_sender" pkg="arcore" type="origin_sender" output="screen">
+		<param name="name_tag" value="$(arg name_tag)_arcore"/>
+		<param name="output_topic" value="$(arg output_topic)"/>
+
 	</node>
 	
   
