@@ -5,6 +5,8 @@
 	<arg name="name_file" default="tag_detection_pose.txt" />
 	<arg name="topic_tag" default="/camera_network/tag_detections_pose" /> <!-- Same in marker_detector.launch -->
 	<arg name="output_topic" default="arcore/origin" />
+	<arg name="tracker_topic" default="/tracker/tracks_smoothed" />
+	<arg name="tracker_arcore" default="arcore/centroid_mod" />
 
 	<!-- Apriltag detector -->
 	<include file="$(find arcore)/launch/marker_detector.launch"/>
@@ -38,8 +40,13 @@
 	<node name="origin_sender" pkg="arcore" type="origin_sender" output="screen">
 		<param name="name_tag" value="$(arg name_tag)_arcore"/>
 		<param name="output_topic" value="$(arg output_topic)"/>
-
 	</node>
 	
+	<!-- Modifier Track -->
+	<node name="modifier" pkg="arcore" type="modifier" output="screen">
+		<param name="input_track" value="$(arg tracker_topic)"/>
+		<param name="origin" value="$(arg output_topic)"/>
+		<param name="output_topic" value="$(arg tracker_arcore)"/>
+	</node>
   
 </launch>

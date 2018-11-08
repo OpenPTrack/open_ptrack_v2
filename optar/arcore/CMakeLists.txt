@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   roscpp
   rospy
+  opt_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -105,7 +106,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  LIBRARIES arcore
- CATKIN_DEPENDS geometry_msg roscpp rospy std_msgs
+ CATKIN_DEPENDS geometry_msg roscpp rospy std_msgs opt_msgs
  DEPENDS system_lib
 )
 
@@ -213,3 +214,7 @@ add_dependencies(tag_file tag_filecpp)
 add_executable(origin_sender src/origin_sender.cpp)
 target_link_libraries(origin_sender ${catkin_LIBRARIES})
 add_dependencies(origin_sender origin_sendercpp)
+
+add_executable(modifier src/modifier.cpp)
+target_link_libraries(modifier ${catkin_LIBRARIES})
+add_dependencies(modifier modifiercpp)
