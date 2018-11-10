@@ -1,3 +1,7 @@
+/*
+* Author: Daniele Dal Degan [danieledaldegan@gmail.com]
+*/
+
 #include <ros/ros.h>
 #include <fstream>
 #include <tf/transform_broadcaster.h>

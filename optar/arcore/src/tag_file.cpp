@@ -1,3 +1,7 @@
+/*
+* Author: Daniele Dal Degan [danieledaldegan@gmail.com]
+*/
+
 #include <ros/ros.h>
 #include <fstream>
 #include <tf/transform_broadcaster.h>
@@ -10,7 +14,7 @@
 std::string filePath;
 std::string nameTag;
 tf::TransformListener* listener;
-int countClass = 0;
+bool countClass = false;
 
 void writeToFileTopic(std::string frameParent)
 {
@@ -36,10 +40,10 @@ void writeToFileTopic(std::string frameParent)
     file.close();
 
 
-    if(countClass == 0)
+    if(!countClass)
     {
       ROS_INFO("FILE TAG -> Write transformation: %s -> %s", frameParent.c_str(), nameTag.c_str());
-      countClass++;
+      countClass = true;
     }
     
     // ROS_INFO("FILE TAG -> Write transformation: %s -> %s", frameParent.c_str(), nameTag.c_str());

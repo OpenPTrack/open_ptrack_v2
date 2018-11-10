@@ -1,3 +1,7 @@
+/*
+* Author: Daniele Dal Degan [danieledaldegan@gmail.com]
+*/
+
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -7,7 +11,7 @@
 
 ros::Publisher vis_pub;
 std::string nameTag;
-int countClass = 0;
+bool countClass = false;
 
 
 void publishMarker(std_msgs::Header header, tf::Vector3 tran_input, tf::Quaternion quat_input)
@@ -56,10 +60,10 @@ void listenerVodom(const geometry_msgs::PoseStamped::ConstPtr& msg)
         
     publishMarker(msg->header, tran_arcore, quat_arcore);
 
-    if(countClass == 0)
+    if(!countClass)
     {
       ROS_INFO("ARCORE -> Received and published arcore pose");
-      countClass++;
+      countClass = true;
     }
 
     // ROS_INFO("ARCORE -> Received and published arcore pose seq: %d", msg->header.seq);

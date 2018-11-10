@@ -7,13 +7,19 @@
 	<arg name="output_topic" default="arcore/origin" />
 	<arg name="tracker_topic" default="/tracker/tracks_smoothed" />
 	<arg name="tracker_arcore" default="arcore/centroid_mod" />
+	<arg name="sensor_name" default="kinect2_head" />
 
 	<!-- Apriltag detector -->
-	<include file="$(find arcore)/launch/marker_detector.launch"/>
+	<include file="$(find arcore)/launch/marker_detector.launch">
+		<arg name="sensor_name" value="$(arg sensor_name)" />
+	</include>
 
 
 	<!-- Server node for mobile comunication -->
-	<include file="$(find file_server)/launch/ros_sharp_communication.launch"/>
+	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+		<param name="port" value="9090"/>
+	</include>
+
 	
 	<!-- Mobile node publisher -->
 	<node name="mobile_receiver" pkg="arcore" type="mobile_receiver" output="screen">
@@ -43,7 +49,7 @@
 	</node>
 	
 	<!-- Modifier Track -->
-	<node name="modifier" pkg="arcore" type="modifier" output="screen">
+	<node name="centroid_modifier" pkg="arcore" type="centroid_modifier" output="screen">
 		<param name="input_track" value="$(arg tracker_topic)"/>
 		<param name="origin" value="$(arg output_topic)"/>
 		<param name="output_topic" value="$(arg tracker_arcore)"/>

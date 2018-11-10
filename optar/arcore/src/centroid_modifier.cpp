@@ -1,3 +1,7 @@
+/*
+* Author: Daniele Dal Degan [danieledaldegan@gmail.com]
+*/
+
 #include <ros/ros.h>
 #include <fstream>
 #include <tf/transform_broadcaster.h>
@@ -12,7 +16,7 @@
 tf::Vector3 originTrans;
 tf::Quaternion originQuat;
 ros::Publisher pub;
-int count = 0;
+bool count = false;
 
 void listenerVodom(const opt_msgs::TrackArray::ConstPtr& msg)
 {
@@ -42,16 +46,16 @@ void listenerVodom(const opt_msgs::TrackArray::ConstPtr& msg)
 		
 		msgMod.tracks[i].x = multi.getOrigin().x();
 		msgMod.tracks[i].y = multi.getOrigin().y();
-		msgMod.tracks[i].height = multi.getOrigin().z();
+		msgMod.tracks[i].height = multi.getOrigin().z() - 0.35;
 		
 		
 	}
 
 	pub.publish(msgMod);
-	if(count == 0)
+	if(!count)
 	{
 		ROS_INFO("MODIFIER -> Started");
-		count++;
+		count = true;
 	}
 
   }
@@ -89,15 +93,15 @@ int main(int argc, char **argv)
   sleep(3.0);
 
   std::string origin;
-  nh.param("modifier/origin", origin, std::string("/arcore/origin"));
+  nh.param("centroid_modifier/origin", origin, std::string("/arcore/origin"));
   ROS_WARN("MODIFIER -> Got param origin: %s", origin.c_str());
 	
   std::string input_track;
-  nh.param("modifier/input_track", input_track, std::string("/tracker/tracks_smoothed"));
+  nh.param("centroid_modifier/input_track", input_track, std::string("/tracker/tracks_smoothed"));
   ROS_WARN("MODIFIER -> Got param input_track: %s", input_track.c_str());
 
   std::string output_topic;
-  nh.param("modifier/output_topic", output_topic, std::string("arcore/centroid_mod"));
+  nh.param("centroid_modifier/output_topic", output_topic, std::string("arcore/centroid_mod"));
   ROS_WARN("MODIFIER -> Got param output_topic: %s", output_topic.c_str());
 
   pub = nh.advertise<opt_msgs::TrackArray>(output_topic.c_str(), 100);

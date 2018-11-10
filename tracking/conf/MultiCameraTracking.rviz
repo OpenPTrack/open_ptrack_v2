@@ -22,8 +22,7 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /Tracking Marker1
+      Expanded: ~
       Splitter Ratio: 0.5
     Tree Height: 740
 Visualization Manager:
@@ -128,171 +127,7 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        "\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        " FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        .h:
-          Value: true
-        .hpp:
-          Value: true
-        "AILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "ASSERTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
         All Enabled: true
-        "D\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "ED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "ERTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "ILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "ION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "LED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "N FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "ON FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "RTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "SERTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "SSERTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        "TION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-          Value: true
-        _ptr.hpp:
-          Value: true
-        "_topic: %s":
-          Value: true
-        alse:
-          Value: true
-        ar_mobile:
-          Value: true
-        blisher.h:
-          Value: true
-        c/include/ros/publisher.h:
-          Value: true
-        c__113:
-          Value: true
-        c__114:
-          Value: true
-        c__116:
-          Value: true
-        c__240:
-          Value: true
-        c__373:
-          Value: true
-        c__374:
-          Value: true
-        c__375:
-          Value: true
-        c__376:
-          Value: true
-        c__377:
-          Value: true
-        c__378:
-          Value: true
-        c__379:
-          Value: true
-        c__380:
-          Value: true
-        c__381:
-          Value: true
-        c__385:
-          Value: true
-        c__386:
-          Value: true
-        c__387:
-          Value: true
-        c__388:
-          Value: true
-        c__389:
-          Value: true
-        c__390:
-          Value: true
-        c__392:
-          Value: true
-        c__395:
-          Value: true
-        c__396:
-          Value: true
-        c__397:
-          Value: true
-        c__398:
-          Value: true
-        c__399:
-          Value: true
-        c__400:
-          Value: true
-        c__401:
-          Value: true
-        c__402:
-          Value: true
-        c__403:
-          Value: true
-        c__404:
-          Value: true
-        c__406:
-          Value: true
-        c__407:
-          Value: true
-        c__408:
-          Value: true
-        c__409:
-          Value: true
-        c__410:
-          Value: true
-        c__411:
-          Value: true
-        c__412:
-          Value: true
-        ception_ptr.hpp:
-          Value: true
-        cker/tracks_smoothed:
-          Value: true
-        clude/ros/publisher.h:
-          Value: true
-        de/ros/publisher.h:
-          Value: true
-        e:
-          Value: true
-        e/ros/publisher.h:
-          Value: true
-        eption_ptr.hpp:
-          Value: true
-        er.h:
-          Value: true
-        etic/include/ros/publisher.h:
-          Value: true
-        exception_ptr.hpp:
-          Value: true
-        false:
-          Value: true
-        h:
-          Value: true
-        her.h:
-          Value: true
-        hpp:
-          Value: true
-        ic/include/ros/publisher.h:
-          Value: true
-        include/ros/publisher.h:
-          Value: true
-        inetic/include/ros/publisher.h:
-          Value: true
-        ion_ptr.hpp:
-          Value: true
-        isher.h:
-          Value: true
         kinect01:
           Value: true
         kinect01_ir_frame:
@@ -305,83 +140,7 @@ Visualization Manager:
           Value: true
         kinect01_rgb_optical_frame:
           Value: true
-        kinetic/include/ros/publisher.h:
-          Value: true
-        lisher.h:
-          Value: true
-        lse:
-          Value: true
-        lude/boost/smart_ptr/shared_ptr.hpp:
-          Value: true
-        lude/ros/publisher.h:
-          Value: true
-        mobile_phone:
-          Value: true
-        n_ptr.hpp:
-          Value: true
-        nclude/ros/publisher.h:
-          Value: true
-        netic/include/ros/publisher.h:
-          Value: true
-        on_ptr.hpp:
-          Value: true
-        opt/ros/kinetic/include/ros/publisher.h:
-          Value: true
-        ore/origin:
-          Value: true
-        os/kinetic/include/ros/publisher.h:
-          Value: true
-        os/publisher.h:
-          Value: true
-        p:
-          Value: true
-        "pic: %s":
-          Value: true
-        pp:
-          Value: true
-        pt/ros/kinetic/include/ros/publisher.h:
-          Value: true
-        ption_ptr.hpp:
-          Value: true
-        ptr.hpp:
-          Value: true
-        publisher.h:
-          Value: true
-        r.h:
-          Value: true
-        r.hpp:
-          Value: true
-        ros/kinetic/include/ros/publisher.h:
-          Value: true
-        ros/publisher.h:
-          Value: true
-        s/kinetic/include/ros/publisher.h:
-          Value: true
-        s/publisher.h:
-          Value: true
-        se:
-          Value: true
-        sher.h:
-          Value: true
-        t/ros/kinetic/include/ros/publisher.h:
-          Value: true
-        tag_0:
-          Value: true
-        tag_0_arcore:
-          Value: true
-        tic/include/ros/publisher.h:
-          Value: true
-        tion_ptr.hpp:
-          Value: true
-        tr.hpp:
-          Value: true
-        ublisher.h:
-          Value: true
-        ude/ros/publisher.h:
-          Value: true
         world:
-          Value: true
-        xception_ptr.hpp:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -397,245 +156,7 @@ Visualization Manager:
                   {}
               kinect01_rgb_frame:
                 kinect01_rgb_optical_frame:
-                  tag_0:
-                    {}
-                  tag_0_arcore:
-                    "\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    " FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    .h:
-                      {}
-                    .hpp:
-                      {}
-                    "AILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "ASSERTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "D\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "ED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "ERTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "ILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "ION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "LED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "N FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "ON FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "RTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "SERTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "SSERTION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    "TION FAILED\n\tfile = %s\n\tline = %d\n\tcond = %s\n\tmessage = ":
-                      {}
-                    _ptr.hpp:
-                      {}
-                    "_topic: %s":
-                      {}
-                    alse:
-                      {}
-                    ar_mobile:
-                      {}
-                    blisher.h:
-                      {}
-                    c/include/ros/publisher.h:
-                      {}
-                    c__113:
-                      {}
-                    c__114:
-                      {}
-                    c__116:
-                      {}
-                    c__240:
-                      {}
-                    c__373:
-                      {}
-                    c__374:
-                      {}
-                    c__375:
-                      {}
-                    c__376:
-                      {}
-                    c__377:
-                      {}
-                    c__378:
-                      {}
-                    c__379:
-                      {}
-                    c__380:
-                      {}
-                    c__381:
-                      {}
-                    c__385:
-                      {}
-                    c__386:
-                      {}
-                    c__387:
-                      {}
-                    c__388:
-                      {}
-                    c__389:
-                      {}
-                    c__390:
-                      {}
-                    c__392:
-                      {}
-                    c__395:
-                      {}
-                    c__396:
-                      {}
-                    c__397:
-                      {}
-                    c__398:
-                      {}
-                    c__399:
-                      {}
-                    c__400:
-                      {}
-                    c__401:
-                      {}
-                    c__402:
-                      {}
-                    c__403:
-                      {}
-                    c__404:
-                      {}
-                    c__406:
-                      {}
-                    c__407:
-                      {}
-                    c__408:
-                      {}
-                    c__409:
-                      {}
-                    c__410:
-                      {}
-                    c__411:
-                      {}
-                    c__412:
-                      {}
-                    ception_ptr.hpp:
-                      {}
-                    cker/tracks_smoothed:
-                      {}
-                    clude/ros/publisher.h:
-                      {}
-                    de/ros/publisher.h:
-                      {}
-                    e:
-                      {}
-                    e/ros/publisher.h:
-                      {}
-                    eption_ptr.hpp:
-                      {}
-                    er.h:
-                      {}
-                    etic/include/ros/publisher.h:
-                      {}
-                    exception_ptr.hpp:
-                      {}
-                    false:
-                      {}
-                    h:
-                      {}
-                    her.h:
-                      {}
-                    hpp:
-                      {}
-                    ic/include/ros/publisher.h:
-                      {}
-                    include/ros/publisher.h:
-                      {}
-                    inetic/include/ros/publisher.h:
-                      {}
-                    ion_ptr.hpp:
-                      {}
-                    isher.h:
-                      {}
-                    kinetic/include/ros/publisher.h:
-                      {}
-                    lisher.h:
-                      {}
-                    lse:
-                      {}
-                    lude/boost/smart_ptr/shared_ptr.hpp:
-                      {}
-                    lude/ros/publisher.h:
-                      {}
-                    mobile_phone:
-                      {}
-                    n_ptr.hpp:
-                      {}
-                    nclude/ros/publisher.h:
-                      {}
-                    netic/include/ros/publisher.h:
-                      {}
-                    on_ptr.hpp:
-                      {}
-                    opt/ros/kinetic/include/ros/publisher.h:
-                      {}
-                    ore/origin:
-                      {}
-                    os/kinetic/include/ros/publisher.h:
-                      {}
-                    os/publisher.h:
-                      {}
-                    p:
-                      {}
-                    "pic: %s":
-                      {}
-                    pp:
-                      {}
-                    pt/ros/kinetic/include/ros/publisher.h:
-                      {}
-                    ption_ptr.hpp:
-                      {}
-                    ptr.hpp:
-                      {}
-                    publisher.h:
-                      {}
-                    r.h:
-                      {}
-                    r.hpp:
-                      {}
-                    ros/kinetic/include/ros/publisher.h:
-                      {}
-                    ros/publisher.h:
-                      {}
-                    s/kinetic/include/ros/publisher.h:
-                      {}
-                    s/publisher.h:
-                      {}
-                    se:
-                      {}
-                    sher.h:
-                      {}
-                    t/ros/kinetic/include/ros/publisher.h:
-                      {}
-                    tic/include/ros/publisher.h:
-                      {}
-                    tion_ptr.hpp:
-                      {}
-                    tr.hpp:
-                      {}
-                    ublisher.h:
-                      {}
-                    ude/ros/publisher.h:
-                      {}
-                    xception_ptr.hpp:
-                      {}
+                  {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -705,7 +226,7 @@ Visualization Manager:
       Marker Topic: /arcore/marker_array
       Name: Marker
       Namespaces:
-        mobile_phone: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -733,25 +254,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.17172146
+      Distance: 5.55378103
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.145993531
-        Y: -1.13710797
-        Z: 1.41039002
+        X: -0.417635739
+        Y: -1.27549946
+        Z: 1.51474154
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -0.0752020031
+      Pitch: -0.205202207
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.95250809
+      Yaw: 2.25751019
     Saved: ~
 Window Geometry:
   Displays:

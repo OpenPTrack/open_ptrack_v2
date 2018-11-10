@@ -1,3 +1,7 @@
+/*
+* Author: Daniele Dal Degan [danieledaldegan@gmail.com]
+*/
+
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -17,7 +21,7 @@ int main(int argc, char **argv)
 
   ros::Rate loop_rate_error(1);
   ros::Rate loop_rate(30);
-  int countClass = 0;
+  bool countClass = false;
 
 
   std::string nameTag;
@@ -47,10 +51,10 @@ int main(int argc, char **argv)
       message.pose.orientation.w = transform.getRotation().w();
       vis_pub.publish(message);
 
-      if(countClass == 0)
+      if(!countClass)
       {
         ROS_INFO("ORIGIN -> Write transformation: %s -> %s", nameTag.c_str(), "world");
-        countClass++;
+        countClass = true;
       }
 
 

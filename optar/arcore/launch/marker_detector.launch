@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-	<arg name="sensor_name" default="kinect01" />
+	<arg name="sensor_name" default="kinect2_head" />
 	
 	<!-- Apriltag detector -->
 	<node pkg="apriltags_ros" name="$(arg sensor_name)_tag_detector" type="apriltag_detector_node">
@@ -17,9 +17,7 @@
 		<rosparam param="tag_descriptions">[
                 <!-- Big apriltag -->
                 {id: 0, size: 0.480, frame_id: tag_0}]
-                <!-- Small apriltag 
-                {id: 0, size: 0.1535, frame_id: tag_0}]-->
-        </rosparam>
+                </rosparam>
 	</node>
   
 </launch>
