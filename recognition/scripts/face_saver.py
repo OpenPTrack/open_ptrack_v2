@@ -25,10 +25,10 @@ class FaceSaverNode:
 
 		for sensor_name in sensor_names:
 			try:
-				rospy.client.wait_for_message('/%s/rgb/image' % sensor_name, Image, 1.0)
-				image_sub = message_filters.Subscriber('/%s/rgb/image' % sensor_name, Image)
+				rospy.client.wait_for_message('/%s/hd/image_color' % sensor_name, Image, 1.0)
+				image_sub = message_filters.Subscriber('/%s/hd/image_color' % sensor_name, Image)
 			except:
-				image_sub = message_filters.Subscriber('/%s/rgb/image/compressed' % sensor_name, CompressedImage)
+				image_sub = message_filters.Subscriber('/%s/hd/image_color/compressed' % sensor_name, CompressedImage)
 
 			self.subscribers = [
 				image_sub,
