@@ -26,6 +26,7 @@
 		<param name="input_topic" value="/arcore/vodom"/>
 		<param name="output_topic" value="/arcore/marker_array"/>
 		<param name="name_tag" value="$(arg name_tag)_arcore"/>
+		<param name="origin" value="$(arg output_topic)"/>
 	</node>
 	
 	<!-- Keep Tag Living  -->

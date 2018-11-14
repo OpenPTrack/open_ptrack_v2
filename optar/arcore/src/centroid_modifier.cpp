@@ -24,7 +24,7 @@ void listenerVodom(const opt_msgs::TrackArray::ConstPtr& msg)
   try
   {    
 
-	tf::Matrix3x3 matrixQuat(tf::Quaternion(originQuat.getX(), originQuat.getY(), originQuat.getZ(), originQuat.getW()));
+	  tf::Matrix3x3 matrixQuat(tf::Quaternion(originQuat.getX(), originQuat.getY(), originQuat.getZ(), originQuat.getW()));
   	tf::Vector3 transOrig2(originTrans.getX(), originTrans.getY(), originTrans.getZ());
 	
   	tf::Transform transform(matrixQuat, transOrig2);
@@ -46,7 +46,7 @@ void listenerVodom(const opt_msgs::TrackArray::ConstPtr& msg)
 		
 		msgMod.tracks[i].x = multi.getOrigin().x();
 		msgMod.tracks[i].y = multi.getOrigin().y();
-		msgMod.tracks[i].height = multi.getOrigin().z();
+		msgMod.tracks[i].height = multi.getOrigin().z() - 0.35;
 		
 		
 	}
