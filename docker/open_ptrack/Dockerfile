@@ -1,7 +1,7 @@
 FROM openptrack/open_ptrack-dep
 LABEL maintainer "Samir Tabriz"
 
-ARG branch=kinect_optar
+ARG branch=master
 
 RUN /bin/bash -c "source /opt/ros/kinetic/setup.bash \
     && git clone https://github.com/openptrack/open_ptrack_v2 ~/workspace/ros/src/open_ptrack \

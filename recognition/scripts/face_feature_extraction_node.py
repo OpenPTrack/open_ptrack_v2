@@ -27,11 +27,11 @@ class FaceFeatureExtractionNode:
 
 		try:
 			print 'trying to listen raw rgb image topic...'
-			rospy.client.wait_for_message(self.sensor_name + '/hd/image_color', Image, 1.0)
-			img_subscriber = message_filters.Subscriber(self.sensor_name + '/hd/image_color', Image, queue_size=30)
+			rospy.client.wait_for_message(self.sensor_name + '/rgb/image', Image, 1.0)
+			img_subscriber = message_filters.Subscriber(self.sensor_name + '/rgb/image', Image, queue_size=30)
 		except rospy.ROSException:
 			print 'failed, listen compressed rgb image topic'
-			img_subscriber = message_filters.Subscriber(self.sensor_name + '/hd/image_color/compressed', CompressedImage, queue_size=30)
+			img_subscriber = message_filters.Subscriber(self.sensor_name + '/rgb/image/compressed', CompressedImage, queue_size=30)
 
 		self.subscribers = [
 			img_subscriber,
