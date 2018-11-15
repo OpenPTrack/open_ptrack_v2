@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "Mobile_pose_node");
   ros::NodeHandle nh_mobile;
-
+  srand(time(0));
   sleep(3.0);
 
   std::string input_name_tag;
