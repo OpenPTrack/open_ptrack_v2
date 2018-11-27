@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+	<!-- TRACKING -->
+	<include file="$(find tracking)/launch/tracking_node.launch">
+		<arg name="enable_object" value="false" />
+		<arg name="enable_people_tracking" value="true" />
+		<arg name="enable_pose" value="true" />
+	</include>
+	
+  
+</launch>

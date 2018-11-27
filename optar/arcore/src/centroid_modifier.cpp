@@ -18,7 +18,7 @@ tf::Quaternion originQuat;
 ros::Publisher pub;
 bool count = false;
 
-void listenerVodom(const opt_msgs::TrackArray::ConstPtr& msg)
+void listenerOPTCentroid(const opt_msgs::TrackArray::ConstPtr& msg)
 {
   opt_msgs::TrackArray msgMod(*msg);
   try
@@ -31,8 +31,6 @@ void listenerVodom(const opt_msgs::TrackArray::ConstPtr& msg)
 
 	for(int i = 0; i < msg->tracks.size(); i++)
 	{
-		
-
 		tf::Matrix3x3 matrixElement(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
 		tf::Vector3 translationElement(msg->tracks[i].x, msg->tracks[i].y, msg->tracks[i].height);
 		
@@ -54,14 +52,14 @@ void listenerVodom(const opt_msgs::TrackArray::ConstPtr& msg)
 	pub.publish(msgMod);
 	if(!count)
 	{
-		ROS_INFO("MODIFIER -> Started");
+		ROS_INFO("MODIFIER CEN -> Started");
 		count = true;
 	}
 
   }
   catch (std::exception e)
   {
-      ROS_ERROR("MODIFIER -> No message from detector");
+      ROS_ERROR("MODIFIER CEN -> No message from detector");
       sleep(3.0);
       return;
   }
@@ -78,7 +76,7 @@ void listenerOrigin(const geometry_msgs::PoseStamped::ConstPtr& msg)
   }
   catch (std::exception e)
   {
-      ROS_ERROR("MODIFIER -> No message from origin");
+      ROS_ERROR("MODIFIER CEN -> No message from origin");
       sleep(3.0);
       return;
   }
@@ -87,25 +85,25 @@ void listenerOrigin(const geometry_msgs::PoseStamped::ConstPtr& msg)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "modifier");
+  ros::init(argc, argv, "modifier_cen");
   ros::NodeHandle nh;
 
   sleep(3.0);
 
   std::string origin;
   nh.param("centroid_modifier/origin", origin, std::string("/arcore/origin"));
-  ROS_WARN("MODIFIER -> Got param origin: %s", origin.c_str());
+  ROS_WARN("MODIFIER CEN -> Got param origin: %s", origin.c_str());
 	
   std::string input_track;
   nh.param("centroid_modifier/input_track", input_track, std::string("/tracker/tracks_smoothed"));
-  ROS_WARN("MODIFIER -> Got param input_track: %s", input_track.c_str());
+  ROS_WARN("MODIFIER CEN -> Got param input_track: %s", input_track.c_str());
 
   std::string output_topic;
-  nh.param("centroid_modifier/output_topic", output_topic, std::string("arcore/centroid_mod"));
-  ROS_WARN("MODIFIER -> Got param output_topic: %s", output_topic.c_str());
+  nh.param("centroid_modifier/output_topic", output_topic, std::string("/arcore/tracks_smoothed"));
+  ROS_WARN("MODIFIER CEN -> Got param output_topic: %s", output_topic.c_str());
 
   pub = nh.advertise<opt_msgs::TrackArray>(output_topic.c_str(), 100);
-  ros::Subscriber sub = nh.subscribe(input_track.c_str(), 1000, listenerVodom);
+  ros::Subscriber sub = nh.subscribe(input_track.c_str(), 1000, listenerOPTCentroid);
   ros::Subscriber sub2 = nh.subscribe(origin.c_str(), 1000, listenerOrigin);
 
   ros::spin();

@@ -20,7 +20,6 @@ int main(int argc, char **argv)
   sleep(3.0);
 
   ros::Rate loop_rate_error(1);
-  ros::Rate loop_rate(30);
   bool countClass = false;
 
 
@@ -57,7 +56,6 @@ int main(int argc, char **argv)
         countClass = true;
       }
 
-
     }
     catch(tf::TransformException &ex)
     {
@@ -65,7 +63,6 @@ int main(int argc, char **argv)
       loop_rate_error.sleep();
       continue;
     }
-    loop_rate.sleep();
     ros::spinOnce();
   }
 
