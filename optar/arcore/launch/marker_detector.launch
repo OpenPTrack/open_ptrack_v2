@@ -16,7 +16,8 @@
 
 		<rosparam param="tag_descriptions">[
                 <!-- Big apriltag -->
-                {id: 0, size: 0.480, frame_id: tag_0}]
+                {id: 0, size: 0.480, frame_id: tag_0},
+                {id: 1, size: 0.569, frame_id: tag_1}]
                 </rosparam>
 	</node>
   

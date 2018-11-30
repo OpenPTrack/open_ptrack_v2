@@ -4,10 +4,19 @@
 	<arg name="name_tag" default="tag_0" />	<!-- Change also in marker_detector.launch -->
 	<arg name="name_file" default="tag_detection_pose.txt" />
 	<arg name="topic_tag" default="/camera_network/tag_detections_pose" /> <!-- Same in marker_detector.launch -->
-	<arg name="output_topic" default="arcore/origin" />
-	<arg name="tracker_topic" default="/tracker/tracks_smoothed" />
-	<arg name="tracker_arcore" default="arcore/centroid_mod" />
-	<arg name="sensor_name" default="kinect2_head" />
+	<arg name="output_topic" default="/arcore/origin" />
+	<arg name="centroid_topic" default="/tracker/tracks_smoothed" />
+	<arg name="centroid_arcore" default="/arcore/tracks_smoothed" />
+	<arg name="skeleton_topic" default="/tracker/skeleton_tracks" />
+	<arg name="skeleton_arcore" default="/arcore/skeleton_tracks" />
+	<arg name="sensor_name" default="kinect01" />
+
+	<!-- DETECTION -->
+	<!-- <include file="$(find detection)/launch/detection_node_$(arg sensor_name).launch">
+		<arg name="enable_object" value="false" />
+		<arg name="enable_people_tracking" value="true" />
+		<arg name="enable_pose" value="true" />
+	</include> -->
 
 	<!-- Apriltag detector -->
 	<include file="$(find arcore)/launch/marker_detector.launch">
@@ -16,9 +25,9 @@
 
 
 	<!-- Server node for mobile comunication -->
-	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+	<!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
 		<param name="port" value="9090"/>
-	</include>
+	</include> -->
 
 	
 	<!-- Mobile node publisher -->
@@ -35,11 +44,18 @@
 		<param name="output_name_tag" value="$(arg name_tag)_arcore"/>
 	</node>
 
-
 	<!-- Tag File -->
 	<node name="tag_file" pkg="arcore" type="tag_file" output="screen">
 		<param name="file_path" value="$(find arcore)/file/$(arg name_file)"/>
 		<param name="name_tag" value="$(arg name_tag)"/>
+		<param name="input_topic" value="$(arg topic_tag)"/>
+	</node>
+
+	<!-- Motion Control -->
+	<node name="motion_control" pkg="arcore" type="motion_control" output="screen">
+		<param name="file_path_tag" value="$(find arcore)/file/motionControlTag.txt"/>
+		<param name="file_path_phone" value="$(find arcore)/file/motionControlPhone.txt"/>
+		<param name="name_tag" value="tag_1"/>
 		<param name="input_topic" value="$(arg topic_tag)"/>
 	</node>
 	
@@ -49,11 +65,18 @@
 		<param name="output_topic" value="$(arg output_topic)"/>
 	</node>
 	
-	<!-- Modifier Track -->
-	<node name="centroid_modifier" pkg="arcore" type="centroid_modifier" output="screen">
-		<param name="input_track" value="$(arg tracker_topic)"/>
+	<!-- Modifier Centroid -->
+	<!-- <node name="centroid_modifier" pkg="arcore" type="centroid_modifier" output="screen">
+		<param name="input_centroid" value="$(arg centroid_topic)"/>
 		<param name="origin" value="$(arg output_topic)"/>
-		<param name="output_topic" value="$(arg tracker_arcore)"/>
-	</node>
+		<param name="output_topic" value="$(arg centroid_arcore)"/>
+	</node> -->
+
+	<!-- Modifier Skeleton -->
+	<!-- <node name="skeleton_modifier" pkg="arcore" type="skeleton_modifier" output="screen">
+		<param name="input_track" value="$(arg skeleton_topic)"/>
+		<param name="origin" value="$(arg output_topic)"/>
+		<param name="output_topic" value="$(arg skeleton_arcore)"/>
+	</node> -->
   
 </launch>
