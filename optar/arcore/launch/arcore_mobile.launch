@@ -10,34 +10,47 @@
 	<arg name="skeleton_topic" default="/tracker/skeleton_tracks" />
 	<arg name="skeleton_arcore" default="/arcore/skeleton_tracks" />
 	<arg name="sensor_name" default="kinect01" />
-
-	<!-- DETECTION -->
-	<!-- <include file="$(find detection)/launch/detection_node_$(arg sensor_name).launch">
-		<arg name="enable_object" value="false" />
-		<arg name="enable_people_tracking" value="true" />
-		<arg name="enable_pose" value="true" />
-	</include> -->
+	<arg name="enable_control" default="false" />
 
 	<!-- Apriltag detector -->
 	<include file="$(find arcore)/launch/marker_detector.launch">
 		<arg name="sensor_name" value="$(arg sensor_name)" />
 	</include>
 
-
 	<!-- Server node for mobile comunication -->
-	<!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
 		<param name="port" value="9090"/>
-	</include> -->
+	</include>
 
-	
 	<!-- Mobile node publisher -->
-	<node name="mobile_receiver" pkg="arcore" type="mobile_receiver" output="screen">
-		<param name="input_topic" value="/arcore/vodom"/>
-		<param name="output_topic" value="/arcore/marker_array"/>
-		<param name="name_tag" value="$(arg name_tag)_arcore"/>
-		<param name="origin" value="$(arg output_topic)"/>
-	</node>
+	<group if="$(arg enable_control)">
+		<node name="mobile_receiver" pkg="arcore" type="mobile_receiver" output="screen">
+			<param name="input_topic" value="/arcore/vodom"/>
+			<param name="output_topic" value="/arcore/marker_array"/>
+			<param name="name_tag" value="$(arg name_tag)_arcore"/>
+			<param name="origin" value="$(arg output_topic)"/>
+			<param name="motion_control" value="enable"/>
+		</node>
+
+		<node name="motion_control" pkg="arcore" type="motion_control" output="screen">
+			<param name="file_path_tag" value="$(find arcore)/file/motionControlTag.txt"/>
+			<param name="file_path_phone" value="$(find arcore)/file/motionControlPhone.txt"/>
+			<param name="name_tag" value="tag_1"/>
+			<param name="input_topic" value="$(arg topic_tag)"/>
+		</node>
 	
+	</group>
+
+	<group unless="$(arg enable_control)">
+		<node name="mobile_receiver" pkg="arcore" type="mobile_receiver" output="screen">
+			<param name="input_topic" value="/arcore/vodom"/>
+			<param name="output_topic" value="/arcore/marker_array"/>
+			<param name="name_tag" value="$(arg name_tag)_arcore"/>
+			<param name="origin" value="$(arg output_topic)"/>
+			<param name="motion_control" value="not_enable"/>
+		</node>
+	</group>
+
 	<!-- Keep Tag Living  -->
 	<node name="keep_tag_living" pkg="arcore" type="keep_tag_living" output="screen">
 		<param name="file_path" value="$(find arcore)/file/$(arg name_file)"/>
@@ -51,14 +64,6 @@
 		<param name="input_topic" value="$(arg topic_tag)"/>
 	</node>
 
-	<!-- Motion Control -->
-	<node name="motion_control" pkg="arcore" type="motion_control" output="screen">
-		<param name="file_path_tag" value="$(find arcore)/file/motionControlTag.txt"/>
-		<param name="file_path_phone" value="$(find arcore)/file/motionControlPhone.txt"/>
-		<param name="name_tag" value="tag_1"/>
-		<param name="input_topic" value="$(arg topic_tag)"/>
-	</node>
-	
 	<!-- Origin sender -->
 	<node name="origin_sender" pkg="arcore" type="origin_sender" output="screen">
 		<param name="name_tag" value="$(arg name_tag)_arcore"/>
@@ -66,17 +71,18 @@
 	</node>
 	
 	<!-- Modifier Centroid -->
-	<!-- <node name="centroid_modifier" pkg="arcore" type="centroid_modifier" output="screen">
+	<node name="centroid_modifier" pkg="arcore" type="centroid_modifier" output="screen">
 		<param name="input_centroid" value="$(arg centroid_topic)"/>
 		<param name="origin" value="$(arg output_topic)"/>
 		<param name="output_topic" value="$(arg centroid_arcore)"/>
-	</node> -->
+	</node>
 
 	<!-- Modifier Skeleton -->
-	<!-- <node name="skeleton_modifier" pkg="arcore" type="skeleton_modifier" output="screen">
+	<node name="skeleton_modifier" pkg="arcore" type="skeleton_modifier" output="screen">
 		<param name="input_track" value="$(arg skeleton_topic)"/>
 		<param name="origin" value="$(arg output_topic)"/>
 		<param name="output_topic" value="$(arg skeleton_arcore)"/>
-	</node> -->
+	</node>
   
+
 </launch>

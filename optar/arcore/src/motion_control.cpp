@@ -27,7 +27,7 @@ void listenerTag(const geometry_msgs::PoseArray::ConstPtr& msg)
   {
     if(msg->poses.size() == 0)
     {
-      ROS_WARN("MOTION CONTROL -> No tag detected. Waiting first tag detection...");
+      ROS_WARN("MOTION CONTROL -> No tag detected. Waiting tag detection...");
       return;
     }
     // frameParent = msg->header.frame_id.c_str();
@@ -50,7 +50,6 @@ void listenerTag(const geometry_msgs::PoseArray::ConstPtr& msg)
 
     std::ofstream fileTag (filePathTag.c_str(), std::ofstream::app);
 
-    // file << "World -> " <<  nameTag.c_str() << std::endl;
     fileTag << transformTag.getOrigin().x() << " ";
     fileTag << transformTag.getOrigin().y() << " ";
     fileTag << transformTag.getOrigin().z() << std::endl;
@@ -62,25 +61,18 @@ void listenerTag(const geometry_msgs::PoseArray::ConstPtr& msg)
     fileTag.close();
 
     std::ofstream filePhone (filePathPhone.c_str(), std::ofstream::app);
-    // file << "World -> phone" << std::endl;
 
     filePhone << transformPhone.getOrigin().x() << " ";
     filePhone << transformPhone.getOrigin().y() << " ";
     filePhone << transformPhone.getOrigin().z() << std::endl;
-    // file << transformTag.getRotation().x() << std::endl;
-    // file << transformTag.getRotation().y() << std::endl;
-    // file << transformTag.getRotation().z() << std::endl;
-    // file << transformTag.getRotation().w() << std::endl;
+    // file << transformPhone.getRotation().x() << std::endl;
+    // file << transformPhone.getRotation().y() << std::endl;
+    // file << transformPhone.getRotation().z() << std::endl;
+    // file << transformPhone.getRotation().w() << std::endl;
     
     filePhone.close();
 
-    ROS_INFO("-----------------");
-    ROS_INFO("-----------------");
-    ROS_INFO("-----------------");
-    ROS_INFO("-----------------");
-    ROS_INFO("-----------------");
-    ROS_INFO("-----------------");
-    ROS_INFO("-----------------");
+        ROS_INFO("-----------------");
     ROS_INFO("-----------------");
     ROS_INFO("-----------------");
     ROS_INFO("-----------------");

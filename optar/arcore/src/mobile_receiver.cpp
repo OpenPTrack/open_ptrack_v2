@@ -26,6 +26,7 @@ bool countClass = false;
 std::map<std::string, Marker> mobilePhones;
 tf::Vector3 originTrans;
 tf::Quaternion originQuat;
+bool motionControl;
 
 
 Marker::Marker(std_msgs::Header header, std::string idPhone)
@@ -56,16 +57,17 @@ void Marker::sendPose(std_msgs::Header header, tf::Vector3 tran_input, tf::Quate
   marker_pose.pose.orientation.z = quat_input[2];
   marker_pose.pose.orientation.w = quat_input[3];
 
-
-
   static tf::TransformBroadcaster br;
 
-  tf::Transform transformToSend;
-  transformToSend.setOrigin(tran_input);
-  transformToSend.setRotation(quat_input);
+  if(motionControl)
+  {
+    tf::Transform transformToSend;
+    transformToSend.setOrigin(tran_input);
+    transformToSend.setRotation(quat_input);
 
-  br.sendTransform(tf::StampedTransform(transformToSend, header.stamp, "world", "phone"));
-
+    br.sendTransform(tf::StampedTransform(transformToSend, header.stamp, "world", "phone"));
+  }
+  
   vis_pub.publish(marker_pose);
 }
 
@@ -84,20 +86,11 @@ void listenerVodom(const geometry_msgs::PoseStamped::ConstPtr& msg)
   	tf::Transform transform(matrixQuat, transOrig2);
     transform = transform.inverse();
 
-    // static tf::TransformBroadcaster br;
-    // tf::Transform transform;
-
-    // transform.setOrigin( tran_arcore );
-    // transform.setRotation( quat_arcore );
-    
-    // br.sendTransform(tf::StampedTransform(transform, msg->header.stamp, nameTag, msg->header.frame_id));
-
     for(std::map<std::string, Marker>::iterator iter = mobilePhones.begin(); iter != mobilePhones.end() || (mobilePhones.size() == 0); ++iter)
     {
       if(mobilePhones.find(msg->header.frame_id) == mobilePhones.end())
       {
         mobilePhones.insert(std::map<std::string, Marker>::value_type(msg->header.frame_id, Marker(msg->header, ("mobile_" + mobilePhones.size()))));
-        //  mobilePhones[msg->header.frame_id] = marker;
         ROS_INFO("ARCORE -> Phone %s added with id: %lu", (msg->header.frame_id).c_str(), mobilePhones.size());
       }
 
@@ -113,9 +106,6 @@ void listenerVodom(const geometry_msgs::PoseStamped::ConstPtr& msg)
         iter->second.sendPose(msg->header, tf::Vector3(multi.getOrigin().x(), multi.getOrigin().y(), multi.getOrigin().z()), tf::Quaternion(multi.getRotation().x(), multi.getRotation().y(), multi.getRotation().z(), multi.getRotation().w()));
       }
     } 
-
-    // Marker marker(msg->header, "mobile_"));
-    // marker.sendPose(tran_arcore, quat_arcore);
 
     if(!countClass)
     {
@@ -160,7 +150,7 @@ int main(int argc, char **argv)
   sleep(3.0);
 
   std::string input_name_tag;
-  nh_mobile.param("keep_tag_living/name_tag", input_name_tag, std::string("/tag_0_arcore"));
+  nh_mobile.param("mobile_receiver/name_tag", input_name_tag, std::string("/tag_0_arcore"));
   nameTag = input_name_tag.c_str();
   ROS_WARN("ARCORE -> Got param name_tag: %s", input_name_tag.c_str());
 
@@ -174,7 +164,22 @@ int main(int argc, char **argv)
 
   std::string origin;
   nh_mobile.param("mobile_receiver/origin", origin, std::string("/arcore/origin"));
-  ROS_WARN("MODIFIER -> Got param origin: %s", origin.c_str());
+  ROS_WARN("ARCORE -> Got param origin: %s", origin.c_str());
+
+  std::string control; 
+  nh_mobile.param("mobile_receiver/motion_control", control, std::string("not_enable"));
+  ROS_WARN("ARCORE -> Got param motion_control: %s", control.c_str());
+
+  if(control.compare("not_enable") == 0)
+  {
+    motionControl = false;
+  }
+  
+  if(control.compare("enable") == 0)
+  {
+    motionControl = true;
+  }
+    
 
   ros::Subscriber sub = nh_mobile.subscribe(input_topic.c_str(), 10, listenerVodom);
   ros::Subscriber sub2 = nh_mobile.subscribe(origin.c_str(), 10, listenerOrigin);
