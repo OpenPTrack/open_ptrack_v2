@@ -1,0 +1,12 @@
+[2018-11-15 21:45:27.400] [exthost] [info] extension host started
+[2018-11-15 21:45:27.428] [exthost] [info] ExtensionService#_doActivateExtension vscode.debug-auto-launch {"startup":true,"activationEvent":"*"}
+[2018-11-15 21:45:27.429] [exthost] [info] ExtensionService#loadCommonJSModule /usr/share/code/resources/app/extensions/debug-auto-launch/dist/extension
+[2018-11-15 21:45:27.442] [exthost] [info] ExtensionService#_doActivateExtension vscode.emmet {"startup":true,"activationEvent":"*"}
+[2018-11-15 21:45:27.442] [exthost] [info] ExtensionService#loadCommonJSModule /usr/share/code/resources/app/extensions/emmet/dist/extension
+[2018-11-15 21:45:27.467] [exthost] [info] ExtensionService#_doActivateExtension vscode.git {"startup":true,"activationEvent":"*"}
+[2018-11-15 21:45:27.467] [exthost] [info] ExtensionService#loadCommonJSModule /usr/share/code/resources/app/extensions/git/dist/main
+[2018-11-15 21:45:27.734] [exthost] [info] ExtensionService#_doActivateExtension vscode.merge-conflict {"startup":true,"activationEvent":"*"}
+[2018-11-15 21:45:27.734] [exthost] [info] ExtensionService#loadCommonJSModule /usr/share/code/resources/app/extensions/merge-conflict/dist/extension
+[2018-11-15 21:45:27.747] [exthost] [info] eager extensions activated
+[2018-11-15 21:45:27.847] [exthost] [info] ExtensionService#_doActivateExtension ajshort.ros {"startup":true,"activationEvent":"*"}
+[2018-11-15 21:45:27.847] [exthost] [info] ExtensionService#loadCommonJSModule /root/.vscode/extensions/ajshort.ros-0.3.0/out/src/extension

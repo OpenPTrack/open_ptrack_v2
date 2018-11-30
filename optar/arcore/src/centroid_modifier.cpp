@@ -44,7 +44,7 @@ void listenerOPTCentroid(const opt_msgs::TrackArray::ConstPtr& msg)
 		
 		msgMod.tracks[i].x = multi.getOrigin().x();
 		msgMod.tracks[i].y = multi.getOrigin().y();
-		msgMod.tracks[i].height = multi.getOrigin().z() - 0.35;
+		msgMod.tracks[i].height = multi.getOrigin().z() - 0.45;
 		
 		
 	}

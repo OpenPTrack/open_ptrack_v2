@@ -94,3 +94,7 @@ add_dependencies(centroid_modifier centroid_modifiercpp)
 add_executable(skeleton_modifier src/skeleton_modifier.cpp)
 target_link_libraries(skeleton_modifier ${catkin_LIBRARIES})
 add_dependencies(skeleton_modifier skeleton_modifier_cpp)
+
+add_executable(motion_control src/motion_control.cpp)
+target_link_libraries(motion_control ${catkin_LIBRARIES})
+add_dependencies(motion_control motion_control_cpp)

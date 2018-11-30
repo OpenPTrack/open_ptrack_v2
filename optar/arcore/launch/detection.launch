@@ -2,13 +2,6 @@
 <launch>
 	<arg name="sensor_name" default="kinect01" />
 
-	<!-- TRACKING -->
-	<include file="$(find tracking)/launch/tracking_node.launch">
-		<arg name="enable_object" value="false" />
-		<arg name="enable_people_tracking" value="true" />
-		<arg name="enable_pose" value="true" />
-	</include>
-
 	<!-- DETECTION -->
 	<include file="$(find detection)/launch/detection_node_$(arg sensor_name).launch">
 		<arg name="enable_object" value="false" />
