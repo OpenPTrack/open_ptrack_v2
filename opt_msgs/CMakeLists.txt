@@ -35,6 +35,7 @@ add_message_files(FILES
   FeatureVectorArray.msg 
   Association.msg 
   NameArray.msg
+  ArcoreCameraImage.msg
   )
 
 add_service_files(FILES OPTSensor.srv OPTTransform.srv)
