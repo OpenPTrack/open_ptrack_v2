@@ -98,3 +98,7 @@ add_dependencies(skeleton_modifier skeleton_modifier_cpp)
 add_executable(motion_control src/motion_control.cpp)
 target_link_libraries(motion_control ${catkin_LIBRARIES})
 add_dependencies(motion_control motion_control_cpp)
+
+add_executable(arcore_camera_image_republisher src/arcore_camera_image_republisher.cpp)
+target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES})
+add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
