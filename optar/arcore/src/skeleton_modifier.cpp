@@ -66,7 +66,7 @@ void listenerOPTSkeleton(const opt_msgs::SkeletonTrackArrayConstPtr& msg )
 
     pub.publish(msgMod);
 
-    ROS_INFO("MODIFIER SKE -> Published transform with seq numb: %d", msgMod.header.seq);
+    // ROS_INFO("MODIFIER SKE -> Published transform with seq numb: %d", msgMod.header.seq);
 
     if(!countClass)
     {

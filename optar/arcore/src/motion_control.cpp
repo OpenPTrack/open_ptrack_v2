@@ -30,13 +30,23 @@ void listenerTag(const geometry_msgs::PoseArray::ConstPtr& msg)
       ROS_WARN("MOTION CONTROL -> No tag detected. Waiting tag detection...");
       return;
     }
+
+    static tf::TransformBroadcaster br;
+
+    tf::Transform transformToSend;
+    transformToSend.setOrigin(tf::Vector3(0,0.38,0));
+    transformToSend.setRotation(tf::Quaternion(0,0,0,1));
+
+    br.sendTransform(tf::StampedTransform(transformToSend, ros::Time::now(), nameTag.c_str(), "diffTag"));
+
+
     // frameParent = msg->header.frame_id.c_str();
     //ROS_INFO("FILE TAG -> Detected tag with parent: %s", frameParent.c_str());
 
     tf::StampedTransform transformTag;
     tf::StampedTransform transformPhone;
 
-    listener->lookupTransform("world", nameTag.c_str(), ros::Time(0), transformTag);  
+    listener->lookupTransform("world", "diffTag", ros::Time(0), transformTag);  
     listener->lookupTransform("world", "phone", ros::Time(0), transformPhone);  
 
     double distance = hypot(hypot(transformTag.getOrigin().x() - transformPhone.getOrigin().x(), transformTag.getOrigin().y() - transformPhone.getOrigin().y()), transformTag.getOrigin().z() - transformPhone.getOrigin().z());
@@ -72,7 +82,7 @@ void listenerTag(const geometry_msgs::PoseArray::ConstPtr& msg)
     
     filePhone.close();
 
-        ROS_INFO("-----------------");
+    ROS_INFO("-----------------");
     ROS_INFO("-----------------");
     ROS_INFO("-----------------");
     ROS_INFO("-----------------");
