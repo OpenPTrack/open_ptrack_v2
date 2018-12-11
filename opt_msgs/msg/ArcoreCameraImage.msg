@@ -21,4 +21,8 @@ int32 image_height_y_px
 # The position of the principal point, in pixels
 float64 principal_point_x_px
 float64 principal_point_y_px
+ 
+# The pixel size in millimiters
+float64 pixel_size_x_mm
+float64 pixel_size_y_mm
 
