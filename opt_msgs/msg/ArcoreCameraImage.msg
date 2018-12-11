@@ -15,8 +15,8 @@ float64 focal_length_x_px
 float64 focal_length_y_px
 
 # The image size in pixels
-int32 image_width_x_px
-int32 image_height_y_px
+int32 image_width_px
+int32 image_height_px
 
 # The position of the principal point, in pixels
 float64 principal_point_x_px
