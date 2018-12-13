@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+
+	<node name="plane_detector" pkg="mr_room" type="plane_detector" output="screen">
+
+		<param name="path_obj_file" value="$(find mr_room)/file/objFromUnity.obj"/>
+		<param name="topic_obj" value="/mrroom/objFromUnity"/>
+
+		<param name="path_output" value="$(find mr_room)/file/elaborated.pcd"/>
+		<param name="output_topic" value="/mrroom/borders"/>
+
+		<rosparam command="load" file="$(find mr_room)/conf/plane_detector.yaml" /> 
+		
+	</node>
+
+
+
+</launch>
