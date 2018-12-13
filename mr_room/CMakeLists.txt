@@ -39,7 +39,6 @@ generate_messages(
   )
 
 catkin_package(
-  INCLUDE_DIRS include
   LIBRARIES mr_room
   CATKIN_DEPENDS geometry_msg roscpp rospy std_msgs detection opt_utils message_filters bayes opt_msgs
   DEPENDS system_lib

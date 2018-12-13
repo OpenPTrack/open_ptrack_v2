@@ -35,6 +35,10 @@ add_message_files(FILES
   FeatureVectorArray.msg 
   Association.msg 
   NameArray.msg
+  ArcoreCameraImage.msg
+  BorderPoint3D.msg
+  Border.msg
+  BorderArray.msg
   )
 
 add_service_files(FILES OPTSensor.srv OPTTransform.srv)
