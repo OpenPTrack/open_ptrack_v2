@@ -8,6 +8,8 @@
 #include "std_msgs/String.h"
 #include <iostream>
 
+#include <tf/transform_listener.h>
+
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseArray.h>
 
@@ -45,6 +47,7 @@
 
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr concaveHull( pcl::PointCloud<pcl::PointXYZRGB>::Ptr );
+tf::Vector3 measureBoundingBox(pcl::PointCloud<pcl::PointXYZRGB>::Ptr);
 bool firstDetectionPlane( std::map<int, pcl::PointCloud<pcl::PointXYZ> >::iterator );
 bool findBoundingBox(std::map<int, pcl::PointCloud<pcl::PointXYZ> >::iterator );
 void sendBorderToRos();
@@ -118,6 +121,29 @@ void sendBorderToRos()
 
       msg_border.border.push_back(pointSingle);
     }
+
+    tf::Vector3 center;
+    for(size_t i = 0; i< iter->second->points.size(); i++)
+    {
+      center[0] += iter->second->points[i].x;
+      center[1] += iter->second->points[i].y;
+      center[2] += iter->second->points[i].z;
+    }
+
+    center[0] /= iter->second->points.size();
+    center[1] /= iter->second->points.size();
+    center[2] /= iter->second->points.size();
+
+    
+    msg_border.center_x = center[0];
+    msg_border.center_y = center[1];
+    msg_border.center_z = center[2];
+
+    tf::Vector3 boxBorder = measureBoundingBox(iter->second);
+    
+    msg_border.height_bbox = boxBorder[0];
+    msg_border.width_bbox = boxBorder[1];
+    msg_border.depth_bbox = boxBorder[2];
 
     msgToSend.borders.push_back(msg_border);
   }
@@ -296,6 +322,15 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr concaveHull( pcl::PointCloud<pcl::PointXY
     cloud_temp->points[i].g = 0;
     cloud_temp->points[i].b = 0;
   }
+  // pcl::visualization::PCLVisualizer::Ptr viewerConcave ( new pcl::visualization::PCLVisualizer("Cloud Viewer concave"));
+  // viewerConcave->setCameraPosition(7,2,0, -5,0,15,  0,0,0,  0);
+  // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud_temp);
+  // viewerConcave->addPointCloud(cloud_temp, rgb, "concave");
+
+  // while (!viewerConcave->wasStopped ())
+  // {
+  //   viewerConcave->spinOnce();
+  // }
 
   return cloud_temp;
 }
@@ -361,6 +396,72 @@ bool firstDetectionPlane(std::map<int, pcl::PointCloud<pcl::PointXYZ> >::iterato
 
   return true;
 }
+
+tf::Vector3 measureBoundingBox(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_input)
+{
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+
+  copyPointCloud(*cloud_input, *cloud);
+
+  pcl::MomentOfInertiaEstimation <pcl::PointXYZ> feature_extractor;
+  feature_extractor.setInputCloud (cloud);
+  feature_extractor.compute ();
+
+  std::vector <float> moment_of_inertia;
+  std::vector <float> eccentricity;
+  pcl::PointXYZ min_point_AABB;
+  pcl::PointXYZ max_point_AABB;
+  pcl::PointXYZ min_point_OBB;
+  pcl::PointXYZ max_point_OBB;
+  pcl::PointXYZ position_OBB;
+  Eigen::Matrix3f rotational_matrix_OBB;
+  float major_value, middle_value, minor_value;
+  Eigen::Vector3f major_vector, middle_vector, minor_vector;
+  Eigen::Vector3f mass_center;
+
+  feature_extractor.getMomentOfInertia (moment_of_inertia);
+  feature_extractor.getEccentricity (eccentricity);
+  feature_extractor.getAABB (min_point_AABB, max_point_AABB);
+  feature_extractor.getOBB (min_point_OBB, max_point_OBB, position_OBB, rotational_matrix_OBB);
+  feature_extractor.getEigenValues (major_value, middle_value, minor_value);
+  feature_extractor.getEigenVectors (major_vector, middle_vector, minor_vector);
+  feature_extractor.getMassCenter (mass_center);
+
+  Eigen::Vector3f position (position_OBB.x, position_OBB.y, position_OBB.z);
+  Eigen::Quaternionf quat (rotational_matrix_OBB);
+
+  
+  pcl::PointXYZ center (mass_center (0), mass_center (1), mass_center (2));
+  pcl::PointXYZ x_axis (major_vector (0) + mass_center (0), major_vector (1) + mass_center (1), major_vector (2) + mass_center (2));
+  pcl::PointXYZ y_axis (middle_vector (0) + mass_center (0), middle_vector (1) + mass_center (1), middle_vector (2) + mass_center (2));
+  pcl::PointXYZ z_axis (minor_vector (0) + mass_center (0), minor_vector (1) + mass_center (1), minor_vector (2) + mass_center (2));
+
+
+  // Eigen::Vector3f p1 (min_point_OBB.x, min_point_OBB.y, min_point_OBB.z);
+  // Eigen::Vector3f p2 (min_point_OBB.x, min_point_OBB.y, max_point_OBB.z);
+  Eigen::Vector3f p3 (max_point_OBB.x, min_point_OBB.y, max_point_OBB.z);
+  Eigen::Vector3f p4 (max_point_OBB.x, min_point_OBB.y, min_point_OBB.z);
+  Eigen::Vector3f p5 (min_point_OBB.x, max_point_OBB.y, min_point_OBB.z);
+  // Eigen::Vector3f p6 (min_point_OBB.x, max_point_OBB.y, max_point_OBB.z);
+  // Eigen::Vector3f p7 (max_point_OBB.x, max_point_OBB.y, max_point_OBB.z);
+  Eigen::Vector3f p8 (max_point_OBB.x, max_point_OBB.y, min_point_OBB.z);
+
+  // p1 = rotational_matrix_OBB * p1 + position;
+  // p2 = rotational_matrix_OBB * p2 + position;
+  p3 = rotational_matrix_OBB * p3 + position;
+  p4 = rotational_matrix_OBB * p4 + position;
+  p5 = rotational_matrix_OBB * p5 + position;
+  // p6 = rotational_matrix_OBB * p6 + position;
+  // p7 = rotational_matrix_OBB * p7 + position;
+  p8 = rotational_matrix_OBB * p8 + position;
+
+  float height = pow(pow((p8(0) - p4(0)), 2) + pow((p8(1) - p4(1)), 2) + pow((p8(2) - p4(2)), 2), 0.5);
+  float width = pow(pow((p8(0) - p5(0)), 2) + pow((p8(1) - p5(1)), 2) + pow((p8(2) - p5(2)), 2), 0.5);
+  float depth = pow(pow((p4(0) - p3(0)), 2) + pow((p4(1) - p3(1)), 2) + pow((p4(2) - p3(2)), 2), 0.5);
+
+  return tf::Vector3(height, width, depth);
+}
+
 
 bool findBoundingBox(std::map<int, pcl::PointCloud<pcl::PointXYZ> >::iterator iter)
 {
@@ -564,8 +665,8 @@ void objToPclVisualizer ()
   // Convert to pcd and save
   saveCloud (path_pcd_output.c_str(), *cloud);
 
-  // pcl::visualization::PCLVisualizer::Ptr viewerOriginal ( new pcl::visualization::PCLVisualizer("Cloud Viewer original"));
-  // viewerOriginal->setCameraPosition(7,2,0, -5,0,15,  0,0,0,  0);
+  pcl::visualization::PCLVisualizer::Ptr viewerOriginal ( new pcl::visualization::PCLVisualizer("Cloud Viewer original"));
+  viewerOriginal->setCameraPosition(7,2,0, -5,0,15,  0,0,0,  0);
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp(new pcl::PointCloud<pcl::PointXYZRGB>);
   cloud_temp->points.resize(cloud->height * cloud->width);
@@ -580,8 +681,8 @@ void objToPclVisualizer ()
     cloud_temp->points[i].b = 255;
   }
 
-  // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud_temp);
-  // viewerOriginal->addPointCloud(cloud_temp, rgb, "original");
+  pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud_temp);
+  viewerOriginal->addPointCloud(cloud_temp, rgb, "original");
 
   clusterExtraction(cloud);
 }

@@ -58,3 +58,7 @@ include_directories(
 add_executable(plane_detector src/plane_detector.cpp)
 target_link_libraries(plane_detector ${catkin_LIBRARIES})
 add_dependencies(plane_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(skeleton src/skeleton.cpp)
+target_link_libraries(skeleton ${catkin_LIBRARIES})
+add_dependencies(skeleton ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

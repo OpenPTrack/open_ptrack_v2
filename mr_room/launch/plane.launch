@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <launch>
 
+	<arg name="kinect_name" default="/kinect01" />
+	<arg name="skeleton_topic" default="/tracker/skeleton_tracks" />
+	<arg name="skeleton_mrroom" default="/mrroom/skeleton_tracks" />
+
 	<node name="plane_detector" pkg="mr_room" type="plane_detector" output="screen">
 
 		<param name="path_obj_file" value="$(find mr_room)/file/objFromUnity.obj"/>
@@ -13,6 +17,17 @@
 		
 	</node>
 
+	<!-- Server node for mobile comunication -->
+	<!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+		<param name="port" value="9090"/>
+	</include>
+	 -->
+	<!-- Modifier Skeleton -->
+	<node name="skeleton" pkg="mr_room" type="skeleton" output="screen">
+		<param name="input_track" value="$(arg skeleton_topic)"/>
+		<param name="kinect_name" value="$(arg kinect_name)"/>
+		<param name="output_topic" value="$(arg skeleton_mrroom)"/>
+	</node>
 
 
 </launch>

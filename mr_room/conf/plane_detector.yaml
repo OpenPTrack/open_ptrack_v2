@@ -12,17 +12,17 @@ rotation_plane_y: 0.6
 ########################################
 
 # set maximun rotation ( m ) on 'x' axis of plane detected
-size_plane_x: 0.35
+size_plane_x: 0.45
 # set maximun rotation ( m ) on 'y' axis of plane detected
-size_plane_y: 0.35
+size_plane_y: 0.45
 
 ########################
 ## Cluster parameters ##
 ########################
 
 # set minimun points ( # )
-min_cluster_points: 4000
+min_cluster_points: 1000
 # set maximun points ( # )
-max_cluster_points: 30000
+max_cluster_points: 300000
 # set_tolerance ( m )
-tolerance: 0.026
+tolerance: 0.027

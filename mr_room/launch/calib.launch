@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find opt_calibration)/launch/calibration_initializer.launch">
+	</include>
+
+
+    <include file="$(find opt_calibration)/launch/listener.launch">
+	</include>
+
+    <include file="$(find opt_calibration)/launch/opt_calibration_master.launch">
+	</include>
+
+    <include file="$(find opt_calibration)/launch/sensor_kinect01.launch">
+    </include>
+
+
+    <!-- 
+        rostopic pub /opt_calibration/action std_msgs/String "save" -1
+
+        roslaunch opt_calibration detection_initializer.launch 
+    -->
+
+</launch>
