@@ -7,8 +7,12 @@
 				name="nomarker_position_estimator"
 				output="screen"
 				args="">
-				<remap from="arcore_camera" 						to="optar/arcore_camera_bag" />
-				<remap from="kinect_camera" 					to="kinect01/qhd/image_mono_bag" />
+				<remap from="arcore_camera" 					to="optar/arcore_camera_bag" />
+				<remap from="kinect_camera" 					to="kinect01/qhd/image_mono_rect_bag" />
+				<remap from="kinect_depth" 						to="kinect01/qhd/image_depth_rect_bag" />
+				<remap from="kinect_camera_info" 				to="kinect01/qhd/camera_info_bag" />
+<!--				<remap from="tf"		 						to="tf_bag" /> -->
+<!--				<remap from="tf_static" 						to="tf_static_bag" /> -->
 	</node>
 	
 </group>
@@ -18,8 +22,10 @@
 				name="nomarker_position_estimator"
 				output="screen"
 				args="">
-				<remap from="arcore_camera" 						to="optar/arcore_camera" />
-				<remap from="kinect_camera" 					to="kinect01/qhd/image_mono" />
+				<remap from="arcore_camera" 					to="optar/arcore_camera" />
+				<remap from="kinect_camera" 					to="kinect01/qhd/image_mono_rect" />
+				<remap from="kinect_depth" 						to="kinect01/qhd/image_depth_rect" />
+				<remap from="kinect_camera_info" 				to="kinect01/qhd/camera_info" />
 	</node>
 </group>
 
