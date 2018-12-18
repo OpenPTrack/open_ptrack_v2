@@ -20,59 +20,15 @@
 #include <visualization_msgs/Marker.h>
 #include <tf/transform_broadcaster.h>
 
-#define ARCORE_CAMERA_IMAGE_REPUBLISHER_NODE_NAME "nomarker_position_estimator"
+#include "utils.hpp"
+
+#define NODE_NAME "nomarker_position_estimator"
 
 tf::StampedTransform transformKinectToWorld;
 ros::Publisher pose_raw_pub;
 ros::Publisher pose_marker_pub;
 
-int publish_marker(std_msgs::Header header, float tx, float ty, float tz, float qx, float qy, float qz, float qw)
-{
-	visualization_msgs::Marker marker_pose;
 
-	marker_pose.header.frame_id = "world";
-	marker_pose.ns = "no_marker_raw";
-	marker_pose.type = visualization_msgs::Marker::SPHERE;
-	marker_pose.action = visualization_msgs::Marker::ADD;
-	marker_pose.scale.x = 0.2;
-	marker_pose.scale.y = 0.2;
-	marker_pose.scale.z = 0.2;
-	marker_pose.color.a = 1.0;
-	marker_pose.color.r = 1;//float(rand()*256) / 255;
-	marker_pose.color.g = 0;//float(rand()*256) / 255;
-	marker_pose.color.b = 0;//float(rand()*256) / 255;
-	marker_pose.lifetime = ros::Duration(10);
-
-
-	marker_pose.header.stamp = header.stamp;
-	marker_pose.id = header.seq;
-	marker_pose.pose.position.x = tx;
-	marker_pose.pose.position.y = ty;
-	marker_pose.pose.position.z = tz;
-	marker_pose.pose.orientation.x = qx;
-	marker_pose.pose.orientation.y = qy;
-	marker_pose.pose.orientation.z = qz;
-	marker_pose.pose.orientation.w = qw;
-
-  	pose_marker_pub.publish(marker_pose);
-
-
-	tf::Vector3 tran_input;
-	tf::Quaternion quat_input((qx),qy,qz,qw);
-	tran_input.setX(tx);
-	tran_input.setY(ty);
-	tran_input.setZ(tz);
-	
-	static tf::TransformBroadcaster br;
-
-	tf::Transform transformToSend;
-	transformToSend.setOrigin(tran_input);
-	transformToSend.setRotation(quat_input);
-
-	br.sendTransform(tf::StampedTransform(transformToSend, header.stamp, "world", "mobile_camera"));
-
-  	return 0;
-}
 
 int findOrbMatches(	const cv::Mat& arcoreImg, 
 					const cv::Mat& kinectCameraImg, 
@@ -161,57 +117,6 @@ int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch
 		}
 	}
 	return 0;
-}
-
-
-cv::Point3f get3dPoint(int x, int y, const cv::Mat& cameraImage, const cv::Mat& depthImage, double focalLengthX, double focalLengthY, double principalPointX, double principalPointY)
-{
-	cv::Point3f p;
-	p.z = (float)(((double)depthImage.at<uint16_t>(x,y))/1000);//convert to meters
-	p.x = (x - principalPointX) * p.z / focalLengthX;
-	p.y = (y - principalPointY) * p.z / focalLengthY;
-	return p;
-}
-
-cv::Mat DoubleMatFromVec3b(cv::Vec3b in)
-{
-    cv::Mat mat(3,1, CV_64FC1);
-    mat.at <double>(0,0) = in [0];
-    mat.at <double>(1,0) = in [1];
-    mat.at <double>(2,0) = in [2];
-
-    return mat;
-};
-
-
-void getEigenPose(cv::Vec3d tvecV, cv::Vec3d rvecV, Eigen::Vector3d &Translate, Eigen::Quaterniond &quats)
-{
-    cv::Mat R;
-    cv::Mat tvec, rvec;
-
-    tvec = DoubleMatFromVec3b(tvecV);
-    rvec = DoubleMatFromVec3b(rvecV);
-
-    cv::Rodrigues(rvec, R); // R is 3x3
-    R = R.t();                 // rotation of inverse
-    tvec = -R*tvec;           // translation of inverse
-
-    Eigen::Matrix3d mat;
-    cv2eigen(R, mat);
-
-    Eigen::Quaterniond EigenQuat(mat);
-
-    quats = EigenQuat;
-
-
-    double x_t = tvec.at<double>(0, 0);
-    double y_t = tvec.at<double>(1, 0);
-    double z_t = tvec.at<double>(2, 0);
-
-    Translate.x() = x_t * 10;
-    Translate.y() = y_t * 10;
-    Translate.z() = z_t * 10;   
-
 }
 
 
@@ -321,7 +226,6 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 		cv::Point2f imgPos = kinectKeypoints.at(goodMatches.at(i).trainIdx).pt;//queryIdx means in the kinect descriptors as we passed to the matcher as the train set
 		goodMatchesImgPos.push_back(imgPos);
 		cv::Point3f pos3d = get3dPoint(	imgPos.x,imgPos.y,
-												kinectCameraImg,
 												kinectDepthImg,
 												kinectCameraInfo.P[0+4*0],kinectCameraInfo.P[1+4*1],kinectCameraInfo.P[2+4*0],kinectCameraInfo.P[2+4*1]);
 		ROS_INFO_STREAM("3d pose = "<<pos3d.x<<";"<<pos3d.y<<";"<<pos3d.z);
@@ -343,7 +247,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	
 	Eigen::Vector3d position;
 	Eigen::Quaterniond rotation;
-	getEigenPose(tvec,rvec,position,rotation);
+	opencvPoseToEigenPose(tvec,rvec,position,rotation);
 
 	geometry_msgs::PoseStamped pose;
 	pose.pose.position.x = position.x();
@@ -367,15 +271,15 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	ROS_INFO_STREAM("estimated pose is "<<pose.pose.position.x<<" "<<pose.pose.position.y<<" "<<pose.pose.position.z<<" ; "<<pose.pose.orientation.x<<" "<<pose.pose.orientation.y<<" "<<pose.pose.orientation.z<<" "<<pose.pose.orientation.w);
 
 	pose_raw_pub.publish(pose);
-	publish_marker(pose.header, pose.pose.position.x, pose.pose.position.y, pose.pose.position.z, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
+	publish_pose_for_viewing(pose.header, pose.pose.position.x, pose.pose.position.y, pose.pose.position.z, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w, pose_marker_pub);
 }
 
 
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, ARCORE_CAMERA_IMAGE_REPUBLISHER_NODE_NAME);
+	ros::init(argc, argv, NODE_NAME);
 	ros::NodeHandle nh;
-	ROS_INFO_STREAM("starting "<<ARCORE_CAMERA_IMAGE_REPUBLISHER_NODE_NAME);
+	ROS_INFO_STREAM("starting "<<NODE_NAME);
 
 	boost::shared_ptr<sensor_msgs::CameraInfo const> kinectCameraInfoPtr;
 	sensor_msgs::CameraInfo kinectCameraInfo;

@@ -103,6 +103,7 @@ add_executable(arcore_camera_image_republisher src/arcore_camera_image_republish
 target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES})
 add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(nomarker_position_estimator src/nomarker_position_estimator.cpp)
+add_executable(nomarker_position_estimator src/nomarker_position_estimator.cpp src/utils.cpp)
 target_link_libraries(nomarker_position_estimator ${catkin_LIBRARIES})
 add_dependencies(nomarker_position_estimator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
