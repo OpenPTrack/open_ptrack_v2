@@ -3,7 +3,6 @@
     <include file="$(find opt_calibration)/launch/calibration_initializer.launch">
 	</include>
 
-
     <include file="$(find opt_calibration)/launch/listener.launch">
 	</include>
 

@@ -77,14 +77,14 @@ void listenerOPTSkeleton(const opt_msgs::SkeletonTrackArrayConstPtr& msg )
 
         tf::Transform multiJoint = transform * transformElementJoint;
 
-        if(counterJoint == 4)
-        {
-          static tf::TransformBroadcaster br;
-          tf::Transform transformToSend;
-          transformToSend.setOrigin(tf::Vector3(multiJoint.getOrigin().x(), multiJoint.getOrigin().y(), multiJoint.getOrigin().z()));
-          transformToSend.setRotation(tf::Quaternion(0,0,0,1));
-          br.sendTransform(tf::StampedTransform(transformToSend, ros::Time::now(), kinect.c_str(), "hand"));
-        }
+        // if(counterJoint == 4)
+        // {
+        //   static tf::TransformBroadcaster br;
+        //   tf::Transform transformToSend;
+        //   transformToSend.setOrigin(tf::Vector3(multiJoint.getOrigin().x(), multiJoint.getOrigin().y(), multiJoint.getOrigin().z()));
+        //   transformToSend.setRotation(tf::Quaternion(0,0,0,1));
+        //   br.sendTransform(tf::StampedTransform(transformToSend, ros::Time::now(), kinect.c_str(), "hand"));
+        // }
         
         //Set new values to new msg
         msgMod.tracks[count].joints[counterJoint].x = multiJoint.getOrigin().x();

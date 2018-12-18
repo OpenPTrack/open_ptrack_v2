@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-	<arg name="kinect_name" default="/kinect01" />
+	<arg name="kinect_name" default="/kinect03" />
 	<arg name="skeleton_topic" default="/tracker/skeleton_tracks" />
 	<arg name="skeleton_mrroom" default="/mrroom/skeleton_tracks" />
 
@@ -18,10 +18,10 @@
 	</node>
 
 	<!-- Server node for mobile comunication -->
-	<!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
 		<param name="port" value="9090"/>
 	</include>
-	 -->
+	
 	<!-- Modifier Skeleton -->
 	<node name="skeleton" pkg="mr_room" type="skeleton" output="screen">
 		<param name="input_track" value="$(arg skeleton_topic)"/>
