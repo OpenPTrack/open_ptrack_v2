@@ -11,8 +11,8 @@
 				<remap from="kinect_camera" 					to="kinect01/qhd/image_mono_rect_bag" />
 				<remap from="kinect_depth" 						to="kinect01/qhd/image_depth_rect_bag" />
 				<remap from="kinect_camera_info" 				to="kinect01/qhd/camera_info_bag" />
-<!--				<remap from="tf"		 						to="tf_bag" /> -->
-<!--				<remap from="tf_static" 						to="tf_static_bag" /> -->
+				<remap from="tf"		 						to="tf_bag" /> 
+				<remap from="tf_static" 						to="tf_static_bag" /> 
 	</node>
 	
 </group>

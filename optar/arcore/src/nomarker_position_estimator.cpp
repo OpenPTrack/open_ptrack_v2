@@ -18,6 +18,7 @@
 #include <opencv2/core/eigen.hpp>
 #include <thread>         // std::this_thread::sleep_for
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <tf/transform_broadcaster.h>
 
 #include "utils.hpp"
@@ -27,6 +28,108 @@
 tf::StampedTransform transformKinectToWorld;
 ros::Publisher pose_raw_pub;
 ros::Publisher pose_marker_pub;
+
+
+class PoseMatch
+{
+private:
+	const geometry_msgs::Pose mobilePose;
+	const geometry_msgs::Pose estimatedWorldPose;
+	const ros::Time time;
+public:
+	PoseMatch(const geometry_msgs::Pose& mobilePose_in, const geometry_msgs::Pose& estimatedWorldPose_in, const ros::Time& time_in):
+		mobilePose(mobilePose_in),
+		estimatedWorldPose(estimatedWorldPose_in),
+		time(time_in)
+	{
+
+	}
+
+	const geometry_msgs::Pose& getEstimatedPose()
+	{
+		return estimatedWorldPose;
+	}
+
+	const ros::Time& getTime()
+	{
+		return time;
+	}
+};
+
+std::vector<PoseMatch> poseMatches;
+
+
+/**
+ * Extracts from the provided sequence of poses the longest sequence where
+ * the move from one pose to the next one doesn't require a speed higher than the provided one
+ */
+std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch> rawPoseMatches, double maxSpeed_metersPerSecond)
+{
+	std::shared_ptr<std::vector<PoseMatch>> longestSequence = std::make_shared<std::vector<PoseMatch>>();
+
+	std::vector<bool> isUsed(longestSequence->size(),false);
+
+	unsigned int startPoint = 0;
+	while(startPoint<rawPoseMatches.size())
+	{
+		std::shared_ptr<std::vector<PoseMatch>> candidate = std::make_shared<std::vector<PoseMatch>>();
+		//keep track of which is the first unused pose, so on the next cycle we start from it
+		//We also know that at the start of cycle all the poses before the start have been used
+		//so the first unused is the first we skip
+		int firstUnused = startPoint+1;//in any case we will go at least one pose forward
+		bool didSetFirstUnused=false;
+		for(unsigned int i=startPoint;i<rawPoseMatches.size();i++)
+		{
+			if(!isUsed[i])//if not already used
+			{
+				if(candidate->size()==0)//It's the first one, we accept it
+				{
+					isUsed[i]=true;
+					candidate->push_back(rawPoseMatches[i]);
+				}
+				else
+				{
+					//check the speed from the previous pose
+					double distance = poseDistance(rawPoseMatches[i].getEstimatedPose(), candidate->back().getEstimatedPose());
+					double timeDiff = (candidate->back().getTime() - rawPoseMatches[i].getTime()).toSec();
+
+					if(distance/timeDiff<maxSpeed_metersPerSecond)
+					{
+						isUsed[i]=true;
+						candidate->push_back(rawPoseMatches[i]);
+					}
+				}
+				if(!isUsed[i] && !didSetFirstUnused)//if we still didn't use this pose and we still havent set the first unused
+				{
+					firstUnused = i;
+					didSetFirstUnused=true;
+				}
+			}
+		}
+		if(!didSetFirstUnused)
+		{
+			//this means there are no unused poses
+			startPoint=rawPoseMatches.size();
+		}
+		else
+		{
+			startPoint=firstUnused;
+		}
+		if(candidate->size()>longestSequence->size())
+			longestSequence=candidate;
+	}
+
+	//check everything went as planned, we should have used every pose
+	for(unsigned int i=0;i<isUsed.size();i++)
+	{
+		if(!isUsed[i])
+		{
+			ROS_WARN("something went wrong, didn't check all the poses (%u is unused)",i);
+		}
+	}
+
+	return longestSequence;
+}
 
 
 
@@ -271,7 +374,26 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	ROS_INFO_STREAM("estimated pose is "<<pose.pose.position.x<<" "<<pose.pose.position.y<<" "<<pose.pose.position.z<<" ; "<<pose.pose.orientation.x<<" "<<pose.pose.orientation.y<<" "<<pose.pose.orientation.z<<" "<<pose.pose.orientation.w);
 
 	pose_raw_pub.publish(pose);
-	publish_pose_for_viewing(pose.header, pose.pose.position.x, pose.pose.position.y, pose.pose.position.z, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w, pose_marker_pub);
+	visualization_msgs::Marker markerRaw;
+	buildMarker(markerRaw,
+				pose.pose,
+				"nomarker_raw_pose",
+				1,0,0,1, 0.2);
+
+	poseMatches.push_back(PoseMatch(arcoreInputMsg->mobileFramePose, pose.pose, arcoreInputMsg->header.stamp));
+
+	std::shared_ptr<std::vector<PoseMatch>> filteredPoseMatches = filterPosesBySpeed(poseMatches, 15);
+	visualization_msgs::Marker markerFiltered;
+	buildMarker(markerFiltered,
+				filteredPoseMatches->back().getEstimatedPose(),
+				"nomarker_filtered_pose",
+				0,1,0,1, 0.25);
+	
+	visualization_msgs::MarkerArray markerArray;
+	markerArray.markers.push_back(markerFiltered);
+	markerArray.markers.push_back(markerRaw);
+
+	pose_marker_pub.publish(markerArray);
 }
 
 
@@ -325,7 +447,7 @@ int main(int argc, char** argv)
 
 
 	pose_raw_pub = nh.advertise<geometry_msgs::PoseStamped>("optar/no_marker_pose_raw", 10);
-	pose_marker_pub = nh.advertise<visualization_msgs::Marker>("optar/pose_raw_marker", 1);
+	pose_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/pose_raw_marker", 1);
 
 
 

@@ -110,26 +110,26 @@ void opencvPoseToEigenPose(cv::Vec3d tvecV, cv::Vec3d rvecV, Eigen::Vector3d &Tr
  *
  * @return zero if successful
  */
-int publish_pose_for_viewing(std_msgs::Header header, float tx, float ty, float tz, float qx, float qy, float qz, float qw, ros::Publisher pose_marker_pub)
+int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, float qz, float qw, ros::Publisher pose_marker_pub, std::string name, float r, float g, float b, float a, float size)
 {
 	visualization_msgs::Marker marker_pose;
 
 	marker_pose.header.frame_id = "world";
-	marker_pose.ns = "no_marker_raw";
+	marker_pose.ns = name;
 	marker_pose.type = visualization_msgs::Marker::SPHERE;
 	marker_pose.action = visualization_msgs::Marker::ADD;
-	marker_pose.scale.x = 0.2;
-	marker_pose.scale.y = 0.2;
-	marker_pose.scale.z = 0.2;
-	marker_pose.color.a = 1.0;
-	marker_pose.color.r = 1;//float(rand()*256) / 255;
-	marker_pose.color.g = 0;//float(rand()*256) / 255;
-	marker_pose.color.b = 0;//float(rand()*256) / 255;
+	marker_pose.scale.x = size;
+	marker_pose.scale.y = size;
+	marker_pose.scale.z = size;
+	marker_pose.color.a = a;
+	marker_pose.color.r = r;//float(rand()*256) / 255;
+	marker_pose.color.g = g;//float(rand()*256) / 255;
+	marker_pose.color.b = b;//float(rand()*256) / 255;
 	marker_pose.lifetime = ros::Duration(10);
 
 
-	marker_pose.header.stamp = header.stamp;
-	marker_pose.id = header.seq;
+	marker_pose.header.stamp = ros::Time::now();
+	marker_pose.id = 0;
 	marker_pose.pose.position.x = tx;
 	marker_pose.pose.position.y = ty;
 	marker_pose.pose.position.z = tz;
@@ -140,7 +140,7 @@ int publish_pose_for_viewing(std_msgs::Header header, float tx, float ty, float 
 
   	pose_marker_pub.publish(marker_pose);
 
-
+/*
 	tf::Vector3 tran_input;
 	tf::Quaternion quat_input((qx),qy,qz,qw);
 	tran_input.setX(tx);
@@ -153,7 +153,57 @@ int publish_pose_for_viewing(std_msgs::Header header, float tx, float ty, float 
 	transformToSend.setOrigin(tran_input);
 	transformToSend.setRotation(quat_input);
 
-	br.sendTransform(tf::StampedTransform(transformToSend, header.stamp, "world", "mobile_camera_raw"));
+	br.sendTransform(tf::StampedTransform(transformToSend, marker_pose.header.stamp, "world", name));*/
 
   	return 0;
+}
+
+/**
+ * Builds a spheric marker for the specified pose to view the pose in rviz
+ * @param marker_pose the marker is returned here
+ * @param pose the pose to build the marker for
+ * @param name the name for the marker
+ * @param r the red component of the color of the marker
+ * @param g the green component of the color of the marker
+ * @param b the blue component of the color of the marker
+ * @param a the alpha component of the color of the marker
+ * @param size the sie of the sphere
+ */
+int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size)
+{
+	marker_pose.header.frame_id = "world";
+	marker_pose.ns = name;
+	marker_pose.type = visualization_msgs::Marker::SPHERE;
+	marker_pose.action = visualization_msgs::Marker::ADD;
+	marker_pose.scale.x = size;
+	marker_pose.scale.y = size;
+	marker_pose.scale.z = size;
+	marker_pose.color.a = a;
+	marker_pose.color.r = r;//float(rand()*256) / 255;
+	marker_pose.color.g = g;//float(rand()*256) / 255;
+	marker_pose.color.b = b;//float(rand()*256) / 255;
+	marker_pose.lifetime = ros::Duration(10);
+
+
+	marker_pose.header.stamp = ros::Time::now();
+	marker_pose.id = 0;
+	marker_pose.pose.position.x = pose.position.x;
+	marker_pose.pose.position.y = pose.position.y;
+	marker_pose.pose.position.z = pose.position.z;
+	marker_pose.pose.orientation.x = pose.orientation.x;
+	marker_pose.pose.orientation.y = pose.orientation.y;
+	marker_pose.pose.orientation.z = pose.orientation.z;
+	marker_pose.pose.orientation.w = pose.orientation.w;
+
+	return 0;
+}
+
+/**
+ * Computes the euclidean distance between the two provided poses
+ */
+double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2)
+{
+	return std::sqrt((pose1.position.x*pose1.position.x - pose2.position.x*pose2.position.x) + 
+					 (pose1.position.y*pose1.position.y - pose2.position.y*pose2.position.y) +
+					 (pose1.position.z*pose1.position.z - pose2.position.z*pose2.position.z));
 }
