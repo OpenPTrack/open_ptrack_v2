@@ -134,7 +134,7 @@ RUN  cd     \
 RUN  cd ~/workspace/ros/src     \ 
     && git clone https://github.com/OpenPTrack/iai_kinect2.git     \ 
     && cd iai_kinect2     \ 
-    && git checkout 1605       
+    && git checkout 1606       
 
 
 RUN  /bin/bash -c "git clone https://github.com/torch/distro.git ~/torch --recursive \ 
