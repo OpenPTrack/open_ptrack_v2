@@ -107,3 +107,7 @@ add_executable(nomarker_position_estimator src/nomarker_position_estimator.cpp s
 target_link_libraries(nomarker_position_estimator ${catkin_LIBRARIES})
 add_dependencies(nomarker_position_estimator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(ntp_server src/ntp_server.cpp src/utils.cpp)
+target_link_libraries(ntp_server ${catkin_LIBRARIES})
+add_dependencies(ntp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+

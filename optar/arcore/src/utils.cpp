@@ -20,6 +20,9 @@
 #include <visualization_msgs/Marker.h>
 #include <tf/transform_broadcaster.h>
 
+using namespace std;
+using namespace cv;
+
 
 /**
  * Get 3d coordinates from the image pixel coordinates and the depth image
@@ -33,12 +36,13 @@
  *
  * @return the 3d point
  */
-cv::Point3f get3dPoint(int x, int y, const cv::Mat& depthImage, double focalLengthX, double focalLengthY, double principalPointX, double principalPointY)
+cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double focalLengthY, double principalPointX, double principalPointY)
 {
 	cv::Point3f p;
-	p.z = (float)(((double)depthImage.at<uint16_t>(x,y))/1000);//convert to meters
+	p.z = (float)(((double)depth_mm)/1000);//convert to meters
 	p.x = (x - principalPointX) * p.z / focalLengthX;
 	p.y = (y - principalPointY) * p.z / focalLengthY;
+	//ROS_INFO_STREAM("depth = "<<depth_mm);
 	return p;
 }
 
@@ -198,6 +202,47 @@ int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Po
 	return 0;
 }
 
+
+/**
+ * Builds a spheric marker for the specified pose to view the pose in rviz
+ * @param marker_pose the marker is returned here
+ * @param position the position to put the marker at
+ * @param name the name for the marker
+ * @param r the red component of the color of the marker
+ * @param g the green component of the color of the marker
+ * @param b the blue component of the color of the marker
+ * @param a the alpha component of the color of the marker
+ * @param size the sie of the sphere
+ */
+int buildMarker(visualization_msgs::Marker& marker_pose, const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size)
+{
+	marker_pose.header.frame_id = "world";
+	marker_pose.ns = name;
+	marker_pose.type = visualization_msgs::Marker::SPHERE;
+	marker_pose.action = visualization_msgs::Marker::ADD;
+	marker_pose.scale.x = size;
+	marker_pose.scale.y = size;
+	marker_pose.scale.z = size;
+	marker_pose.color.a = a;
+	marker_pose.color.r = r;//float(rand()*256) / 255;
+	marker_pose.color.g = g;//float(rand()*256) / 255;
+	marker_pose.color.b = b;//float(rand()*256) / 255;
+	marker_pose.lifetime = ros::Duration(10);
+
+
+	marker_pose.header.stamp = ros::Time::now();
+	marker_pose.id = 0;
+	marker_pose.pose.position.x = position.x;
+	marker_pose.pose.position.y = position.y;
+	marker_pose.pose.position.z = position.z;
+	marker_pose.pose.orientation.x = 1;
+	marker_pose.pose.orientation.y = 0;
+	marker_pose.pose.orientation.z = 0;
+	marker_pose.pose.orientation.w = 0;
+
+	return 0;
+}
+
 /**
  * Computes the euclidean distance between the two provided poses
  */
@@ -207,3 +252,68 @@ double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2)
 					 (pose1.position.y*pose1.position.y - pose2.position.y*pose2.position.y) +
 					 (pose1.position.z*pose1.position.z - pose2.position.z*pose2.position.z));
 }
+
+uint16_t getPixelSafe(const Mat& image, const Point2i p, uint16_t outOfBoundsValue)
+{
+	if(p.x<0 || p.y<0 || p.x>=image.cols || p.y>=image.rows)
+		return outOfBoundsValue;
+	else
+		return image.at<uint16_t>(p);
+}
+
+Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, double maxDist)
+{
+	//ROS_INFO("searching closest non-zero pixel for %d;%d",x,y);
+	if(image.type()!=CV_16U)
+	{
+		throw std::invalid_argument("Only CV_16U mats are supported");
+	}
+	int bestx=x+maxDist+1;
+	int besty=y+maxDist+1;
+	double bestDist=maxDist+1;
+
+	if(getPixelSafe(image,Point2i(x,y),0)!=0)
+		return Point2i(x,y);
+
+	auto checkPixel = [&](int xToCheck, int yToCheck)
+	{
+		//ROS_INFO("checking %d;%d",xToCheck,yToCheck);
+		if(getPixelSafe(image,Point2i(xToCheck,yToCheck),0)!=0)
+		{
+			double dist = hypot(xToCheck-x,yToCheck-y);
+			if(dist<bestDist)
+			{
+				bestDist = dist;
+				bestx=xToCheck;
+				besty=yToCheck;
+				maxDist=bestDist;
+			}
+		}
+	};
+	for(int r = 1; r<=maxDist; r++)
+	{
+		checkPixel(x+r,y);
+		checkPixel(x,y+r);
+		checkPixel(x-r,y);
+		checkPixel(x,y-r);
+		for(int i=1;i<=r;i++)
+		{
+			checkPixel(x+r,y-i);
+			checkPixel(x+r,y+i);
+
+			checkPixel(x-r,y-i);
+			checkPixel(x-r,y+i);
+
+			checkPixel(x-i,y+r);
+			checkPixel(x+i,y+r);
+
+			checkPixel(x-i,y-r);
+			checkPixel(x+i,y-r);
+		}
+	}
+
+	if(bestDist==maxDist+1)
+		return Point2i(x,y);
+	return Point2i(bestx,besty);
+}
+
