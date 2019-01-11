@@ -466,7 +466,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	pose.pose.orientation.z = rotation.z();
 	pose.pose.orientation.w = rotation.w();
 
-	ROS_INFO_STREAM("estimated pose before transform is "<<pose.pose.position.x<<" "<<pose.pose.position.y<<" "<<pose.pose.position.z<<" ; "<<pose.pose.orientation.x<<" "<<pose.pose.orientation.y<<" "<<pose.pose.orientation.z<<" "<<pose.pose.orientation.w);
+	ROS_INFO_STREAM("estimated pose before transform: "<<pose.pose.position.x<<" "<<pose.pose.position.y<<" "<<pose.pose.position.z<<" ; "<<pose.pose.orientation.x<<" "<<pose.pose.orientation.y<<" "<<pose.pose.orientation.z<<" "<<pose.pose.orientation.w);
 
 	geometry_msgs::TransformStamped transformMsg;
 	//tf2::convert(transformKinectToWorld, transformMsg);

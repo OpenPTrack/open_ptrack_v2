@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(arcore)
+project(optar)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11 -Wall)
@@ -51,7 +51,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS
- LIBRARIES arcore
+ LIBRARIES optar
  CATKIN_DEPENDS geometry_msg roscpp rospy std_msgs detection opt_utils message_filters bayes opt_msgs
  DEPENDS system_lib
 )
