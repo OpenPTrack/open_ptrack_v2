@@ -1,6 +1,7 @@
 <launch>
-	<env name="ROSCONSOLE_FORMAT" value="[${severity}] [${walltime}] [${node}]: ${message}"/>
 
+	<env name="ROSCONSOLE_FORMAT" value="[${severity}] [${walltime}] [${node}]: ${message}" />
+	
 	<group if="$(arg bag)">
 		<node pkg="optar"
 					type="nomarker_position_estimator"

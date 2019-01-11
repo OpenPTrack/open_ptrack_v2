@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 
+	<env name="ROSCONSOLE_FORMAT" value="[${severity}] [${walltime}] [${node}]: ${message}" />
+
 	<arg name="name_tag" default="tag_0" />	<!-- Change also in marker_detector.launch -->
 	<arg name="name_file" default="tag_detection_pose.txt" />
 	<arg name="topic_tag" default="/camera_network/tag_detections_pose" /> <!-- Same in marker_detector.launch -->
