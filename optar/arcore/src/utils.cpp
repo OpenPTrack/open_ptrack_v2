@@ -46,21 +46,6 @@ cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double f
 	return p;
 }
 
-/**
- * Converts an opencv Vec3b to a opencv Mat
- * @param in the vector
- *
- * @return the Mat
- */
-cv::Mat DoubleMatFromVec3b(cv::Vec3b in)
-{
-    cv::Mat mat(3,1, CV_64FC1);
-    mat.at <double>(0,0) = in [0];
-    mat.at <double>(1,0) = in [1];
-    mat.at <double>(2,0) = in [2];
-
-    return mat;
-};
 
 /**
  * Converts a pose expressed as an opencv position vector and an opencv orientation vector
@@ -70,34 +55,19 @@ cv::Mat DoubleMatFromVec3b(cv::Vec3b in)
  * @param Translate Eigen position vector
  * @param quats Eigen quaternion
  */
-void opencvPoseToEigenPose(cv::Vec3d tvecV, cv::Vec3d rvecV, Eigen::Vector3d &Translate, Eigen::Quaterniond &quats)
+void opencvPoseToEigenPose(cv::Vec3d tvec, cv::Vec3d rvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion)
 {
+
     cv::Mat R;
-    cv::Mat tvec, rvec;
-
-    tvec = DoubleMatFromVec3b(tvecV);
-    rvec = DoubleMatFromVec3b(rvecV);
-
-    cv::Rodrigues(rvec, R); // R is 3x3
-    R = R.t();                 // rotation of inverse
-    tvec = -R*tvec;           // translation of inverse
-
-    Eigen::Matrix3d mat;
-    cv2eigen(R, mat);
-
-    Eigen::Quaterniond EigenQuat(mat);
-
-    quats = EigenQuat;
+    cv::Rodrigues(rvec, R);
+    Eigen::Matrix3d eigenMat;
+    cv2eigen(R, eigenMat);
+    quaternion = Eigen::Quaterniond(eigenMat);
 
 
-    double x_t = tvec.at<double>(0, 0);
-    double y_t = tvec.at<double>(1, 0);
-    double z_t = tvec.at<double>(2, 0);
-
-    Translate.x() = x_t * 10;
-    Translate.y() = y_t * 10;
-    Translate.z() = z_t * 10;   
-
+    translation.x() = tvec[0];
+    translation.y() = tvec[1];
+    translation.z() = tvec[2];
 }
 
 /**
@@ -173,9 +143,9 @@ int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, f
  * @param a the alpha component of the color of the marker
  * @param size the sie of the sphere
  */
-int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size)
+int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
 {
-	marker_pose.header.frame_id = "world";
+	marker_pose.header.frame_id = frame_id;
 	marker_pose.ns = name;
 	marker_pose.type = visualization_msgs::Marker::SPHERE;
 	marker_pose.action = visualization_msgs::Marker::ADD;
@@ -214,9 +184,9 @@ int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Po
  * @param a the alpha component of the color of the marker
  * @param size the sie of the sphere
  */
-int buildMarker(visualization_msgs::Marker& marker_pose, const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size)
+int buildMarker(visualization_msgs::Marker& marker_pose, const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
 {
-	marker_pose.header.frame_id = "world";
+	marker_pose.header.frame_id = frame_id;
 	marker_pose.ns = name;
 	marker_pose.type = visualization_msgs::Marker::SPHERE;
 	marker_pose.action = visualization_msgs::Marker::ADD;

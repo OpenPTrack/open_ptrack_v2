@@ -8,9 +8,9 @@
 					output="screen"
 					args="">
 					<remap from="arcore_camera" 					to="optar/arcore_camera_bag" />
-					<remap from="kinect_camera" 					to="$(arg sensor_name)/qhd/image_mono_rect_bag" />
-					<remap from="kinect_depth" 						to="$(arg sensor_name)/qhd/image_depth_rect_bag" />
-					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/qhd/camera_info_bag" />
+					<remap from="kinect_camera" 					to="$(arg sensor_name)/hd/image_mono_rect_bag" />
+					<remap from="kinect_depth" 						to="$(arg sensor_name)/hd/image_depth_rect_bag" />
+					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/hd/camera_info_bag" />
 					<remap from="tf"		 						to="tf_bag" /> 
 					<remap from="tf_static" 						to="tf_static_bag" /> 
 		</node>
@@ -22,9 +22,9 @@
 					output="screen"
 					args="">
 					<remap from="arcore_camera" 					to="optar/arcore_camera" />
-					<remap from="kinect_camera" 					to="$(arg sensor_name)/qhd/image_mono_rect" />
-					<remap from="kinect_depth" 						to="$(arg sensor_name)/qhd/image_depth_rect" />
-					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/qhd/camera_info" />
+					<remap from="kinect_camera" 					to="$(arg sensor_name)/hd/image_mono_rect" />
+					<remap from="kinect_depth" 						to="$(arg sensor_name)/hd/image_depth_rect" />
+					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/hd/camera_info" />
 		</node>
 	</group>
 

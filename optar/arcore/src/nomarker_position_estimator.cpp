@@ -149,11 +149,12 @@ std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch
 			startPoint=firstUnused;
 		}
 		*/
+		/*
 		ROS_INFO("candidate:");
 		for(unsigned int i=0;i<candidate->size();i++)
 		{
 			ROS_INFO("    %f \t %f \t %f",candidate->at(i).getEstimatedPose().position.x,candidate->at(i).getEstimatedPose().position.y,candidate->at(i).getEstimatedPose().position.z);
-		}
+		}*/
 		if(candidate->size()>longestSequence->size())
 		{
 			longestSequence=candidate;
@@ -229,7 +230,7 @@ int findOrbMatches(	const cv::Mat& arcoreImg,
   	//find matches between the descriptors
    	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
     cv::BFMatcher matcher(cv::NORM_HAMMING);
-    matcher.match(arcoreDescriptors,kinectDescriptors,matches);
+    matcher.match(arcoreDescriptors,kinectDescriptors,matches);//arcore is query, kinect is trains
    	std::chrono::steady_clock::time_point afterMatching = std::chrono::steady_clock::now();
 	unsigned long matchingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterMatching - beforeMatching).count();
 	ROS_INFO("Descriptors matching took %lu ms",matchingDuration);
@@ -240,19 +241,23 @@ int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch
 {
 	double max_dist = -10000000;
   	double min_dist = 10000000;
-
+  	const cv::DMatch* bestMatch;
 	//Find minimum and maximum distances between matches
 	for( unsigned int i = 0; i < matches.size(); i++ )
 	{
 		double dist = matches[i].distance;
 		if( dist < min_dist )
+		{
 			min_dist = dist;
+			bestMatch = &(matches[i]);
+		}
 		if( dist > max_dist )
 			max_dist = dist;
 	}
 	ROS_INFO("Max match dist : %f", max_dist );
 	ROS_INFO("Min match dist : %f", min_dist );
 
+	
 	//Filter the matches to keep just the best ones
 	for( unsigned int i = 0; i < matches.size(); i++ )
 	{
@@ -262,6 +267,7 @@ int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch
 			//ROS_INFO_STREAM("got a good match, dist="<<matches[i].distance);
 		}
 	}
+	//goodMatches.push_back(*bestMatch);
 	return 0;
 }
 
@@ -318,7 +324,10 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 		return;
 	}
     ROS_INFO("decoded kinect depth image");
-
+  /*  cv::namedWindow("KinectDepth", cv::WINDOW_NORMAL);
+	cv::resizeWindow("KinectDepth",1280,720);
+    cv::imshow("KinectDepth", kinectDepthImg);
+*/
 	std::chrono::steady_clock::time_point afterDecoding = std::chrono::steady_clock::now();
 	unsigned long decodingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDecoding - beginning).count();
 	ROS_INFO("Images decoding and initialization took %lu ms",decodingDuration);
@@ -352,7 +361,8 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	std::vector< cv::DMatch > goodMatches;
 	for( unsigned int i = 0; i < goodMatchesWithNull.size(); i++ )
 	{
-		cv::Point2f imgPos = kinectKeypoints.at(goodMatchesWithNull.at(i).queryIdx).pt;
+		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
+		cv::Point2f imgPos = kinectKeypoints.at(goodMatchesWithNull.at(i).trainIdx).pt;
 		//try to find the depth using the closest pixel
 		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
 		{
@@ -375,20 +385,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 
-    cv::Mat matchesImg;
-    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
-	ROS_INFO("total duration is %lu ms",totalDuration);
-
-	std::string matchesWinName = "Matches";
-	cv::namedWindow(matchesWinName, cv::WINDOW_NORMAL);
-	int winHeight=800;
-	int winWidth=(int)(((double)winHeight)/matchesImg.rows*matchesImg.cols);
-	cv::resizeWindow(matchesWinName,winWidth,winHeight);
-    cv::imshow(matchesWinName,matchesImg);
-    cv::waitKey(10);
 
 
 
@@ -401,10 +398,16 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 	for( unsigned int i = 0; i < goodMatches.size(); i++ )
 	{
-		cv::Point2f kinectPixelPos = kinectKeypoints.at(goodMatches.at(i).queryIdx).pt;//queryIdx means in the kinect descriptors as we passed to the matcher as the train set
-		cv::Point2f arcorePixelPos = arcoreKeypoints.at(goodMatches.at(i).trainIdx).pt;//queryIdx means in the kinect descriptors as we passed to the matcher as the train set
+		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
+		cv::Point2f kinectPixelPos = kinectKeypoints.at(goodMatches.at(i).trainIdx).pt;
+		cv::Point2f arcorePixelPos = arcoreKeypoints.at(goodMatches.at(i).queryIdx).pt;
 		ROS_INFO_STREAM("good match between "<<kinectPixelPos.x<<";"<<kinectPixelPos.y<<" and "<<arcorePixelPos.x<<";"<<arcorePixelPos.y);
 		goodMatchesImgPos.push_back(arcorePixelPos);
+		ROS_INFO_STREAM("depth = "<<kinectDepthImg.at<uint16_t>(kinectPixelPos));
+		cv::rectangle(	kinectCameraImg,
+						cv::Point((int)kinectPixelPos.x-10,(int)kinectPixelPos.y-10),
+						cv::Point((int)kinectPixelPos.x+10,(int)kinectPixelPos.y+10),
+						cv::Scalar(1,0,0),4);
 		cv::Point3f pos3d = get3dPoint(	kinectPixelPos.x,kinectPixelPos.y,
 												kinectDepthImg.at<uint16_t>(kinectPixelPos),
 												kinectCameraInfo.P[0+4*0],kinectCameraInfo.P[1+4*1],kinectCameraInfo.P[2+4*0],kinectCameraInfo.P[2+4*1]);
@@ -416,23 +419,39 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 		buildMarker(matchMarker,
 					pos3d,
 					"match"+std::to_string(i),
-					0,0,1,1, 0.2);//matches are blue
+					0,0,1,1, 0.2, "kinect01_rgb_optical_frame");//matches are blue
 		markerArray.markers.push_back(matchMarker);
 	}
 
+	
+	cv::Mat matchesImg;
+    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+	std::string matchesWinName = "Matches";
+	cv::namedWindow(matchesWinName, cv::WINDOW_NORMAL);
+	int winHeight=800;
+	int winWidth=(int)(((double)winHeight)/matchesImg.rows*matchesImg.cols);
+	cv::resizeWindow(matchesWinName,winWidth,winHeight);
+    cv::imshow(matchesWinName,matchesImg);
+    cv::waitKey(10);
+
+
 	if(goodMatches.size()<4)
 	{
+		pose_marker_pub.publish(markerArray);
 		ROS_INFO("not enough matches to determine position");
 		return;
 	}
 
-	double projMat[kinectCameraInfo.P.size()];
-	std::copy(kinectCameraInfo.P.begin(), kinectCameraInfo.P.end(), projMat);
+	double projMat[kinectCameraInfo.P.size()] =	{	arcoreInputMsg->focal_length_x_px,	0, 									arcoreInputMsg->principal_point_x_px,
+													0,									arcoreInputMsg->focal_length_y_px,	arcoreInputMsg->principal_point_y_px,
+													0,									0,									0,									};
 	cv::Mat cameraMatrix = cv::Mat(3, 3, CV_32FC1, projMat);
 	cv::Mat tvec;
 	cv::Mat rvec;
 	cv::solvePnPRansac(goodMatches3dPos,goodMatchesImgPos,cameraMatrix,cv::noArray(),tvec,rvec);
-	
+
+	ROS_INFO_STREAM("solvePnPRansac says:\n tvec = "<<tvec<<"\n rvec = "<<rvec);
+
 	Eigen::Vector3d position;
 	Eigen::Quaterniond rotation;
 	opencvPoseToEigenPose(tvec,rvec,position,rotation);
@@ -446,6 +465,8 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	pose.pose.orientation.y = rotation.y();
 	pose.pose.orientation.z = rotation.z();
 	pose.pose.orientation.w = rotation.w();
+
+	ROS_INFO_STREAM("estimated pose before transform is "<<pose.pose.position.x<<" "<<pose.pose.position.y<<" "<<pose.pose.position.z<<" ; "<<pose.pose.orientation.x<<" "<<pose.pose.orientation.y<<" "<<pose.pose.orientation.z<<" "<<pose.pose.orientation.w);
 
 	geometry_msgs::TransformStamped transformMsg;
 	//tf2::convert(transformKinectToWorld, transformMsg);
@@ -463,7 +484,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	buildMarker(markerRaw,
 				pose.pose,
 				"nomarker_raw_pose",
-				1,0,0,1, 0.2);//raw is red
+				1,0,0,1, 0.2, "world");//raw is red
 
 	ROS_INFO("Raw estimated pose is      %f \t%f \t%f",pose.pose.position.x,pose.pose.position.y,pose.pose.position.z);
 	poseMatches.push_back(PoseMatch(arcoreInputMsg->mobileFramePose, pose.pose, arcoreInputMsg->header.stamp));
@@ -473,13 +494,17 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	buildMarker(markerFiltered,
 				filteredPoseMatches->back().getEstimatedPose(),
 				"nomarker_filtered_pose",
-				0,1,0,1, 0.25);//filtered is green and bigger
+				0,1,0,1, 0.25, "world");//filtered is green and bigger
 	
 	ROS_INFO("filtered estimated pose is %f \t%f \t%f",filteredPoseMatches->back().getEstimatedPose().position.x,filteredPoseMatches->back().getEstimatedPose().position.y,filteredPoseMatches->back().getEstimatedPose().position.z);
 	markerArray.markers.push_back(markerFiltered);
 	markerArray.markers.push_back(markerRaw);
 
 	pose_marker_pub.publish(markerArray);
+
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
+	ROS_INFO("total duration is %lu ms",totalDuration);
 }
 
 
