@@ -37,12 +37,7 @@
     <include file="$(find yolo_detector)/launch/detect_yolo_object_kinect_network.launch">
       <arg name="sensor_name"             value="$(arg sensor_name)" />
     </include>
-    <node pkg="detection" type="multiple_objects_detection_node" name="multiple_objects_detection" output="screen" required="true">
-     <rosparam command="load"                        file="$(find detection)/conf/multiple_objects_detection.yaml" />
-     <param name="set_object_names" value="true" />
-    </node>
     <include file="$(find tracking)/launch/object_tracker_single.launch" />
-
   </group>
 
   <!-- UDP messaging -->
