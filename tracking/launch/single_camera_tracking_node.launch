@@ -44,5 +44,5 @@
   <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
 
   <!-- Visualization -->
-  <include file="$(find opt_utils)/launch/multicamera_visualization.launch"/>
+  <include file="$(find opt_utils)/launch/singlecamera_visualization.launch"/>
 </launch>
