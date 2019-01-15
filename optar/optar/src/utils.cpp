@@ -287,3 +287,30 @@ Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, double maxDist)
 	return Point2i(bestx,besty);
 }
 
+
+
+
+
+void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTransform transform)
+{
+	geometry_msgs::PoseStamped pose;
+	pose.pose.position.x = in.x;
+	pose.pose.position.y = in.y;
+	pose.pose.position.z = in.z;
+
+	pose.pose.orientation.x = 1;
+	pose.pose.orientation.y = 0;
+	pose.pose.orientation.z = 0;
+	pose.pose.orientation.w = 0;
+
+	geometry_msgs::TransformStamped transformMsg;
+	//tf2::convert(transformKinectToWorld, transformMsg);
+	tf::transformStampedTFToMsg(transform,transformMsg);
+
+	tf2::doTransform(pose,pose,transformMsg);
+
+	out.x = pose.pose.position.x;
+	out.y = pose.pose.position.y;
+	out.z = pose.pose.position.z;
+
+}
