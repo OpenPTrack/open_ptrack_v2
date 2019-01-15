@@ -1,4 +1,4 @@
-FROM nvidia/opengl:1.0-glvnd-runtime-ubuntu16.04
+FROM nvidia/cudagl:9.2-devel-ubuntu16.04
 
 LABEL maintainer "Samir Tabriz"
 
@@ -55,17 +55,41 @@ RUN  /bin/bash -c "source /opt/ros/kinetic/setup.bash     \
 RUN  /bin/bash -c "echo 'source /root/workspace/ros/devel/setup.bash' >> /root/.bashrc"          
 
 RUN  cd ~/workspace/ros     \ 
-    && apt-get install -y ocl-icd-opencl-dev     \ 
-    && wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run -O cuda.run     \ 
-    && chmod +x cuda.run     \ 
-    && ./cuda.run -silent --toolkit --samples --samplespath="/root/workspace/"     \ 
-    && wget "https://www.dropbox.com/s/cx95583vbf1ifzm/cudnn-8.0-linux-x64-v5.1.tgz?dl%3D0&sa=D&ust=1507541105896000&usg=AFQjCNEU511fT00n547PxPt_P6cfSLPVWw"     \ 
-    && tar -zxvf cudnn*     \
+    && apt-get install -y ocl-icd-opencl-dev     \
+    # && wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run -O cuda.run     \ 
+    # && chmod +x cuda.run     \ 
+    # && ./cuda.run -silent --toolkit     \ 
+    && wget "https://www.dropbox.com/s/di9zzggw2llp9pc/cudnn-9.0-linux-x64-v7.2.1.38.tgz?dl=0"     \ 
+    && tar -zxvf cudnn*     \ 
     && cp cuda/include/* /usr/local/cuda/include     \ 
     && cp cuda/lib64/* /usr/local/cuda/lib64/     \ 
     && echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64' >> ~/.bashrc     \ 
     && echo 'export PATH=$PATH:/usr/local/cuda/bin' >> ~/.bashrc          
-    
+
+RUN  cd     \ 
+    && cd workspace     \ 
+    && git clone https://github.com/openptrack/libfreenect2     \ 
+    && cd libfreenect2     \ 
+    && git checkout 1604     \ 
+    && cd depends/     \ 
+    && apt-get install -y git cmake cmake-curses-gui libxmu-dev libxi-dev libgl1-mesa-dev dos2unix xorg-dev libglu1-mesa-dev libtool automake libudev-dev libgtk2.0-dev pkg-config libjpeg-turbo8-dev libturbojpeg libglewmx-dev     \ 
+    && ./install_ubuntu.sh     \ 
+    && ln -f -s /usr/lib/x86_64-linux-gnu/libturbojpeg.so.0.1.0 /usr/lib/x86_64-linux-gnu/libturbojpeg.so     \ 
+    && cd ../examples/protonect/     \ 
+    && mkdir build \ 
+    && cd build     \ 
+    && /bin/bash -c "source /opt/ros/kinetic/setup.bash    \ 
+    && cmake ..     \ 
+    && make     \ 
+    && make install"     \ 
+    && echo '# ATTR{product}=="Kinect2" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02c4", MODE="0666" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02d8", MODE="0666" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02d9", MODE="0666"' > ~/90-kinect2.rules     \ 
+    && mv ~/90-kinect2.rules /etc/udev/rules.d/90-kinect2.rules     
+
+RUN  cd ~/workspace/ros/src     \ 
+    && git clone https://github.com/openptrack/iai_kinect2     \ 
+    && cd iai_kinect2     \ 
+    && git checkout 1604       
+
 RUN  apt-get install cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev -y --force-yes     \ 
     && mkdir /tmp/ceres_install     \ 
     && cd /tmp/ceres_install     \ 
@@ -87,64 +111,92 @@ RUN  apt-get install cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev li
     && git fetch origin --tags     \ 
     && git checkout tags/v0.2         
 
-RUN cd     \ 
-    && cd workspace     \ 
-    && apt-get update     \ 
-    && git clone https://github.com/marketto89/opencv     \ 
-    && cd opencv     \ 
-    && git checkout 3.1.0-with-cuda8     \ 
-    && mkdir release     \ 
-    && cd release     \ 
-    && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local/opencv3 -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D WITH_V4L=ON -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_OPENGL=ON -D ENABLE_FAST_MATH=1 -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 -D WITH_IPP=ON -D CMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs ..     \ 
-    && make -j8 -l8     \ 
-    && make install     \ 
+# RUN cd     \ 
+#     && cd workspace     \ 
+#     && apt-get update     \ 
+#     && git clone https://github.com/marketto89/opencv     \ 
+#     && cd opencv     \ 
+#     && git checkout 3.1.0-with-cuda8     \ 
+#     && mkdir release     \ 
+#     && cd release     \ 
+#     && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local/opencv3 -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D WITH_V4L=ON -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_OPENGL=ON -D ENABLE_FAST_MATH=1 -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 -D WITH_IPP=ON -D CMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs ..     \ 
+#     && make -j8 -l8     \ 
+#     && make install     \ 
+#     && printf '#OpenCV\nPKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/opencv3/lib/pkgconfig\nexport PKG_CONFIG_PATH\n' >> /root/.bashrc     \ 
+#     && printf 'PATH=$PATH:/usr/local/opencv3/bin\nexport PATH\n' >> /root/.bashrc      \ 
+#     && printf 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/opencv3/lib\nexport LD_LIBRARY_PATH\n' >> /root/.bashrc       \ 
+#     && /bin/bash -c "source /root/.bashrc"     \ 
+#     && ln -s /usr/local/opencv3/share/OpenCV/3rdparty/lib/libippicv.a /usr/local/lib/libippicv.a  
+
+
+RUN apt-get update && apt-get remove -y x264 libx264-dev
+RUN apt-get update && apt-get upgrade -y && apt-get install -y sudo clang-format wget apt-utils
+
+# Get OpenCV dependencies
+RUN apt-get update && apt-get install -y build-essential checkinstall cmake pkg-config yasm git \
+    gfortran libjpeg8-dev libjasper-dev libpng12-dev libtiff5-dev libavcodec-dev libavformat-dev \
+    libswscale-dev libdc1394-22-dev libxine2-dev libv4l-dev libgstreamer0.10-dev \
+    libgstreamer-plugins-base0.10-dev qt5-default libgtk2.0-dev libtbb-dev libatlas-base-dev \
+    libfaac-dev libmp3lame-dev libtheora-dev libvorbis-dev libxvidcore-dev libopencore-amrnb-dev \
+    libopencore-amrwb-dev x264 v4l-utils libprotobuf-dev protobuf-compiler libgoogle-glog-dev \
+    libgflags-dev libgphoto2-dev libeigen3-dev libhdf5-dev doxygen \
+    python-dev python-pip python3-dev python3-pip &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    pip2 install -U pip numpy &&\
+    pip3 install -U pip numpy &&\
+    pip install numpy scipy matplotlib scikit-image scikit-learn ipython
+
+# Fetch OpenCV
+RUN cd /root/workspace && git clone --verbose https://github.com/opencv/opencv.git -b 3.4.3 &&\
+    cd /root/workspace && wget https://github.com/opencv/opencv_contrib/archive/3.4.3.tar.gz &&\
+    mkdir opencv_contrib && tar -xf 3.4.3.tar.gz -C opencv_contrib --strip-components 1
+
+RUN cd /root/workspace/opencv \
+    && mkdir build \
+    && cd build \
+    && cmake \
+        -D CMAKE_BUILD_TYPE=RELEASE \
+        -D CMAKE_INSTALL_PREFIX=/usr/local/opencv3 \
+        -D WITH_TBB=ON \
+        -D BUILD_NEW_PYTHON_SUPPORT=ON \
+        -D WITH_V4L=ON \
+        -D INSTALL_C_EXAMPLES=ON \
+        -D INSTALL_PYTHON_EXAMPLES=ON \
+        -D BUILD_EXAMPLES=ON \
+        -D WITH_QT=ON \
+        -D WITH_OPENGL=ON \
+        -D ENABLE_FAST_MATH=1  \
+        -D CUDA_FAST_MATH=1  \
+        -D WITH_CUBLAS=1  \
+        -D WITH_IPP=ON  \
+        -D CMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs .. \
+    && make -j"$(nproc)" \ 
+    && make install \
     && printf '#OpenCV\nPKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/opencv3/lib/pkgconfig\nexport PKG_CONFIG_PATH\n' >> /root/.bashrc     \ 
     && printf 'PATH=$PATH:/usr/local/opencv3/bin\nexport PATH\n' >> /root/.bashrc      \ 
     && printf 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/opencv3/lib\nexport LD_LIBRARY_PATH\n' >> /root/.bashrc       \ 
     && /bin/bash -c "source /root/.bashrc"     \ 
-    && ln -s /usr/local/opencv3/share/OpenCV/3rdparty/lib/libippicv.a /usr/local/lib/libippicv.a  
+    && ln -s /usr/local/opencv3/share/OpenCV/3rdparty/lib/libippicv.a /usr/local/lib/libippicv.a  \
+    && ldconfig \
+    && cd /root/workspace/opencv/build \
+    && make clean
 
-RUN  /bin/bash -c "source /root/.bashrc    \ 
-    && cd ~/workspace/ros/src      \ 
-    && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
-    && cd rtpose_wrapper     \ 
-    && git checkout integration-1604     \ 
-    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev     \ 
-    && make all -j8"
+# RUN  /bin/bash -c "source /root/.bashrc    \ 
+#     && cd ~/workspace/ros/src      \ 
+#     && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
+#     && cd rtpose_wrapper     \ 
+#     && git checkout integration-1604     \ 
+#     && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev     \ 
+#     && make all -j8"
 
-RUN  cd     \ 
-    && cd workspace     \ 
-    && git clone https://github.com/OpenPTrack/libfreenect2.git     \ 
-    && cd libfreenect2     \ 
-    && git checkout 1605     \ 
-    && cd depends/     \ 
-    && apt-get install -y git cmake cmake-curses-gui libxmu-dev libxi-dev libgl1-mesa-dev xorg-dev libglu1-mesa-dev libtool automake libudev-dev libgtk2.0-dev pkg-config libjpeg-turbo8-dev libturbojpeg libglewmx-dev     \ 
-    && ln -f -s /usr/lib/x86_64-linux-gnu/libturbojpeg.so.0.1.0 /usr/lib/x86_64-linux-gnu/libturbojpeg.so     \ 
-    && cd .. \
-    && mkdir build \ 
-    && cd build     \ 
-    && /bin/bash -c "source /opt/ros/kinetic/setup.bash    \ 
-    && export NVCUDASAMPLES_ROOT='/root/workspace/NVIDIA_CUDA-8.0_Samples' \
-    && cmake .. -DENABLE_CXX11=ON -DCUDA_PROPAGATE_HOST_FLAGS=off   \ 
-    && make     \
-    && make install"     \
-    && echo '# ATTR{product}=="Kinect2" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02c4", MODE="0666" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02d8", MODE="0666" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02d9", MODE="0666"' > ~/90-kinect2.rules     \ 
-    && cp ~/90-kinect2.rules /etc/udev/rules.d/
-
-RUN  cd ~/workspace/ros/src     \ 
-    && git clone https://github.com/OpenPTrack/iai_kinect2.git     \ 
-    && cd iai_kinect2     \ 
-    && git checkout 1605       
-
-
-RUN  /bin/bash -c "git clone https://github.com/torch/distro.git ~/torch --recursive \ 
-    && cd ~/torch \ 
-    && bash install-deps \ 
-    && ./install.sh -b \ 
-    && source ~/.bashrc \ 
-    && cd install/bin \ 
-    && ./luarocks install dpnn \ 
-    && ./luarocks install csvigo"
+# RUN  /bin/bash -c "git clone https://github.com/torch/distro.git ~/torch --recursive \ 
+#     && cd ~/torch \ 
+#     && bash install-deps \ 
+#     && ./install.sh -b \ 
+#     && source ~/.bashrc \ 
+#     && cd install/bin \ 
+#     && ./luarocks install dpnn \ 
+#     && ./luarocks install csvigo"
 
 RUN /bin/bash -c "cd /tmp \
     && git clone https://github.com/cmusatyalab/openface.git \
