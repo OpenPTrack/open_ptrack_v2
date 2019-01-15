@@ -498,19 +498,6 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   }
 
 
-  PointCloudPtr temp_cloud(new PointCloud);
-
-  // for (unsigned int i = 0; i < no_ground_cloud_->points.size(); i++){
-
-  //   if(no_ground_cloud_ -> points[i].x < 5.0){
-  //       temp_cloud->points.push_back(no_ground_cloud_->points[i]);
-  //   }
-
-  // }
-
-  // no_ground_cloud_ = temp_cloud;
-
-
   if (no_ground_cloud_->points.size() > 0)
   {
     // Euclidean Clustering:
@@ -584,9 +571,6 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
         swapDimensions(rgb_image_);
       }
 
-      // ROS_INFO("(size of cloud) (%lu)", no_ground_cloud_rotated->size());
-      // ROS_INFO("(clusters.size) (%d)", clusters.size());
-
       int i = 0;
 
       for(typename std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
@@ -594,7 +578,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
 
         //Evaluate confidence for the current PersonCluster:
 
-
+        // translate rotation for zed camera
         Eigen::Vector3f trans_centroid = anti_transform_ * it->getTCenter();
         Eigen::Vector3f trans_top = anti_transform_ * it->getTTop();
         Eigen::Vector3f trans_bottom = anti_transform_ * it->getTBottom();
@@ -602,55 +586,18 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
         Eigen::Vector3f inverted_centroid = Eigen::Vector3f( -1 * trans_centroid(1), -1 * trans_centroid(2),trans_centroid(0));
         Eigen::Vector3f inverted_top = Eigen::Vector3f( -1 * trans_top(1), -1 * trans_top(2),trans_top(0));
         Eigen::Vector3f inverted_bottom = Eigen::Vector3f( -1 * trans_bottom(1), -1 * trans_bottom(2),trans_bottom(0));
-        // 1 is always Z depth
-        // Eigen::Vector3f inverted_centroid = it->getTCenter() * ;
-        // ROS_INFO_STREAM("(inverted_centroid before) (    \n  \n \n"<<inverted_centroid<<" \n  \n  \n )");
 
         Eigen::Vector3f centroid = intrinsics_matrix_ * inverted_centroid;
-        // ROS_INFO_STREAM("(centroid before) (  \n"<<centroid<<" \n )");
         centroid /= centroid(2);
         Eigen::Vector3f top = intrinsics_matrix_ *  inverted_top;
-        // ROS_INFO_STREAM("(top before) (  \n"<<top<<" \n )");
         top /= top(2);
         Eigen::Vector3f bottom = intrinsics_matrix_ * inverted_bottom;
-        // ROS_INFO_STREAM("(bottom before) (  \n"<<bottom<<" \n )");
         bottom /= bottom(2);
 
-
-        // ROS_INFO_STREAM("(centroid) after (  \n"<<centroid<<" \n )");
-        // ROS_INFO_STREAM("(inverted_centroid) (   \n  "<< inverted_centroid << " \n )");
-        // ROS_INFO_STREAM("(trans_centroid    \n " << trans_centroid<< ")  \n");
-
-
-        // ROS_INFO_STREAM("(intrinsics_matrix_) ( \n"<<intrinsics_matrix_<<")");
-        // ROS_INFO_STREAM("(top) (   \n "<<top<<")  \n");
-        // ROS_INFO_STREAM("(bottom) (    \n "<<bottom<<" \n )");
-        // ROS_INFO_STREAM("inverted_top (    \n " << inverted_top << ")  \n");
-        // ROS_INFO_STREAM("inverted_bottom (  \n  " <<inverted_bottom << " \n )");
-        // ROS_INFO_STREAM("(anti_transform_) (  \n  " << anti_transform_.matrix() <<" \n )");
-
-        // ROS_INFO_STREAM("(trans_top) (  \n  " << trans_top << " \n )");
-        // ROS_INFO_STREAM("(trans_bottom) (  \n  " << trans_bottom <<" \n )");
-
-
         // if(i == 0){
-        // Eigen::Vector3f centroid = it->getTCenter();
-        // centroid /= centroid(2);
-        // Eigen::Vector3f top = it->getTTop();
-        // top /= top(2);
-        // Eigen::Vector3f bottom = it->getTBottom();
-        // bottom /= bottom(2);
 
         it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
 
-        // ROS_INFO("(Number Points) (%d) \n \n \n",it->getNumberPoints());
-        // ROS_INFO("(confidence) (%f)",it->getPersonConfidence());
-
-        // ROS_INFO("(person height) (%f)", bottom(1) - top(1));
-
-        // ROS_INFO("(centroid) (%f)", it->getTCenter()(1));
-
-        //   i = i + 1;
         // }
 
       }
@@ -665,7 +612,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
 
     cloud_ = rotateCloud(no_ground_cloud_, transform_);
 
-    Point_cloud_visulizer(cloud_ ,  ground_coeffs_new , viewer, clusters);
+    // Point_cloud_visulizer(cloud_ ,  ground_coeffs_new , viewer, clusters);
 
   }
 

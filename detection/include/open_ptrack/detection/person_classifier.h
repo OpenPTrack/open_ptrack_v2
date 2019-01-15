@@ -163,6 +163,9 @@ namespace open_ptrack
       
       void
       point_cloud_visulizer(PointCloudPtr& cloud, Eigen::Vector3f& centroid, Eigen::Vector3f& top, Eigen::Vector3f& bottom , bool vertical_);
+
+      void
+      image_visulizer(PointCloudPtr& cloud);
     };
   } /* namespace open_ptrack */
 } /* namespace detection */

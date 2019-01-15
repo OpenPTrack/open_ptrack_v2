@@ -110,6 +110,7 @@ open_ptrack::detection::PersonClassifier<PointT>::getSVM (int& window_height, in
   SVM_offset = SVM_offset_;
 }
 
+
 template <typename PointT> void
 open_ptrack::detection::PersonClassifier<PointT>::resize (PointCloudPtr& input_image,
               PointCloudPtr& output_image,
@@ -173,17 +174,11 @@ open_ptrack::detection::PersonClassifier<PointT>::resize (PointCloudPtr& input_i
     new_point.b = int((1 - w1) * ((1 - w2) * g1.b + w2 * g4.b) + w1 * ((1 - w2) * g3.b + w2 * g4.b));
 
     // Insert the point in the output image:
-    try
-    {
-      (*output_image).at(i,j) = new_point;
-    }
-    catch (std::exception& e)
-    {
-      // cout << "Standard exception: " << e.what() << endl;
-    }
+    (*output_image)(j,i) = new_point;
   }
   }
 }
+
 
 template <typename PointT> void
 open_ptrack::detection::PersonClassifier<PointT>::copyMakeBorder (PointCloudPtr& input_image,
@@ -217,20 +212,17 @@ open_ptrack::detection::PersonClassifier<PointT>::copyMakeBorder (PointCloudPtr&
 //std::cout << "inside copyMakeBorder: " << x_start_in << " " << x_end_in << " " << y_start_in << " " << y_end_in << std::endl;
 //std::cout << "inside copyMakeBorder2: " << x_start_out << " " << y_start_out << " " << " " << x_end_in - x_start_in + 1 << " " << y_end_in - y_start_in + 1 << std::endl;
 
-  ROS_INFO("before double for loop");
-
     for (unsigned int i = 0; i < (y_end_in - y_start_in + 1); i++)
     {
       for (unsigned int j = 0; j < (x_end_in - x_start_in + 1); j++)
       {
-      // (*output_image)(x_start_out + j, y_start_out + i) = (*input_image)(x_start_in + j, y_start_in + i);
         try
         {
-          (*output_image).at( y_start_out + i, x_start_out + j) = (*input_image).at(y_start_in + i , x_start_in + j);
+          (*output_image).at(x_start_out + j, y_start_out + i) = (*input_image).at(x_start_in + j, y_start_in + i);
         }
         catch (std::exception& e)
         {
-          // cout << "Standard exception: " << e.what() << endl;
+          cout << "Standard exception: " << e.what() << endl;
         }
       }
     }
@@ -255,27 +247,27 @@ open_ptrack::detection::PersonClassifier<PointT>::evaluate (float height_person,
   int ymin = floor(yc - height / 2 + 0.5);
   double confidence;
 
-  // ROS_INFO("(window_height_) (%d)", window_height_);
-  // ROS_INFO("(window_width_) (%d)", window_width_);
+                // ROS_INFO("(window_height_) (%d)", window_height_);
+                // ROS_INFO("(window_width_) (%d)", window_width_);
 
-  // if(width == 0.0){
-  //   confidence = -100;
-  //   ROS_INFO("confidence (%f)", confidence);
-  //   ROS_INFO("(xmin) (%d)", xmin);
-  //   ROS_INFO_STREAM("(ymin) ("<<ymin<<")");
-  //   ROS_INFO("(width) (%d)", width);
-  //   ROS_INFO("(height) (%d)", height);
-  //   ROS_INFO("(height_person) (%f)", height_person);
+                // if(width == 0.0){
+                //   confidence = -100;
+                //   ROS_INFO("confidence (%f)", confidence);
+                //   ROS_INFO("(xmin) (%d)", xmin);
+                //   ROS_INFO_STREAM("(ymin) ("<<ymin<<")");
+                //   ROS_INFO("(width) (%d)", width);
+                //   ROS_INFO("(height) (%d)", height);
+                //   ROS_INFO("(height_person) (%f)", height_person);
 
-  //   return confidence;
-  // }
+                //   return confidence;
+                // }
 
-  // ROS_INFO("(xmin) (%d)", xmin);
-  // ROS_INFO_STREAM("(ymin) ("<<ymin<<")");
-  // ROS_INFO("(width) (%d)", width);
-  // ROS_INFO("(height) (%d)", height);
-  // ROS_INFO("(height_person) (%f)", height_person);
-  // ROS_INFO("(xmin+width-1) (%d)", xmin+width-1);
+                // ROS_INFO("(xmin) (%d)", xmin);
+                // ROS_INFO_STREAM("(ymin) ("<<ymin<<")");
+                // ROS_INFO("(width) (%d)", width);
+                // ROS_INFO("(height) (%d)", height);
+                // ROS_INFO("(height_person) (%f)", height_person);
+                // ROS_INFO("(xmin+width-1) (%d)", xmin+width-1);
 
 //std::cout << "Before copyMakeBorder: " << xmin << " " << ymin << " " << width << " " << height << std::endl;
 
@@ -289,10 +281,10 @@ open_ptrack::detection::PersonClassifier<PointT>::evaluate (float height_person,
     // Make the image match the correct size (used in the training stage):
     PointCloudPtr sample(new PointCloud);
 
-    ROS_INFO("before resize");
-
     resize(box, sample, window_width_, window_height_);
-    
+
+    // image_visulizer(sample);
+
     // Convert the image to array of float:
     float* sample_float = new float[sample->width * sample->height * 3]; 
     int delta = sample->height * sample->width;
@@ -354,7 +346,7 @@ open_ptrack::detection::PersonClassifier<PointT>::evaluate (PointCloudPtr& image
     }
   }
 
-  point_cloud_visulizer( image , centroid, top, bottom, vertical);
+  // point_cloud_visulizer( image , centroid, top, bottom, vertical);
 
   float pixel_height;
   float pixel_width;
@@ -403,7 +395,6 @@ open_ptrack::detection::PersonClassifier<PointT>::point_cloud_visulizer (PointCl
 
   cv::Mat mat = cv::Mat(cloud->height,cloud->width, CV_8UC3, sample_float);
 
-
   int off_set = 20;
   float pixel_height;
   float pixel_width;
@@ -431,12 +422,33 @@ open_ptrack::detection::PersonClassifier<PointT>::point_cloud_visulizer (PointCl
   int xmin = floor(xc - width / 2 + 0.5);
   int ymin = floor(yc - height / 2 + 0.5);
 
-  // ROS_INFO_STREAM("(xc) ( "<<xc<<" ) " << yc << " ");
-
-  // rectangle(mat, cv::Rect(xmin, ymin, width, height), cv::Scalar(255,0,1),-1, 8);
+  rectangle(mat, cv::Rect(xmin, ymin, width, height), cv::Scalar(255,0,1),-1, 8);
   circle(mat, cv::Point(xmin, ymin), 10, cv::Scalar(0,255,10), -1, 8);
 
   cv::imshow("test", mat);
+  cv::waitKey(20);
+
+}
+
+template <typename PointT> void
+open_ptrack::detection::PersonClassifier<PointT>::image_visulizer (PointCloudPtr& cloud){
+
+  PointCloudPtr& sample = cloud;
+
+  uint8_t* sample_float = new uint8_t[sample->width * sample->height * 3]; 
+  int delta = sample->height * sample->width;
+  for(int row = 0; row < sample->height; row++)
+  {
+    for(int col = 0; col < sample->width; col++)
+    {
+      sample_float[3*(col + sample->width * row)] = ( ((*sample)(col, row).b)); //ptr[col * 3 + 2];
+      sample_float[3*(col + sample->width * row) + 1] = (((*sample)(col, row).g)); //ptr[col * 3 + 1];
+      sample_float[3*(col + sample->width * row) + 2] = (((*sample)(col, row).r)); //ptr[col * 3];
+    }
+  }
+
+  cv::Mat mat = cv::Mat(cloud->height,cloud->width, CV_8UC3, sample_float);
+  cv::imshow("test_2", mat);
   cv::waitKey(20);
 
 }
