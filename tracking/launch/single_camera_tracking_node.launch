@@ -9,10 +9,12 @@
   <!-- Load calibration results -->
   <!--include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/-->
 
-  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">
+  <!-- <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">
     <arg name="publish_frame" value="true" />
     <arg name="sensor_name" value="$(arg sensor_name)" />
-  </include>
+  </include> -->
+
+  <node pkg="rosbag" type="play" name="player" output="screen" args="--clock -q /root/zed/kinect_point_cloud_sd.bag"/>
 
   <group if="$(arg enable_people_tracking)">
   <!-- People tracking -->

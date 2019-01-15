@@ -1,3 +1,5 @@
+
+
 /*
  * Software License Agreement (BSD License)
  *
@@ -158,6 +160,9 @@ namespace open_ptrack
       double
       evaluate (PointCloudPtr& image, Eigen::Vector3f& bottom, Eigen::Vector3f& top, Eigen::Vector3f& centroid,
          bool vertical);
+      
+      void
+      point_cloud_visulizer(PointCloudPtr& cloud, Eigen::Vector3f& centroid, Eigen::Vector3f& top, Eigen::Vector3f& bottom , bool vertical_);
     };
   } /* namespace open_ptrack */
 } /* namespace detection */

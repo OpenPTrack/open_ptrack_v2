@@ -1,4 +1,3 @@
-
 /*
  * Software License Agreement (BSD License)
  *
@@ -498,7 +497,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   }
 
 
-  PointCloudPtr temp_cloud(new PointCloud);
+  // PointCloudPtr temp_cloud(new PointCloud);
 
   // for (unsigned int i = 0; i < no_ground_cloud_->points.size(); i++){
 
@@ -591,54 +590,20 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
 
       for(typename std::vector<pcl::people::PersonCluster<PointT> >::iterator it = clusters.begin(); it != clusters.end(); ++it)
       {
-
-        //Evaluate confidence for the current PersonCluster:
-
-
-        Eigen::Vector3f trans_centroid = anti_transform_ * it->getTCenter();
-        Eigen::Vector3f trans_top = anti_transform_ * it->getTTop();
-        Eigen::Vector3f trans_bottom = anti_transform_ * it->getTBottom();
-
-        Eigen::Vector3f inverted_centroid = Eigen::Vector3f( -1 * trans_centroid(1), -1 * trans_centroid(2),trans_centroid(0));
-        Eigen::Vector3f inverted_top = Eigen::Vector3f( -1 * trans_top(1), -1 * trans_top(2),trans_top(0));
-        Eigen::Vector3f inverted_bottom = Eigen::Vector3f( -1 * trans_bottom(1), -1 * trans_bottom(2),trans_bottom(0));
-        // 1 is always Z depth
-        // Eigen::Vector3f inverted_centroid = it->getTCenter() * ;
-        // ROS_INFO_STREAM("(inverted_centroid before) (    \n  \n \n"<<inverted_centroid<<" \n  \n  \n )");
-
-        Eigen::Vector3f centroid = intrinsics_matrix_ * inverted_centroid;
-        // ROS_INFO_STREAM("(centroid before) (  \n"<<centroid<<" \n )");
-        centroid /= centroid(2);
-        Eigen::Vector3f top = intrinsics_matrix_ *  inverted_top;
-        // ROS_INFO_STREAM("(top before) (  \n"<<top<<" \n )");
-        top /= top(2);
-        Eigen::Vector3f bottom = intrinsics_matrix_ * inverted_bottom;
-        // ROS_INFO_STREAM("(bottom before) (  \n"<<bottom<<" \n )");
-        bottom /= bottom(2);
-
-
-        // ROS_INFO_STREAM("(centroid) after (  \n"<<centroid<<" \n )");
-        // ROS_INFO_STREAM("(inverted_centroid) (   \n  "<< inverted_centroid << " \n )");
-        // ROS_INFO_STREAM("(trans_centroid    \n " << trans_centroid<< ")  \n");
-
-
-        // ROS_INFO_STREAM("(intrinsics_matrix_) ( \n"<<intrinsics_matrix_<<")");
-        // ROS_INFO_STREAM("(top) (   \n "<<top<<")  \n");
-        // ROS_INFO_STREAM("(bottom) (    \n "<<bottom<<" \n )");
-        // ROS_INFO_STREAM("inverted_top (    \n " << inverted_top << ")  \n");
-        // ROS_INFO_STREAM("inverted_bottom (  \n  " <<inverted_bottom << " \n )");
-        // ROS_INFO_STREAM("(anti_transform_) (  \n  " << anti_transform_.matrix() <<" \n )");
-
-        // ROS_INFO_STREAM("(trans_top) (  \n  " << trans_top << " \n )");
-        // ROS_INFO_STREAM("(trans_bottom) (  \n  " << trans_bottom <<" \n )");
-
+        // //Evaluate confidence for the current PersonCluster:
+        // Eigen::Vector3f centroid = intrinsics_matrix_ * (anti_transform_ * it->getTCenter());
+        // // centroid /= centroid(2);
+        // Eigen::Vector3f top = intrinsics_matrix_ * (anti_transform_ * it->getTTop());
+        // // top /= top(2);
+        // Eigen::Vector3f bottom = intrinsics_matrix_ * (anti_transform_ * it->getTBottom());
+        // // bottom /= bottom(2);
 
         // if(i == 0){
-        // Eigen::Vector3f centroid = it->getTCenter();
+        Eigen::Vector3f centroid = it->getTCenter();
         // centroid /= centroid(2);
-        // Eigen::Vector3f top = it->getTTop();
+        Eigen::Vector3f top = it->getTTop();
         // top /= top(2);
-        // Eigen::Vector3f bottom = it->getTBottom();
+        Eigen::Vector3f bottom = it->getTBottom();
         // bottom /= bottom(2);
 
         it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
@@ -650,7 +615,7 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
 
         // ROS_INFO("(centroid) (%f)", it->getTCenter()(1));
 
-        //   i = i + 1;
+          i = i + 1;
         // }
 
       }
@@ -709,46 +674,21 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::Point_cloud_visul
     std::string f_str = "PersonConfidence : " + std::to_string(it->getPersonConfidence());
     viewer.addText(f_str,off_set,20,f_str,0);
 
+        //Evaluate confidence for the current PersonCluster:
+        Eigen::Vector3f centroid = intrinsics_matrix_ * (anti_transform_ * it->getTCenter());
+        centroid /= centroid(2);
+        Eigen::Vector3f top = intrinsics_matrix_ * (anti_transform_ * it->getTTop());
+        top /= top(2);
+        Eigen::Vector3f bottom = intrinsics_matrix_ * (anti_transform_ * it->getTBottom());
+        bottom /= bottom(2);
 
+        // Eigen::Vector3f centroid = it->getTCenter();
+        // // centroid /= centroid(2);
+        // Eigen::Vector3f top = it->getTTop();
+        // // top /= top(2);
+        // Eigen::Vector3f bottom = it->getTBottom();
+        // // bottom /= bottom(2);
 
-    pcl::ModelCoefficients::Ptr sphere_top (new pcl::ModelCoefficients); 
-    sphere_top->values.resize (1); 
-    sphere_top->values[0] = it->getTTop()(0); 
-    sphere_top->values[1] = it->getTTop()(1); 
-    sphere_top->values[2] = it->getTTop()(2); 
-    sphere_top->values[3] = 0.05; 
-
-    viewer.addSphere (*sphere_top, "sphere_top", 0); 
-    viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.9, 0.1, 0.1 /*R,G,B*/, "sphere_top", 0); 
-    viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY, 0.6, "sphere_top", 0); 
-    viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, "sphere_top", 0); 
-
-    pcl::ModelCoefficients::Ptr sphere_bottom (new pcl::ModelCoefficients); 
-    sphere_bottom->values.resize (1); 
-    sphere_bottom->values[0] = it->getTBottom()(0); 
-    sphere_bottom->values[1] = it->getTBottom()(1); 
-    sphere_bottom->values[2] = it->getTBottom()(2); 
-    sphere_bottom->values[3] = 0.05; 
-
-    viewer.addSphere (*sphere_bottom, "sphere_bottom", 0); 
-    viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.9, 0.1, 0.1 /*R,G,B*/, "sphere_bottom", 0); 
-    viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_OPACITY, 0.6, "sphere_bottom", 0); 
-    viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, "sphere_bottom", 0); 
-
-    //Evaluate confidence for the current PersonCluster:
-    // Eigen::Vector3f centroid = intrinsics_matrix_ * ( anti_transform_ * it->getTCenter());
-    // centroid /= centroid(2);
-    // Eigen::Vector3f top = intrinsics_matrix_ * (anti_transform_ * it->getTTop());
-    // top /= top(2);
-    // Eigen::Vector3f bottom = intrinsics_matrix_ * (anti_transform_ * it->getTBottom());
-    // bottom /= bottom(2);
-
-    Eigen::Vector3f centroid = it->getTCenter();
-    centroid /= centroid(2);
-    Eigen::Vector3f top = it->getTTop();
-    top /= top(2);
-    Eigen::Vector3f bottom = it->getTBottom();
-    bottom /= bottom(2);
 
     float pixel_height;
     float pixel_width;
@@ -789,3 +729,6 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::~GroundBasedPeopl
   // TODO Auto-generated destructor stub
 }
 #endif /* OPEN_PTRACK_DETECTION_GROUND_BASED_PEOPLE_DETECTION_APP_HPP_ */
+
+
+

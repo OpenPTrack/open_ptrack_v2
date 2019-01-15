@@ -31,7 +31,7 @@ include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
 
 # Dynamic reconfigure support
 generate_dynamic_reconfigure_options(
-  cfg/SkeletonTracker.cfg
+#  cfg/SkeletonTracker.cfg
   cfg/Tracker.cfg
   #cfg/TrackerSmoother.cfg
   cfg/MovingAverageSmoother.cfg
@@ -53,8 +53,8 @@ add_library(${PROJECT_NAME}
   src/track3d.cpp
   src/tracker.cpp
   src/tracker3d.cpp
-  src/skeleton_tracker.cpp
-  src/skeleton_track.cpp
+ # src/skeleton_tracker.cpp
+ # src/skeleton_track.cpp
   src/track_object.cpp
   src/tracker_object.cpp
   )
@@ -70,13 +70,13 @@ add_dependencies(tracker_object ${PROJECT_NAME}_gencfg)
 add_executable(tracker3d apps/tracker_node_3d.cpp)
 target_link_libraries(tracker3d ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-add_executable(${PROJECT_NAME}_skeleton_tracker_node
-  apps/skeleton_tracker_node.cpp
-  )
-target_link_libraries(${PROJECT_NAME}_skeleton_tracker_node
-  ${PROJECT_NAME}
-  ${catkin_LIBRARIES}
- )
+#add_executable(${PROJECT_NAME}_skeleton_tracker_node
+ # apps/skeleton_tracker_node.cpp
+ # )
+#target_link_libraries(${PROJECT_NAME}_skeleton_tracker_node
+#  ${PROJECT_NAME}
+#  ${catkin_LIBRARIES}
+# )
 
 add_executable(moving_average_filter apps/moving_average_filter_node.cpp)
 add_dependencies(moving_average_filter ${PROJECT_NAME}_gencfg)
