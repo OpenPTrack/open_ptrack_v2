@@ -7,7 +7,7 @@ RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula selec
     apt-get update && apt-get install -y apt-transport-https apt-utils less lsb-release udev wget && \
     mkdir -p /etc/udev/rules.d/ && \
     cd /tmp/ && \
-    wget https://www.stereolabs.com/developers/downloads/ZED_SDK_Linux_Ubuntu16_v2.6.0.run && \
+    wget -O ZED_SDK_Linux_Ubuntu16_2_7.run https://download.stereolabs.com/zedsdk/2.7/ubuntu16_cuda9 && \
     chmod +x ./ZED_SDK_Linux_Ubuntu16_*.run && \
     ./ZED_SDK_Linux_Ubuntu16_*.run --noexec --keep --target temp_zed && \
     rm -f ZED_SDK_Linux_Ubuntu16_*.run && \
@@ -17,7 +17,7 @@ RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula selec
     cd / && \
     rm -rf /tmp/temp_zed
 
-RUN git clone --branch v2.5.x https://github.com/stereolabs/zed-ros-wrapper.git ~/workspace/ros/src/zed-ros-wrapper
+RUN git clone --branch v2.7.x https://github.com/stereolabs/zed-ros-wrapper.git ~/workspace/ros/src/zed-ros-wrapper
 
 RUN /bin/bash -c "source /opt/ros/kinetic/setup.bash \
     && git clone https://github.com/openptrack/open_ptrack_v2 ~/workspace/ros/src/open_ptrack \
