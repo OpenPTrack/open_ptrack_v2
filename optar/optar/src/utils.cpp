@@ -55,7 +55,7 @@ cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double f
  * @param Translate Eigen position vector
  * @param quats Eigen quaternion
  */
-void opencvPoseToEigenPose(cv::Vec3d tvec, cv::Vec3d rvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion)
+void opencvPoseToEigenPose(cv::Vec3d rvec, cv::Vec3d tvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion)
 {
 
     cv::Mat R;
@@ -313,4 +313,38 @@ void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTran
 	out.y = pose.pose.position.y;
 	out.z = pose.pose.position.z;
 
+}
+
+/** Prepares an opencv image to be shown in a new window. To actually display it you will have to call cv::waitKey(int)
+ *
+ * @param winName The name to give to the window
+ * @param image The image to be shown
+ * @param winHeight The height the displayed image will have in the screen, in pixels
+ * @param winHeight The width the displayed image will have in the screen, in pixels. If it is -1 it will be deduced from winHeight using the aspect of the image
+ *
+ */
+void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHeight, int winWidth=-1)
+{
+	cv::namedWindow(winName, cv::WINDOW_NORMAL);
+	if(winWidth==-1)
+		winWidth=(int)(((double)winHeight)/image.rows*image.cols);
+	cv::resizeWindow(winName,winWidth,winHeight);
+    cv::imshow(winName,image);
+}
+
+
+/**
+ *	Publishes the provided pose as a tf frame
+ *	
+ *	@param pose The pose to be published
+ *	@param tfFrameName The name the of the tf frame the pose will be published as
+ */
+void publishPoseAsTfFrame(geometry_msgs::PoseStamped& pose, std::string tfFrameName)
+{
+	static tf::TransformBroadcaster br;
+	tf::Transform transform;
+	transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
+	tf::Quaternion q(pose.pose.orientation.x,pose.pose.orientation.y,pose.pose.orientation.z,pose.pose.orientation.w);
+	transform.setRotation(q);
+	br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), pose.header.frame_id, tfFrameName));
 }

@@ -78,6 +78,7 @@
   <exec_depend>opt_utils</exec_depend>
   <exec_depend>bayes</exec_depend>
 
+  <depend>dynamic_reconfigure</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

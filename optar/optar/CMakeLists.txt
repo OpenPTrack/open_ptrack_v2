@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   bayes
   opt_msgs
+  dynamic_reconfigure 
   )
 
 find_package(OpenCV REQUIRED)
@@ -25,6 +26,8 @@ link_directories(${OpenCV_LIB_DIR})
 
 find_package(Eigen3 REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
+
+include_directories( cfg/cpp )
 
 #add_message_files(
 #  FILES
@@ -40,6 +43,11 @@ generate_messages(
   )
 
 
+#add dynamic reconfigure api
+generate_dynamic_reconfigure_options(
+  cfg/OptarDynamicParameters.cfg
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -52,7 +60,7 @@ generate_messages(
 catkin_package(
  INCLUDE_DIRS
  LIBRARIES optar
- CATKIN_DEPENDS geometry_msg roscpp rospy std_msgs detection opt_utils message_filters bayes opt_msgs
+ CATKIN_DEPENDS geometry_msg roscpp rospy std_msgs detection opt_utils message_filters bayes opt_msgs dynamic_reconfigure
  DEPENDS system_lib
 )
 
@@ -110,4 +118,5 @@ add_dependencies(nomarker_position_estimator ${${PROJECT_NAME}_EXPORTED_TARGETS}
 add_executable(ntp_server src/ntp_server.cpp src/utils.cpp)
 target_link_libraries(ntp_server ${catkin_LIBRARIES})
 add_dependencies(ntp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
+# make sure configure headers are built before any node using them
+add_dependencies(nomarker_position_estimator ${PROJECT_NAME}_gencfg)

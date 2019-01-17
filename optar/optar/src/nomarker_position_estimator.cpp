@@ -21,6 +21,10 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <tf/transform_broadcaster.h>
 
+
+#include <dynamic_reconfigure/server.h>
+#include <optar/OptarDynamicParametersConfig.h>
+
 #include "utils.hpp"
 
 
@@ -42,6 +46,15 @@ const string output_pose_marker_topic		= "optar/pose_marker";
 tf::StampedTransform transformKinectToWorld;
 ros::Publisher pose_raw_pub;
 ros::Publisher pose_marker_pub;
+
+
+
+double pnpReprojectionError = 5;
+double pnpConfidence = 0.99;
+double pnpIterations = 1000;
+double matchingThreshold = 25;
+double reprojectionErrorDiscardThreshold = 5;
+
 
 
 class PoseMatch
@@ -176,6 +189,19 @@ std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch
 }
 
 
+void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint32_t level)
+{
+  ROS_INFO("Reconfigure Request: %f %f %f", 
+            config.nomarker_position_estimator_pnp_iterations,
+            config.nomarker_position_estimator_pnp_confidence, 
+            config.nomarker_position_estimator_pnp_reprojection_error);
+  pnpReprojectionError = config.nomarker_position_estimator_pnp_reprojection_error;
+  pnpConfidence 					= config.nomarker_position_estimator_pnp_confidence;
+  pnpIterations 					= config.nomarker_position_estimator_pnp_iterations;
+  matchingThreshold 				= config.nomarker_position_estimator_matching_threshold;
+  reprojectionErrorDiscardThreshold = config.nomarker_position_estimator_reprojection_discard_threshold;
+}
+
 
 int findOrbMatches(	const cv::Mat& arcoreImg, 
 					const cv::Mat& kinectCameraImg, 
@@ -259,15 +285,15 @@ int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch
 	//Filter the matches to keep just the best ones
 	for( unsigned int i = 0; i < matches.size(); i++ )
 	{
-		if( matches[i].distance <= std::min(min_dist+(max_dist-min_dist)*0.2,25.0) )
+		if( matches[i].distance <= matchingThreshold/*std::min(min_dist+(max_dist-min_dist)*0.2,25.0)*/ )
 		{
 			goodMatches.push_back( matches[i]);
 			//ROS_INFO_STREAM("got a good match, dist="<<matches[i].distance);
 		}
 	}
 
-
-/*	//take best 4
+/*
+	//take best 4
 	std::vector<int> goodMatchesIdx;
 	for(int i=0;i<4;i++)
 	{
@@ -296,19 +322,14 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo)
 {
-	ROS_INFO("received images");
 	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
 	long arcoreTime = arcoreInputMsg->header.stamp.sec*1000000000L + arcoreInputMsg->header.stamp.nsec;
 	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;
-	ROS_INFO("\n\nreceived images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
+	ROS_INFO("\n\n\n\n\n\nreceived images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
 
-	ROS_INFO_STREAM("arcoreInputMsg->focal_length_x_px = "<<arcoreInputMsg->focal_length_x_px);
-	ROS_INFO_STREAM("arcoreInputMsg->focal_length_y_px = "<<arcoreInputMsg->focal_length_y_px);
-	ROS_INFO_STREAM("arcoreInputMsg->principal_point_x_px = "<<arcoreInputMsg->principal_point_x_px);
-	ROS_INFO_STREAM("arcoreInputMsg->principal_point_y_px = "<<arcoreInputMsg->principal_point_y_px);
 	double arcoreCameraMatrixArr[kinectCameraInfo.P.size()] =	{	arcoreInputMsg->focal_length_x_px,	0, 									arcoreInputMsg->principal_point_x_px,
 													0,									arcoreInputMsg->focal_length_y_px,	arcoreInputMsg->principal_point_y_px,
-													0,									0,									0,									};
+													0,									0,									1									};
 	cv::Mat arcoreCameraMatrix = cv::Mat(3, 3, CV_64FC1, arcoreCameraMatrixArr);
 
 	cv::Mat arcoreImg = cv::imdecode(cv::Mat(arcoreInputMsg->image.data),1);//convert compressed image data to cv::Mat
@@ -429,7 +450,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
 		cv::Point2f kinectPixelPos = kinectKeypoints.at(goodMatches.at(i).trainIdx).pt;
 		cv::Point2f arcorePixelPos = arcoreKeypoints.at(goodMatches.at(i).queryIdx).pt;
-		ROS_INFO_STREAM("good match between "<<kinectPixelPos.x<<";"<<kinectPixelPos.y<<" \tand \t"<<arcorePixelPos.x<<";"<<arcorePixelPos.y<<" \tdistance = "<<goodMatches.at(i).distance);
+		ROS_DEBUG_STREAM("good match between "<<kinectPixelPos.x<<";"<<kinectPixelPos.y<<" \tand \t"<<arcorePixelPos.x<<";"<<arcorePixelPos.y<<" \tdistance = "<<goodMatches.at(i).distance);
 		goodMatchesImgPos.push_back(arcorePixelPos);
 		//ROS_INFO_STREAM("depth = "<<kinectDepthImg.at<uint16_t>(kinectPixelPos));
 	/*	cv::rectangle(	kinectCameraImg,
@@ -439,15 +460,13 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 		cv::Point3f pos3d = get3dPoint(	kinectPixelPos.x,kinectPixelPos.y,
 												kinectDepthImg.at<uint16_t>(kinectPixelPos),
 												kinectCameraInfo.P[0+4*0],kinectCameraInfo.P[1+4*1],kinectCameraInfo.P[2+4*0],kinectCameraInfo.P[2+4*1]);
-		transformCvPoint3f(pos3d,pos3d,transformKinectToWorld);
-		ROS_INFO_STREAM("3d pose = "<<pos3d.x<<";"<<pos3d.y<<";"<<pos3d.z);
 		goodMatches3dPos.push_back(pos3d);
 
 		visualization_msgs::Marker matchMarker;
 		buildMarker(matchMarker,
 					pos3d,
 					"match"+std::to_string(i),
-					0,0,1,1, 0.2, "world");//matches are blue
+					0,0,1,1, 0.2, kinectInputCameraMsg->header.frame_id);//matches are blue
 		markerArray.markers.push_back(matchMarker);
 	}
 
@@ -466,12 +485,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	{
 		cv::Mat matchesImg;
 	    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-		std::string matchesWinName = "Matches";
-		cv::namedWindow(matchesWinName, cv::WINDOW_NORMAL);
-		int winHeight=800;
-		int winWidth=(int)(((double)winHeight)/matchesImg.rows*matchesImg.cols);
-		cv::resizeWindow(matchesWinName,winWidth,winHeight);
-	    cv::imshow(matchesWinName,matchesImg);
+		prepareOpencvImageForShowing("Matches", matchesImg, 800);
 	    cv::waitKey(10);
 
 		pose_marker_pub.publish(markerArray);
@@ -483,82 +497,103 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	ROS_INFO_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
 	cv::Mat tvec;
 	cv::Mat rvec;
+	std::vector<int> inliers;
+	ROS_INFO_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
 	cv::solvePnPRansac(	goodMatches3dPos,goodMatchesImgPos,
 						arcoreCameraMatrix,cv::noArray(),
-						tvec,rvec,
+						rvec,tvec,
 						false,
-						100000,
-						8,
-						0.99);
+						pnpIterations,
+						pnpReprojectionError,
+						pnpConfidence,
+						inliers);
 
-	ROS_INFO_STREAM("solvePnPRansac says:\n tvec = "<<tvec<<"\n rvec = "<<rvec);
+	ROS_INFO_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
 
 	std::vector<Point2f> reprojPoints;
 	cv::projectPoints 	(goodMatches3dPos,
-		rvec,
-		tvec,
-		arcoreCameraMatrix,
-		cv::noArray(),
-		reprojPoints);
+						rvec, tvec,
+						arcoreCameraMatrix,
+						cv::noArray(),
+						reprojPoints);
+
+
+	cv::Mat colorArcoreImg;
+	cvtColor(arcoreImg, colorArcoreImg, CV_GRAY2RGB);
 	double reprojError = 0;
-	for(unsigned int i=0;i<reprojPoints.size();i++)
+	
+	for(unsigned int i=0;i<inliers.size();i++)
 	{
-		Point2f reprojPix = reprojPoints.at(i);
-		Point2f pix = goodMatchesImgPos.at(i);
+		Point2f pix = goodMatchesImgPos.at(inliers.at(i));
+		Point2f reprojPix = reprojPoints.at(inliers.at(i));
 		reprojError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojPoints.size();
-		ROS_INFO_STREAM("drawing reprojected point at "<<reprojPix);
-		cv::circle(arcoreImg,reprojPix,15,cv::Scalar(0,0,1),5);
+		cv::circle(colorArcoreImg,pix,15,Scalar(128,128,128),5);
+		int r = ((double)rand())/RAND_MAX*255;
+		int g= ((double)rand())/RAND_MAX*255;
+		int b = ((double)rand())/RAND_MAX*255;
+		Scalar color = Scalar(r,g,b);
+		cv::line(colorArcoreImg,pix,reprojPix,color,3);
 	}
-	ROS_INFO_STREAM("reprojection error = "<<reprojError);
+	ROS_INFO_STREAM("inliers reprojection error = "<<reprojError);
+
 
 	cv::Mat matchesImg;
     cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-	std::string matchesWinName = "Matches";
-	cv::namedWindow(matchesWinName, cv::WINDOW_NORMAL);
-	int winHeight=800;
-	int winWidth=(int)(((double)winHeight)/matchesImg.rows*matchesImg.cols);
-	cv::resizeWindow(matchesWinName,winWidth,winHeight);
-    cv::imshow(matchesWinName,matchesImg);
-    cv::waitKey(10);
+	
+	prepareOpencvImageForShowing("Matches", matchesImg, 800);
+	prepareOpencvImageForShowing("Reprojection", colorArcoreImg, 400);
+	cv::waitKey(10);
+
+
+	if(reprojError>reprojectionErrorDiscardThreshold)
+	{
+		ROS_WARN("Reprojection error beyond threshold, discarding frame");
+		return;
+	}
 
 
 	Eigen::Vector3d position;
 	Eigen::Quaterniond rotation;
-	opencvPoseToEigenPose(tvec,rvec,position,rotation);
+	opencvPoseToEigenPose(rvec,tvec,position,rotation);
+
+	geometry_msgs::Pose poseNotStamped;
+	poseNotStamped.position.x = position.x();
+	poseNotStamped.position.y = position.y();
+	poseNotStamped.position.z = position.z();
+
+	poseNotStamped.orientation.x = rotation.x();
+	poseNotStamped.orientation.y = rotation.y();
+	poseNotStamped.orientation.z = rotation.z();
+	poseNotStamped.orientation.w = rotation.w();
+
+
+	//invert the pose
+	tf::Pose poseTf;
+	tf::poseMsgToTF(poseNotStamped,poseTf);
+	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
 
 	geometry_msgs::PoseStamped pose;
-	pose.pose.position.x = position.x();
-	pose.pose.position.y = position.y();
-	pose.pose.position.z = position.z();
+	pose.pose = poseNotStamped;
 
-	pose.pose.orientation.x = rotation.x();
-	pose.pose.orientation.y = rotation.y();
-	pose.pose.orientation.z = rotation.z();
-	pose.pose.orientation.w = rotation.w();
+	pose.header.frame_id = "kinect01_rgb_optical_frame";
+	pose.header.stamp = arcoreInputMsg->header.stamp;
 
 	ROS_INFO_STREAM("estimated pose before transform: "<<pose.pose.position.x<<" "<<pose.pose.position.y<<" "<<pose.pose.position.z<<" ; "<<pose.pose.orientation.x<<" "<<pose.pose.orientation.y<<" "<<pose.pose.orientation.z<<" "<<pose.pose.orientation.w);
 
-	/*
+	
 	geometry_msgs::TransformStamped transformMsg;
 	tf::transformStampedTFToMsg(transformKinectToWorld,transformMsg);
 	tf2::doTransform(pose,pose,transformMsg);
-	*/
-
 	pose.header.frame_id = "/world";
-	pose.header.stamp = arcoreInputMsg->header.stamp;
 
-	ROS_INFO_STREAM("estimated pose is "<<pose.pose.position.x<<" "<<pose.pose.position.y<<" "<<pose.pose.position.z<<" ; "<<pose.pose.orientation.x<<" "<<pose.pose.orientation.y<<" "<<pose.pose.orientation.z<<" "<<pose.pose.orientation.w);
+	poseMatches.push_back(PoseMatch(arcoreInputMsg->mobileFramePose, pose.pose, arcoreInputMsg->header.stamp));
+	ROS_INFO_STREAM("estimated pose is                "<<pose.pose.position.x<<" "<<pose.pose.position.y<<" "<<pose.pose.position.z<<" ; "<<pose.pose.orientation.x<<" "<<pose.pose.orientation.y<<" "<<pose.pose.orientation.z<<" "<<pose.pose.orientation.w);
+
 
 	pose_raw_pub.publish(pose);
-
-
+	publishPoseAsTfFrame(pose,"mobile_pose");
 	visualization_msgs::Marker markerRaw;
-	buildMarker(markerRaw,
-				pose.pose,
-				"nomarker_raw_pose",
-				1,0,0,1, 0.2, "world");//raw is red
-	ROS_INFO("Raw estimated pose is      %f \t%f \t%f",pose.pose.position.x,pose.pose.position.y,pose.pose.position.z);
-	poseMatches.push_back(PoseMatch(arcoreInputMsg->mobileFramePose, pose.pose, arcoreInputMsg->header.stamp));
+	buildMarker(markerRaw,	pose.pose,	"nomarker_raw_pose", 1,0,0,1, 0.2, pose.header.frame_id);//raw is red
 	markerArray.markers.push_back(markerRaw);
 
 /*
@@ -586,6 +621,14 @@ int main(int argc, char** argv)
 	ros::init(argc, argv, NODE_NAME);
 	ros::NodeHandle nh;
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
+
+
+	dynamic_reconfigure::Server<optar::OptarDynamicParametersConfig> server;
+	dynamic_reconfigure::Server<optar::OptarDynamicParametersConfig>::CallbackType bindedDynamicParametersCallback;
+
+	bindedDynamicParametersCallback = boost::bind(&dynamicParametersCallback, _1, _2);
+	server.setCallback(bindedDynamicParametersCallback);
+
 
 	boost::shared_ptr<sensor_msgs::CameraInfo const> kinectCameraInfoPtr;
 	sensor_msgs::CameraInfo kinectCameraInfo;
