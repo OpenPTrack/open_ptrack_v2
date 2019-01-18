@@ -79,31 +79,31 @@ include_directories(
 ## Add folders to be run by python nosetests
 
 
-add_executable(mobile_receiver src/mobile_receiver.cpp)
+add_executable(mobile_receiver src/withMarker/mobile_receiver.cpp)
 target_link_libraries(mobile_receiver ${catkin_LIBRARIES})
 add_dependencies(mobile_receiver mobile_receivercpp)
 
-add_executable(keep_tag_living src/keep_tag_living.cpp)
+add_executable(keep_tag_living src/withMarker/keep_tag_living.cpp)
 target_link_libraries(keep_tag_living ${catkin_LIBRARIES})
 add_dependencies(keep_tag_living keep_tag_livingcpp)
 
-add_executable(tag_file src/tag_file.cpp)
+add_executable(tag_file src/withMarker/tag_file.cpp)
 target_link_libraries(tag_file ${catkin_LIBRARIES})
 add_dependencies(tag_file tag_filecpp)
 
-add_executable(origin_sender src/origin_sender.cpp)
+add_executable(origin_sender src/withMarker/origin_sender.cpp)
 target_link_libraries(origin_sender ${catkin_LIBRARIES})
 add_dependencies(origin_sender origin_sendercpp)
 
-add_executable(centroid_modifier src/centroid_modifier.cpp)
+add_executable(centroid_modifier src/withMarker/centroid_modifier.cpp)
 target_link_libraries(centroid_modifier ${catkin_LIBRARIES})
 add_dependencies(centroid_modifier centroid_modifiercpp)
 
-add_executable(skeleton_modifier src/skeleton_modifier.cpp)
+add_executable(skeleton_modifier src/withMarker/skeleton_modifier.cpp)
 target_link_libraries(skeleton_modifier ${catkin_LIBRARIES})
 add_dependencies(skeleton_modifier skeleton_modifier_cpp)
 
-add_executable(motion_control src/motion_control.cpp)
+add_executable(motion_control src/withMarker/motion_control.cpp)
 target_link_libraries(motion_control ${catkin_LIBRARIES})
 add_dependencies(motion_control motion_control_cpp)
 
@@ -111,7 +111,7 @@ add_executable(arcore_camera_image_republisher src/arcore_camera_image_republish
 target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES})
 add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(nomarker_position_estimator src/nomarker_position_estimator.cpp src/utils.cpp)
+add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/utils.cpp)
 target_link_libraries(nomarker_position_estimator ${catkin_LIBRARIES})
 add_dependencies(nomarker_position_estimator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

@@ -2,6 +2,9 @@
 
 	<env name="ROSCONSOLE_FORMAT" value="[${severity}] [${walltime}] [${node}]: ${message}" />
 	
+	<arg name="sensor_name" default="kinect01" />
+	<arg name="bag" default="false" />
+
 	<group if="$(arg bag)">
 		<node pkg="optar"
 					type="nomarker_position_estimator"

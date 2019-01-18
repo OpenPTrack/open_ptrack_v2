@@ -25,7 +25,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <optar/OptarDynamicParametersConfig.h>
 
-#include "utils.hpp"
+#include "../utils.hpp"
 
 
 using namespace cv;
@@ -48,13 +48,15 @@ ros::Publisher pose_raw_pub;
 ros::Publisher pose_marker_pub;
 
 
-
+//These may be overwritten by dynamic_reconfigure
 double pnpReprojectionError = 5;
 double pnpConfidence = 0.99;
 double pnpIterations = 1000;
 double matchingThreshold = 25;
 double reprojectionErrorDiscardThreshold = 5;
-
+int orbMaxPoints = 500;
+double orbScaleFactor = 1.2;
+int orbLevelsNumber = 8;
 
 
 class PoseMatch
@@ -198,8 +200,13 @@ void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint
   pnpReprojectionError = config.nomarker_position_estimator_pnp_reprojection_error;
   pnpConfidence 					= config.nomarker_position_estimator_pnp_confidence;
   pnpIterations 					= config.nomarker_position_estimator_pnp_iterations;
+  
   matchingThreshold 				= config.nomarker_position_estimator_matching_threshold;
   reprojectionErrorDiscardThreshold = config.nomarker_position_estimator_reprojection_discard_threshold;
+
+  orbMaxPoints		= config.nomarker_position_estimator_orb_max_points;
+  orbScaleFactor	= config.nomarker_position_estimator_orb_scale_factor;
+  orbLevelsNumber	= config.nomarker_position_estimator_orb_levels_number;
 }
 
 
@@ -210,7 +217,7 @@ int findOrbMatches(	const cv::Mat& arcoreImg,
 					std::vector<cv::KeyPoint>& kinectKeypoints)
 {
 	matches.clear();
-    cv::Ptr<cv::ORB> orb = cv::ORB::create(/*500,1.189207115,12*/);
+    cv::Ptr<cv::ORB> orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber/*500,1.189207115,12*/);
 
     //detect keypoints on both images
    	std::chrono::steady_clock::time_point beforeDetection = std::chrono::steady_clock::now();
