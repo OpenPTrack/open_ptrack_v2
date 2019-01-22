@@ -213,10 +213,31 @@ class Listener :
         file.write('    <arg name="zed_id"           value="$(arg sensor_id)" />\n')
       file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('  </include>\n\n') 
+    elif request.type == OPTSensorRequest.TYPE_REALSENSE:
+      file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n')
+      if request.serial != '':
+        file.write('  <arg name="sensor_id" default="' + request.serial + '" />\n')
+      file.write('\n')
       
+      file.write('  <!-- Launch sensor -->\n')
+      # file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">\n')
+      file.write('<include file="$(find realsense2_camera)/launch/rs_rgbd.launch">\n')
+      if request.serial != '':
+        file.write('    <arg name="sensor_id"           value="$(arg sensor_id)" />\n')
+      #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_serial).yaml" />\n')
+      #else:
+      #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
+      file.write('      <arg name="camera_name"         value="$(arg sensor_name)" />\n')
+      # file.write('    <arg name="publish_frame"       value="true" />\n')
+      file.write('  </include>\n\n') 
+
+      # file.write('  <!-- Publish a further transform -->\n')
+      # file.write('  <node pkg="tf" type="static_transform_publisher" name="$(arg sensor_name)_broadcaster" args="0 0 0 1.57079 -1.57079 0 /$(arg sensor_name) /$(arg sensor_name)_link  100" />\n\n')     
+
     file.write('</launch>\n')
     file.close();
     rospy.loginfo(file_name + ' created!');
+
     
     return (OPTSensorResponse.STATUS_OK, file_name + ' created!')
     
@@ -306,6 +327,60 @@ class Listener :
       file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('    <arg name="publish_frame"       value="true" />\n')
       file.write('  </include>\n\n')
+      file.write('  <!-- Detection node -->\n')
+      file.write('  <group if="$(arg enable_people_tracking)" >\n')
+      file.write('      <group if="$(arg munaro_detection_enabled)">\n')
+      file.write('          <include file="$(find detection)/launch/detector_kinect2.launch">\n')
+      if request.serial != '':
+        file.write('            <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+        file.write('            <arg name="rgb_camera_info_url"     value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
+      else:
+        file.write('            <arg name="rgb_camera_info_url"     value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_name).yaml" />\n')
+      file.write('              <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+      file.write('              <arg name="ground_from_calibration" value="true" />\n')
+      file.write('          </include>\n')
+      file.write('      </group>\n')
+      file.write('      <group unless="$(arg munaro_detection_enabled)" >\n')
+      file.write('  	    <include file="$(find yolo_detector)/launch/detector_yolo_kinect.launch">\n')
+      if request.id_num != '':
+        file.write('    	<arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+      file.write('    	        <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+      file.write('    	        <arg name="standalone"              value="false" />\n')
+      file.write('  	    </include>\n')
+      file.write('      </group>\n')
+      file.write('  </group>\n\n')
+
+      file.write('  <!-- Skeleton Detection node -->\n')
+      file.write('  <group if="$(arg enable_pose)">\n')
+      file.write('    <include file="$(find detection)/launch/skeleton_detector.launch">\n')
+      if request.serial != '':
+        file.write('      <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+      file.write('      <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+      file.write('      <arg name="ground_from_calibration" value="true" />\n')
+      file.write('    </include>\n\n')
+      file.write('  </group>\n\n')
+      
+      file.write('  <!-- Object Detection node -->\n')
+      file.write('  <group if="$(arg enable_object)">\n')
+      file.write('    <include file="$(find yolo_detector)/launch/detect_yolo_object_kinect_network.launch">\n')
+      if request.serial != '':
+        file.write('      <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+      file.write('      <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+      file.write('    </include>\n\n')
+      file.write('  </group>\n\n') 
+
+    elif request.type == OPTSensorRequest.TYPE_REALSENSE:
+      if request.serial != '':
+        file.write('  <arg name="sensor_id"   default="' + request.serial + '" />\n')
+      file.write('  <arg name="sensor_name" default="' + request.id + '" />\n\n')
+      file.write('  <!-- true  = Munaro Based OPT Detection -->\n')
+      file.write('  <!-- false = YOLO Based Detection (Must Have YOLO installed to use)-->\n')
+      if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
+        file.write('  <arg name="munaro_detection_enabled"         default="false" />\n\n')
+      else:
+        file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
+      file.write('  <!-- Launch the sensor -->\n')
+      file.write('   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/>\n')
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
       file.write('      <group if="$(arg munaro_detection_enabled)">\n')

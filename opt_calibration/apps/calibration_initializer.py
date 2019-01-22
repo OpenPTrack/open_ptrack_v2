@@ -152,6 +152,10 @@ class CalibrationInitializer :
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_rect_color" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
+      elif sensor['type'] == 'realsense':
+        file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/color/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/color/camera_info" />\n\n')
       else:
         rospy.logfatal('Sensor type "' + sensor['type'] + '" not supported yet!');
       index = index + 1
@@ -217,6 +221,10 @@ class CalibrationInitializer :
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_rect_color" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
+      elif sensor['type'] == 'realsense':
+        file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/color/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/color/camera_info" />\n\n')
       else:
         rospy.logfatal('Sensor type "' + sensor['type'] + '" not supported yet!');
       index = index + 1
@@ -266,6 +274,11 @@ class CalibrationInitializer :
           sensor_msg.type = OPTSensorRequest.TYPE_ZED
           if 'id_num' in sensor_item:
             sensor_msg.id_num = sensor_item['id_num']
+        elif sensor_item['type'] == 'realsense':
+          sensor_msg.type = OPTSensorRequest.TYPE_REALSENSE
+          if 'id_num' in sensor_item:
+            sensor_msg.id_num = sensor_item['id_num']
+
         if 'people_detector' in sensor_item:
           if sensor_item['people_detector'] == 'yolo':
             sensor_msg.people_detector_type = OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED
