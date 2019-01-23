@@ -207,13 +207,13 @@ class Listener :
         file.write('  <arg name="sensor_id" default="' + request.id_num + '" />\n')
       file.write('\n')
       file.write('  <!-- Launch sensor -->\n')
-      file.write(' <group ns="$(arg sensor_name)"> ')
+      file.write(' <group ns="$(arg sensor_name)">\n')
       file.write('  <include file="$(find zed_wrapper)/launch/zed.launch">\n')
       if request.id_num != '':
         file.write('    <arg name="zed_id"           value="$(arg sensor_id)" />\n')
       # file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('  </include>\n\n') 
-      file.write('  </group>\n\n') 
+      file.write('  </group>\n\n')
     elif request.type == OPTSensorRequest.TYPE_REALSENSE:
       file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n')
       if request.serial != '':
