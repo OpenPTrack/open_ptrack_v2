@@ -408,7 +408,7 @@ class Listener :
         file.write('                  <arg name="ground_from_calibration" value="true" />\n')
         file.write('    </include>\n')
       file.write('  </group>\n\n')
-    l
+    
     elif request.type == OPTSensorRequest.TYPE_REALSENSE:
       if request.serial != '':
         file.write('  <arg name="sensor_id"   default="' + request.serial + '" />\n')
