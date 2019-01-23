@@ -206,13 +206,14 @@ class Listener :
       if request.id_num != '':
         file.write('  <arg name="sensor_id" default="' + request.id_num + '" />\n')
       file.write('\n')
-      
       file.write('  <!-- Launch sensor -->\n')
+      file.write(' <group ns="$(arg sensor_name)"> ')
       file.write('  <include file="$(find zed_wrapper)/launch/zed.launch">\n')
       if request.id_num != '':
         file.write('    <arg name="zed_id"           value="$(arg sensor_id)" />\n')
-      file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
+      # file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('  </include>\n\n') 
+      file.write('  </group>\n\n') 
     elif request.type == OPTSensorRequest.TYPE_REALSENSE:
       file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n')
       if request.serial != '':
@@ -369,6 +370,34 @@ class Listener :
       file.write('    </include>\n\n')
       file.write('  </group>\n\n') 
 
+    elif request.type == OPTSensorRequest.TYPE_ZED:
+      if request.id_num != '':
+        file.write('  <arg name="sensor_id" default="' + request.id_num + '" />\n')
+      file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n\n')
+      file.write('  <!-- true  = Munaro Based OPT Detection -->\n')
+      file.write('  <!-- false = YOLO Based Detection (Must Have YOLO installed to use)-->\n')
+      if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
+        file.write('  <arg name="munaro_detection_enabled"         default="false" />\n\n')
+      else:
+        file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
+
+      file.write('  <!-- Detection node -->\n')
+      file.write('  <group if="$(arg enable_people_tracking)" >\n')
+      if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
+        file.write('        <include file="$(find yolo_detector)/launch/detector_yolo_zed.launch">\n')
+        if request.id_num != '':
+          file.write('              <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+        file.write('                    <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+        file.write('        </include>\n')
+      else:
+        file.write('          <include file="$(find detection)/launch/detector_zed.launch">\n')
+        if request.id_num != '':
+          file.write('          <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+        file.write('                  <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
+        file.write('                  <arg name="ground_from_calibration" value="true" />\n')
+        file.write('    </include>\n')
+      file.write('  </group>\n\n')
+    
     elif request.type == OPTSensorRequest.TYPE_REALSENSE:
       if request.serial != '':
         file.write('  <arg name="sensor_id"   default="' + request.serial + '" />\n')
@@ -423,35 +452,6 @@ class Listener :
       file.write('    </include>\n\n')
       file.write('  </group>\n\n') 
 
-    elif request.type == OPTSensorRequest.TYPE_ZED:
-      if request.id_num != '':
-        file.write('  <arg name="sensor_id" default="' + request.id_num + '" />\n')
-      file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n\n')
-      file.write('  <!-- true  = Munaro Based OPT Detection -->\n')
-      file.write('  <!-- false = YOLO Based Detection (Must Have YOLO installed to use)-->\n')
-      if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
-        file.write('  <arg name="munaro_detection_enabled"         default="false" />\n\n')
-      else:
-        file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
-
-      file.write('  <!-- Detection node -->\n')
-      file.write('  <group if="$(arg enable_people_tracking)" >\n')
-      if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
-        file.write('        <include file="$(find yolo_detector)/launch/detector_yolo_zed.launch">\n')
-        if request.id_num != '':
-          file.write('              <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
-        file.write('                    <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
-        file.write('        </include>\n')
-      else:
-        file.write('          <include file="$(find detection)/launch/detector_zed.launch">\n')
-        if request.id_num != '':
-          file.write('          <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
-        file.write('                  <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
-        file.write('                  <arg name="ground_from_calibration" value="true" />\n')
-        file.write('    </include>\n')
-      file.write('  </group>\n\n')
-
-      
     file.write('</launch>\n')
     file.close();
     rospy.loginfo(file_name + ' created!');
