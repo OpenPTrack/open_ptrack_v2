@@ -386,7 +386,7 @@ class Listener :
       file.write('   <arg name="resolution"           value="3" />\n')
       file.write('  </include>\n\n')
       file.write('  </group>\n\n')
-      
+
       if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
         file.write('  <arg name="munaro_detection_enabled"         default="false" />\n\n')
       else:
@@ -408,7 +408,7 @@ class Listener :
         file.write('                  <arg name="ground_from_calibration" value="true" />\n')
         file.write('    </include>\n')
       file.write('  </group>\n\n')
-    
+    l
     elif request.type == OPTSensorRequest.TYPE_REALSENSE:
       if request.serial != '':
         file.write('  <arg name="sensor_id"   default="' + request.serial + '" />\n')
@@ -424,7 +424,7 @@ class Listener :
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
       file.write('      <group if="$(arg munaro_detection_enabled)">\n')
-      file.write('          <include file="$(find detection)/launch/detector_kinect2.launch">\n')
+      file.write('          <include file="$(find detection)/launch/detector_realsense.launch">\n')
       if request.serial != '':
         file.write('            <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
         file.write('            <arg name="rgb_camera_info_url"     value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
@@ -435,7 +435,7 @@ class Listener :
       file.write('          </include>\n')
       file.write('      </group>\n')
       file.write('      <group unless="$(arg munaro_detection_enabled)" >\n')
-      file.write('  	    <include file="$(find yolo_detector)/launch/detector_yolo_kinect.launch">\n')
+      file.write('  	    <include file="$(find yolo_detector)/launch/detect_yolo_object_realsense_network.launch">\n')
       if request.id_num != '':
         file.write('    	<arg name="sensor_id"               value="$(arg sensor_id)" />\n')
       file.write('    	        <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
@@ -446,7 +446,7 @@ class Listener :
 
       file.write('  <!-- Skeleton Detection node -->\n')
       file.write('  <group if="$(arg enable_pose)">\n')
-      file.write('    <include file="$(find detection)/launch/skeleton_detector.launch">\n')
+      file.write('    <include file="$(find detection)/launch/skeleton_detector_realsense.launch">\n')
       if request.serial != '':
         file.write('      <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
       file.write('      <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
@@ -456,7 +456,7 @@ class Listener :
       
       file.write('  <!-- Object Detection node -->\n')
       file.write('  <group if="$(arg enable_object)">\n')
-      file.write('    <include file="$(find yolo_detector)/launch/detect_yolo_object_kinect_network.launch">\n')
+      file.write('    <include file="$(find yolo_detector)/launch/detect_yolo_object_realsense_network.launch">\n')
       if request.serial != '':
         file.write('      <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
       file.write('      <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
