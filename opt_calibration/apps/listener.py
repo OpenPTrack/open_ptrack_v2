@@ -376,6 +376,17 @@ class Listener :
       file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n\n')
       file.write('  <!-- true  = Munaro Based OPT Detection -->\n')
       file.write('  <!-- false = YOLO Based Detection (Must Have YOLO installed to use)-->\n')
+
+      file.write(' <group ns="$(arg sensor_name)"> \n')
+      file.write('  <!-- Launch the sensor -->\n')
+      file.write('  <include file="$(find zed_wrapper)/launch/zed.launch">\n')
+      if request.serial != '':
+        file.write(' <arg name="camera_model"         value="0" /> \n')
+      file.write('   <arg name="frame_rate"           value="100" />\n')
+      file.write('   <arg name="resolution"           value="3" />\n')
+      file.write('  </include>\n\n')
+      file.write('  </group>\n\n')
+      
       if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
         file.write('  <arg name="munaro_detection_enabled"         default="false" />\n\n')
       else:
