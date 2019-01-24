@@ -228,7 +228,7 @@ class Listener :
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_serial).yaml" />\n')
       #else:
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
-      file.write('      <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
+      file.write('      <arg name="camera"         value="$(arg sensor_name)" />\n')
       # file.write('    <arg name="publish_frame"       value="true" />\n')
       file.write('  </include>\n\n') 
 
@@ -420,7 +420,9 @@ class Listener :
       else:
         file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
       file.write('  <!-- Launch the sensor -->\n')
-      file.write('   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/>\n')
+      file.write('   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">\n')
+      file.write('      <arg name="camera"         value="$(arg sensor_name)" />\n')
+      file.write('   </include>\n')
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
       file.write('      <group if="$(arg munaro_detection_enabled)">\n')
