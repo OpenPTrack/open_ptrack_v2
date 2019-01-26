@@ -15,9 +15,24 @@ cv::Mat DoubleMatFromVec3b(cv::Vec3b in);
 void opencvPoseToEigenPose(cv::Vec3d rvec, cv::Vec3d tvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion);
 int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, float qz, float qw, ros::Publisher pose_marker_pub, std::string name, float r, float g, float b, float a, float size);
 double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2);
-int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
-int buildMarker(visualization_msgs::Marker& marker_pose, const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
+
+visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
+visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
+
 cv::Point2i findNearestNonZeroPixel(const cv::Mat& image, int x, int y, double maxDist);
+
 void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTransform transform);
 void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHeight, int winWidth=-1);
-void publishPoseAsTfFrame(geometry_msgs::PoseStamped& pose, std::string tfFrameName);
+void publishPoseAsTfFrame(const geometry_msgs::PoseStamped& pose, std::string tfFrameName);
+void publishTransformAsTfFrame(const tf::Transform& transform, std::string tfFrameName, std::string parentFrame, const ros::Time& time);
+
+
+geometry_msgs::Point buildRosPoint(double positionX, double positionY, double positionZ);
+geometry_msgs::Quaternion& buildRosQuaternion(double quaternionX, double quaternionY, double quaternionZ, double quaternionW);
+geometry_msgs::Pose buildRosPose(double positionX, double positionY, double positionZ, double quaternionX, double quaternionY, double quaternionZ, double quaternionW);
+geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation);
+
+std::string poseToString(tf::Pose pose);
+
+
+tf::Transform leftHandedToRightHanded(const tf::Transform& leftHandedPose);

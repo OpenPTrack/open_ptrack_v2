@@ -143,8 +143,9 @@ int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, f
  * @param a the alpha component of the color of the marker
  * @param size the sie of the sphere
  */
-int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
+visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
 {
+	visualization_msgs::Marker marker_pose;
 	marker_pose.header.frame_id = frame_id;
 	marker_pose.ns = name;
 	marker_pose.type = visualization_msgs::Marker::SPHERE;
@@ -169,13 +170,12 @@ int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Po
 	marker_pose.pose.orientation.z = pose.orientation.z;
 	marker_pose.pose.orientation.w = pose.orientation.w;
 
-	return 0;
+	return marker_pose;
 }
 
 
 /**
  * Builds a spheric marker for the specified pose to view the pose in rviz
- * @param marker_pose the marker is returned here
  * @param position the position to put the marker at
  * @param name the name for the marker
  * @param r the red component of the color of the marker
@@ -184,8 +184,9 @@ int buildMarker(visualization_msgs::Marker& marker_pose, const geometry_msgs::Po
  * @param a the alpha component of the color of the marker
  * @param size the sie of the sphere
  */
-int buildMarker(visualization_msgs::Marker& marker_pose, const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
+visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
 {
+	visualization_msgs::Marker marker_pose;
 	marker_pose.header.frame_id = frame_id;
 	marker_pose.ns = name;
 	marker_pose.type = visualization_msgs::Marker::SPHERE;
@@ -210,7 +211,7 @@ int buildMarker(visualization_msgs::Marker& marker_pose, const cv::Point3f& posi
 	marker_pose.pose.orientation.z = 0;
 	marker_pose.pose.orientation.w = 0;
 
-	return 0;
+	return marker_pose;
 }
 
 /**
@@ -339,12 +340,87 @@ void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHei
  *	@param pose The pose to be published
  *	@param tfFrameName The name the of the tf frame the pose will be published as
  */
-void publishPoseAsTfFrame(geometry_msgs::PoseStamped& pose, std::string tfFrameName)
+void publishPoseAsTfFrame(const geometry_msgs::PoseStamped& pose, std::string tfFrameName)
 {
 	static tf::TransformBroadcaster br;
 	tf::Transform transform;
 	transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
 	tf::Quaternion q(pose.pose.orientation.x,pose.pose.orientation.y,pose.pose.orientation.z,pose.pose.orientation.w);
 	transform.setRotation(q);
-	br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), pose.header.frame_id, tfFrameName));
+	br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, tfFrameName));
+}
+
+/**
+ *	Publishes the provided transform as a tf frame
+ *	
+ *	@param pose The pose to be published
+ *	@param tfFrameName The name the of the tf frame the pose will be published as
+ */
+void publishTransformAsTfFrame(const tf::Transform& transform, std::string tfFrameName, std::string parentFrame, const ros::Time& time)
+{
+	static tf::TransformBroadcaster br;
+	br.sendTransform(tf::StampedTransform(transform, time, parentFrame, tfFrameName));
+}
+
+
+geometry_msgs::Point buildRosPoint(double positionX, double positionY, double positionZ)
+{
+	geometry_msgs::Point point;
+	point.x=positionX;
+	point.y=positionY;
+	point.z=positionZ;
+	return point;
+}
+
+geometry_msgs::Quaternion buildRosQuaternion(double quaternionX, double quaternionY, double quaternionZ, double quaternionW)
+{
+	geometry_msgs::Quaternion quaternion;
+	quaternion.x = quaternionX;
+	quaternion.y = quaternionY;
+	quaternion.z = quaternionZ;
+	quaternion.w = quaternionW;
+	return quaternion;
+}
+
+
+geometry_msgs::Pose buildRosPose(double positionX, double positionY, double positionZ, double quaternionX, double quaternionY, double quaternionZ, double quaternionW)
+{
+	geometry_msgs::Pose pose;//the compiler should optimize this and don't do a copy on return (guaranteed in c++17)
+	pose.position.x = positionX;
+	pose.position.y = positionY;
+	pose.position.z = positionZ;
+
+	pose.orientation.x = quaternionX;
+	pose.orientation.y = quaternionY;
+	pose.orientation.z = quaternionZ;
+	pose.orientation.w = quaternionW;
+	return pose;
+}
+
+geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation)
+{
+	return buildRosPose(position.x(),position.y(),position.z(),orientation.x(),orientation.y(),orientation.z(),orientation.w());
+}
+
+std::string poseToString(tf::Pose pose)
+{
+	return ""+to_string(pose.getOrigin().getX())+";"+to_string(pose.getOrigin().getY())+";"+to_string(pose.getOrigin().getZ())+"      "+to_string(pose.getRotation().getX())+";"+to_string(pose.getRotation().getY())+";"+to_string(pose.getRotation().getZ())+";"+to_string(pose.getRotation().getW());
+}
+
+
+
+/**
+ * Converts a transform in a left-handed coordinate space to a transform in a righ-handed coordinate space
+ * Note that tf::Pose and tf::Transform are the same thing
+ */
+tf::Transform leftHandedToRightHanded(const tf::Transform& leftHandedPose)
+{
+	tf::Vector3 leftHandedOrigin = leftHandedPose.getOrigin();
+	tf::Vector3 rightHandedOrigin = tf::Vector3(leftHandedOrigin.getX(),-leftHandedOrigin.getY(),leftHandedOrigin.getZ());
+
+	tf::Vector3 leftHandedRotationAxis = leftHandedPose.getRotation().getAxis();
+	tfScalar leftHandedRotationAngle = leftHandedPose.getRotation().getAngle();
+	tf::Quaternion rightHandedRotation = tf::Quaternion(tf::Vector3(leftHandedRotationAxis.getX(),-leftHandedRotationAxis.getY(),leftHandedRotationAxis.getZ()),-leftHandedRotationAngle);
+
+	return tf::Transform(rightHandedRotation,rightHandedOrigin);
 }

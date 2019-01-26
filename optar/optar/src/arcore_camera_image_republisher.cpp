@@ -16,7 +16,7 @@ void imageCallback(const opt_msgs::ArcoreCameraImageConstPtr& inImg)
 		ROS_ERROR("couldn't extract kinect camera opencv image");
 		return;
 	}
-    ROS_INFO("decoded kinect camera image");
+    ROS_INFO("decoded kinect camera image, it's %dx%d",img.cols,img.rows);
 
 	sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", img).toImageMsg();
 
@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 	
 	ROS_INFO_STREAM("starting "<<ARCORE_CAMERA_IMAGE_REPUBLISHER_NODE_NAME);
 	ros::Subscriber sub = nh.subscribe("/optar/arcore_camera", 1, imageCallback);
-	pub = nh.advertise<sensor_msgs::CompressedImage>("/optar/camera_republished_raw", 10);
+	pub = nh.advertise<sensor_msgs::Image>("/optar/camera_republished_raw", 10);
 	ros::spin();
 }
 
