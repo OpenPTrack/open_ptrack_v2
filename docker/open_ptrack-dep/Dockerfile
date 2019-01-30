@@ -1,4 +1,4 @@
-FROM nvidia/cudagl:9.2-devel-ubuntu16.04
+FROM nvidia/cudagl:9.0-devel-ubuntu16.04
 
 LABEL maintainer "Samir Tabriz"
 
@@ -59,7 +59,7 @@ RUN  cd ~/workspace/ros     \
     # && wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run -O cuda.run     \ 
     # && chmod +x cuda.run     \ 
     # && ./cuda.run -silent --toolkit     \ 
-    && wget "https://www.dropbox.com/s/di9zzggw2llp9pc/cudnn-9.0-linux-x64-v7.2.1.38.tgz?dl=0"     \ 
+    && wget "https://www.dropbox.com/s/cx95583vbf1ifzm/cudnn-8.0-linux-x64-v5.1.tgz?dl%3D0&sa=D&ust=1507541105896000&usg=AFQjCNEU511fT00n547PxPt_P6cfSLPVWw"     \ 
     && tar -zxvf cudnn*     \ 
     && cp cuda/include/* /usr/local/cuda/include     \ 
     && cp cuda/lib64/* /usr/local/cuda/lib64/     \ 
@@ -110,23 +110,6 @@ RUN  apt-get install cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev li
     && cd calibration_toolkit     \ 
     && git fetch origin --tags     \ 
     && git checkout tags/v0.2         
-
-# RUN cd     \ 
-#     && cd workspace     \ 
-#     && apt-get update     \ 
-#     && git clone https://github.com/marketto89/opencv     \ 
-#     && cd opencv     \ 
-#     && git checkout 3.1.0-with-cuda8     \ 
-#     && mkdir release     \ 
-#     && cd release     \ 
-#     && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local/opencv3 -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D WITH_V4L=ON -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_OPENGL=ON -D ENABLE_FAST_MATH=1 -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 -D WITH_IPP=ON -D CMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs ..     \ 
-#     && make -j8 -l8     \ 
-#     && make install     \ 
-#     && printf '#OpenCV\nPKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/opencv3/lib/pkgconfig\nexport PKG_CONFIG_PATH\n' >> /root/.bashrc     \ 
-#     && printf 'PATH=$PATH:/usr/local/opencv3/bin\nexport PATH\n' >> /root/.bashrc      \ 
-#     && printf 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/opencv3/lib\nexport LD_LIBRARY_PATH\n' >> /root/.bashrc       \ 
-#     && /bin/bash -c "source /root/.bashrc"     \ 
-#     && ln -s /usr/local/opencv3/share/OpenCV/3rdparty/lib/libippicv.a /usr/local/lib/libippicv.a  
 
 
 RUN apt-get update && apt-get remove -y x264 libx264-dev
@@ -181,22 +164,24 @@ RUN cd /root/workspace/opencv \
     && cd /root/workspace/opencv/build \
     && make clean
 
-# RUN  /bin/bash -c "source /root/.bashrc    \ 
-#     && cd ~/workspace/ros/src      \ 
-#     && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
-#     && cd rtpose_wrapper     \ 
-#     && git checkout integration-1604     \ 
-#     && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev     \ 
-#     && make all -j8"
+RUN  /bin/bash -c "source /root/.bashrc    \ 
+    && cd ~/workspace/ros/src      \ 
+    && git clone https://bitbucket.org/itabr/rtpose_wrapper     \ 
+    && cd rtpose_wrapper     \ 
+    && git checkout integration-1604     \ 
+    && apt-get update   \
+    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev     \ 
+    && make all -j8"
 
-# RUN  /bin/bash -c "git clone https://github.com/torch/distro.git ~/torch --recursive \ 
-#     && cd ~/torch \ 
-#     && bash install-deps \ 
-#     && ./install.sh -b \ 
-#     && source ~/.bashrc \ 
-#     && cd install/bin \ 
-#     && ./luarocks install dpnn \ 
-#     && ./luarocks install csvigo"
+RUN  /bin/bash -c "git clone https://github.com/torch/distro.git ~/torch --recursive \ 
+    && export TORCH_NVCC_FLAGS='-D__CUDA_NO_HALF_OPERATORS__' \
+    && cd ~/torch \ 
+    && bash install-deps \ 
+    && ./install.sh -b \ 
+    && source ~/.bashrc \ 
+    && cd install/bin \ 
+    && ./luarocks install dpnn \ 
+    && ./luarocks install csvigo"
 
 RUN /bin/bash -c "cd /tmp \
     && git clone https://github.com/cmusatyalab/openface.git \

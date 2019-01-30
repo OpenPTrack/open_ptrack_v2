@@ -1,7 +1,7 @@
 FROM openptrack/open_ptrack-dep
 LABEL maintainer "Samir Tabriz"
 
-ARG branch=zed
+ARG branch=master
 
 RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections && \
     apt-get update && apt-get install -y apt-transport-https apt-utils less lsb-release udev wget && \
