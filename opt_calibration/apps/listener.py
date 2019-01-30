@@ -385,6 +385,7 @@ class Listener :
       file.write('   <arg name="frame_rate"           value="100" />\n')
       file.write('   <arg name="resolution"           value="3" />\n')
       file.write('  </include>\n\n')
+      file.write('  <include file="$(find detection)/launch/zed_frames.launch">\n')
       file.write('  </group>\n\n')
 
       if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
@@ -423,6 +424,7 @@ class Listener :
       file.write('   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">\n')
       file.write('      <arg name="camera"         value="$(arg sensor_name)" />\n')
       file.write('   </include>\n')
+      file.write('  <include file="$(find detection)/launch/realsense_frames.launch">\n')
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
       file.write('      <group if="$(arg munaro_detection_enabled)">\n')
