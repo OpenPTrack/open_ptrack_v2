@@ -12,9 +12,10 @@ void callback(const opt_msgs::OptarNtpMessagePtr& inMsg)
 		opt_msgs::OptarNtpMessage response;
 		response.type = opt_msgs::OptarNtpMessage::REPLY;
 		response.serverTime = ros::Time::now();
+		response.clientRequestTime = inMsg->clientRequestTime;
 		response.id = inMsg->id;
 		pub.publish(response);
-		ROS_INFO("handled query");
+		ROS_INFO_STREAM("handled query from "<<inMsg->id<<"    partial time diff "<<(response.serverTime-response.clientRequestTime));
 	}
 }
 

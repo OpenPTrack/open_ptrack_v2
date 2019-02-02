@@ -20,6 +20,7 @@ visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::str
 visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
 
 cv::Point2i findNearestNonZeroPixel(const cv::Mat& image, int x, int y, double maxDist);
+cv::Point2i findLowestNonZeroInRing(const cv::Mat& image, int x, int y, double maxRadius, double minRadius);
 
 void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTransform transform);
 void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHeight, int winWidth=-1);
@@ -35,4 +36,4 @@ geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Q
 std::string poseToString(tf::Pose pose);
 
 
-tf::Transform leftHandedToRightHanded(const tf::Transform& leftHandedPose);
+tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose);

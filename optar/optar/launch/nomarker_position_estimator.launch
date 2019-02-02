@@ -30,6 +30,7 @@
 					<remap from="kinect_depth" 						to="$(arg sensor_name)/hd/image_depth_rect" />
 					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/hd/camera_info" />
 		</node>
+		<node pkg="optar" type="ntp_server" name="ntp_server" output="screen"/>
 	</group>
 
 </launch>

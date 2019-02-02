@@ -26,6 +26,7 @@
 #include <optar/OptarDynamicParametersConfig.h>
 
 #include "../utils.hpp"
+#include  "TransformKalmanFilter.hpp"
 
 
 using namespace cv;
@@ -49,15 +50,16 @@ ros::Publisher pose_marker_pub;
 
 
 //These may be overwritten by dynamic_reconfigure
-double pnpReprojectionError = 5;
-double pnpConfidence = 0.99;
-double pnpIterations = 1000;
-double matchingThreshold = 25;
-double reprojectionErrorDiscardThreshold = 5;
-int orbMaxPoints = 500;
-double orbScaleFactor = 1.2;
-int orbLevelsNumber = 8;
+static double pnpReprojectionError = 5;
+static double pnpConfidence = 0.99;
+static double pnpIterations = 1000;
+static double matchingThreshold = 25;
+static double reprojectionErrorDiscardThreshold = 5;
+static int orbMaxPoints = 500;
+static double orbScaleFactor = 1.2;
+static int orbLevelsNumber = 8;
 
+static shared_ptr<TransformKalmanFilter> transformKalmanFilter;
 
 class PoseMatch
 {
@@ -217,7 +219,7 @@ int findOrbMatches(	const cv::Mat& arcoreImg,
 					std::vector<cv::KeyPoint>& kinectKeypoints)
 {
 	matches.clear();
-    cv::Ptr<cv::ORB> orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber/*500,1.189207115,12*/);
+    cv::Ptr<cv::ORB> orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber);
 
     //detect keypoints on both images
    	std::chrono::steady_clock::time_point beforeDetection = std::chrono::steady_clock::now();
@@ -262,8 +264,7 @@ int findOrbMatches(	const cv::Mat& arcoreImg,
   	 
   	//find matches between the descriptors
    	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
-    cv::BFMatcher matcher(cv::NORM_HAMMING);
-    matcher.match(arcoreDescriptors,kinectDescriptors,matches);//arcore is query, kinect is trains
+    cv::BFMatcher::create(cv::NORM_HAMMING)->match(arcoreDescriptors,kinectDescriptors,matches);//arcore is query, kinect is trains
    	std::chrono::steady_clock::time_point afterMatching = std::chrono::steady_clock::now();
 	unsigned long matchingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterMatching - beforeMatching).count();
 	ROS_INFO("Descriptors matching took %lu ms",matchingDuration);
@@ -377,7 +378,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	cv::flip(arcoreImg,flippedArcoreImg,0);
 	arcoreImg=flippedArcoreImg;
 	//cv::xphoto::createSimpleWB()->balanceWhite(flippedArcoreImg,arcoreImg);
-	//cv::equalizeHist(flippedArcoreImg,arcoreImg);
+	cv::equalizeHist(arcoreImg,arcoreImg);
     ROS_INFO("decoded arcore image");
     //cv::imshow("Arcore", arcoreImg);
 
@@ -389,6 +390,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 		return;
 	}
     ROS_INFO("decoded kinect camera image");
+	cv::equalizeHist(kinectCameraImg,kinectCameraImg);
     //cv::imshow("Kinect", kinectCameraImg);
 
 
@@ -418,12 +420,12 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	// camera position is defined with x pointing right, y pointing up and -z pointing where the camera is facing.
 	// As provided from all ARCore APIs, Poses always describe the transformation from object's local coordinate space 
 	// to the world coordinate space. This is the usual pose representation, same as ROS
-	tf::Pose phonePoseArcoreFrameLeftHanded;
-	tf::poseMsgToTF(arcoreInputMsg->mobileFramePose,phonePoseArcoreFrameLeftHanded);
-	tf::Pose phonePoseArcoreFrame = leftHandedToRightHanded(phonePoseArcoreFrameLeftHanded);
+	tf::Pose phonePoseArcoreFrameUnity;
+	tf::poseMsgToTF(arcoreInputMsg->mobileFramePose,phonePoseArcoreFrameUnity);
+	tf::Pose phonePoseArcoreFrame = convertPoseUnityToRos(phonePoseArcoreFrameUnity);
 
 	publishTransformAsTfFrame(phonePoseArcoreFrame,"phone_arcore","/world",arcoreInputMsg->header.stamp);
-	publishTransformAsTfFrame(phonePoseArcoreFrameLeftHanded,"phone_arcore_left","/world",arcoreInputMsg->header.stamp);
+	publishTransformAsTfFrame(phonePoseArcoreFrameUnity,"phone_arcore_left","/world",arcoreInputMsg->header.stamp);
 
 	//from x to the right, y up, z back to x to the right, y down, z forward
 	tf::Transform cameraConventionTransform = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0), 3.1415926535897));//rotate 180 degrees around x axis
@@ -490,6 +492,9 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
 		{
 			Point2i nnz = findNearestNonZeroPixel(kinectDepthImg,imgPos.x,imgPos.y,100);
+			double nnzDist = hypot(nnz.x-imgPos.x,nnz.y-imgPos.y);
+			nnz = findLowestNonZeroInRing(kinectDepthImg,imgPos.x,imgPos.y, nnzDist+10, nnzDist);
+
 			ROS_INFO("Got closest non-zero pixel, %d;%d",nnz.x,nnz.y);
 			kinectDepthImg.at<uint16_t>(imgPos)=kinectDepthImg.at<uint16_t>(nnz);
 		}
@@ -567,8 +572,9 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	if(goodMatches.size()<4)
 	{
 		cv::Mat matchesImg;
-	    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-		prepareOpencvImageForShowing("Matches", matchesImg, 800);
+		//cv::drawKeypoints(arcoreImg,arcoreKeypoints)
+	    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+		prepareOpencvImageForShowing("Matches", matchesImg, matchesImg.rows * 1920/matchesImg.cols);
 	    cv::waitKey(10);
 
 		pose_marker_pub.publish(markerArray);
@@ -642,7 +648,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 	cv::Mat matchesImg;
-    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 	prepareOpencvImageForShowing("Matches", matchesImg, 800);
 	prepareOpencvImageForShowing("Reprojection", colorArcoreImg, 400);
 	cv::waitKey(10);
@@ -726,11 +732,13 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	// let arcoreWorld = A
 	// let phonePoseTf = Pr
 	//
-	// Pa*A*0 = Pr*0
+	// A*Pa*0 = Pr*0
 	// so:
-	// Pa^-1*Pa*A*0 = Pa^-1*Pr*0
+	// A*Pa = Pr
 	// so:
-	// A = Pa^-1*Pr
+	// A*Pa*Pa^-1 = Pr*Pa^-1
+	// so:
+	// A = Pr*Pa^-1
 	tf::Pose arcoreWorld = phonePoseTf * phonePoseArcoreFrameConverted.inverse();
 
 	publishTransformAsTfFrame(arcoreWorld,"arcore_world","/world",arcoreInputMsg->header.stamp);
@@ -741,6 +749,9 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 
+	tf::Pose filteredArcoreWorld = transformKalmanFilter->update(arcoreWorld);
+	publishTransformAsTfFrame(filteredArcoreWorld,"arcore_world_filtered","/world",arcoreInputMsg->header.stamp);
+	ROS_INFO_STREAM("filtering correction = "<<poseToString(arcoreWorld*filteredArcoreWorld.inverse()));
 
 
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -761,6 +772,9 @@ int main(int argc, char** argv)
 
 	bindedDynamicParametersCallback = boost::bind(&dynamicParametersCallback, _1, _2);
 	server.setCallback(bindedDynamicParametersCallback);
+
+
+	transformKalmanFilter = std::make_shared<TransformKalmanFilter>(1e-7,1e-2,1);
 
 
 	boost::shared_ptr<sensor_msgs::CameraInfo const> kinectCameraInfoPtr;

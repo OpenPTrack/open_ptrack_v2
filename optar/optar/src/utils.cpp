@@ -19,6 +19,7 @@
 #include <thread>         // std::this_thread::sleep_for
 #include <visualization_msgs/Marker.h>
 #include <tf/transform_broadcaster.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 
 using namespace std;
 using namespace cv;
@@ -232,7 +233,7 @@ uint16_t getPixelSafe(const Mat& image, const Point2i p, uint16_t outOfBoundsVal
 		return image.at<uint16_t>(p);
 }
 
-Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, double maxDist)
+Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, const double maxDist)
 {
 	//ROS_INFO("searching closest non-zero pixel for %d;%d",x,y);
 	if(image.type()!=CV_16U)
@@ -257,11 +258,88 @@ Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, double maxDist)
 				bestDist = dist;
 				bestx=xToCheck;
 				besty=yToCheck;
-				maxDist=bestDist;
 			}
 		}
 	};
 	for(int r = 1; r<=maxDist; r++)
+	{
+		checkPixel(x+r,y);
+		checkPixel(x,y+r);
+		checkPixel(x-r,y);
+		checkPixel(x,y-r);
+		for(int i=1;i<=r;i++)
+		{
+			if(bestDist<=maxDist)//if you did find it, exit
+				break;
+			checkPixel(x+r,y-i);
+			checkPixel(x+r,y+i);
+
+			checkPixel(x-r,y-i);
+			checkPixel(x-r,y+i);
+
+			checkPixel(x-i,y+r);
+			checkPixel(x+i,y+r);
+
+			checkPixel(x-i,y-r);
+			checkPixel(x+i,y-r);
+		}
+		if(bestDist<=maxDist)//if you did find it, exit
+			break;
+	}
+
+	if(bestDist==maxDist+1)
+		return Point2i(x,y);
+	return Point2i(bestx,besty);
+}
+
+/**
+ * Finds the non-zero pixel with the lowest value in a ring centered around a specific pixel
+ * @param image the image in which to search
+ * @param x the x coordinate of the center of the ring
+ * @param y the y coordinate of the center of the ring
+ * @param maxRadius the outer radius of the ring
+ * @param minRadius the inner radius of the ring
+ *
+ * @return the pixel
+ */
+Point2i findLowestNonZeroInRing(const Mat& image, int x, int y, double maxRadius, double minRadius)
+{
+	//ROS_INFO("searching closest non-zero pixel for %d;%d",x,y);
+	if(image.type()!=CV_16U)
+	{
+		throw std::invalid_argument("Only CV_16U mats are supported");
+	}
+	int bestx=x+maxRadius+1;
+	int besty=y+maxRadius+1;
+	int bestValue = INT_MAX;
+
+
+	auto checkPixel = [&](int xToCheck, int yToCheck)
+	{
+		//ROS_INFO("checking %d;%d",xToCheck,yToCheck);
+		int value = getPixelSafe(image,Point2i(xToCheck,yToCheck),0);
+		if(value!=0)
+		{
+			double dist = hypot(xToCheck-x,yToCheck-y);
+			//if it's in the ring and it's the best until now
+			if(value<bestValue && minRadius<=dist && dist<=maxRadius)
+			{
+				bestx = xToCheck;
+				besty = yToCheck;
+				bestValue = value;
+			}
+		}
+	};
+
+	if(minRadius==0 && getPixelSafe(image,Point2i(x,y),0)!=0)
+	{
+		checkPixel(x,y);
+	}
+
+	//loop through all the values in the square ring that contains our ring
+	int squareMaxRadius = maxRadius;
+	int squareMinRadius = minRadius/std::sqrt(2);
+	for(int r = squareMinRadius; r<=squareMaxRadius; r++)
 	{
 		checkPixel(x+r,y);
 		checkPixel(x,y+r);
@@ -283,11 +361,10 @@ Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, double maxDist)
 		}
 	}
 
-	if(bestDist==maxDist+1)
+	if(bestValue==INT_MAX)//if we didn't find anything
 		return Point2i(x,y);
 	return Point2i(bestx,besty);
 }
-
 
 
 
@@ -334,21 +411,6 @@ void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHei
 }
 
 
-/**
- *	Publishes the provided pose as a tf frame
- *	
- *	@param pose The pose to be published
- *	@param tfFrameName The name the of the tf frame the pose will be published as
- */
-void publishPoseAsTfFrame(const geometry_msgs::PoseStamped& pose, std::string tfFrameName)
-{
-	static tf::TransformBroadcaster br;
-	tf::Transform transform;
-	transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
-	tf::Quaternion q(pose.pose.orientation.x,pose.pose.orientation.y,pose.pose.orientation.z,pose.pose.orientation.w);
-	transform.setRotation(q);
-	br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, tfFrameName));
-}
 
 /**
  *	Publishes the provided transform as a tf frame
@@ -358,8 +420,26 @@ void publishPoseAsTfFrame(const geometry_msgs::PoseStamped& pose, std::string tf
  */
 void publishTransformAsTfFrame(const tf::Transform& transform, std::string tfFrameName, std::string parentFrame, const ros::Time& time)
 {
-	static tf::TransformBroadcaster br;
-	br.sendTransform(tf::StampedTransform(transform, time, parentFrame, tfFrameName));
+	static tf2_ros::StaticTransformBroadcaster br;
+	tf::StampedTransform stampedTransform(transform, time, parentFrame, tfFrameName);
+	geometry_msgs::TransformStamped stampedTransformMsg;
+	tf::transformStampedTFToMsg(stampedTransform,stampedTransformMsg);
+	br.sendTransform(stampedTransformMsg);
+}
+
+/**
+ *	Publishes the provided pose as a tf frame
+ *	
+ *	@param pose The pose to be published
+ *	@param tfFrameName The name the of the tf frame the pose will be published as
+ */
+void publishPoseAsTfFrame(const geometry_msgs::PoseStamped& pose, std::string tfFrameName)
+{
+	tf::Transform transform;
+	transform.setOrigin( tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z) );
+	tf::Quaternion q(pose.pose.orientation.x,pose.pose.orientation.y,pose.pose.orientation.z,pose.pose.orientation.w);
+	transform.setRotation(q);
+	publishTransformAsTfFrame(transform,tfFrameName,pose.header.frame_id,pose.header.stamp);
 }
 
 
@@ -410,10 +490,10 @@ std::string poseToString(tf::Pose pose)
 
 
 /**
- * Converts a transform in a left-handed coordinate space to a transform in a righ-handed coordinate space
+ * Converts a transform in a left-handed coordinate space to a transform in a right-handed coordinate space
  * Note that tf::Pose and tf::Transform are the same thing
  */
-tf::Transform leftHandedToRightHanded(const tf::Transform& leftHandedPose)
+tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose)
 {
 	tf::Vector3 leftHandedOrigin = leftHandedPose.getOrigin();
 	tf::Vector3 rightHandedOrigin = tf::Vector3(leftHandedOrigin.getX(),-leftHandedOrigin.getY(),leftHandedOrigin.getZ());
