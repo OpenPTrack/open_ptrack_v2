@@ -1,0 +1,9 @@
+<launch>
+  <arg name="publish_frame" default="true" />
+  <arg name="camera" default="zed01" />
+  <arg name="tf_prefix" default="" />
+  <arg name="pi/2" value="1.5707963267948966" />
+  <arg name="pi" value="3.14159265359" />
+  <arg name="optical_rotate" value="0 0 0 $(arg pi/2) -$(arg pi/2) 0" />
+  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="$(arg optical_rotate) $(arg camera) map 100" />                 
+</launch>

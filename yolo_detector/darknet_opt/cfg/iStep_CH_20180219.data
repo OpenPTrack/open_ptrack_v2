@@ -1,5 +1,0 @@
-classes = 22
-train  = data/train.txt
-valid  = data/test.txt
-names = cfg/iStep_CH_20180219.names
-backup = backup/

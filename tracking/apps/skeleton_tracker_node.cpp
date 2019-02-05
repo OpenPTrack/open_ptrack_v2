@@ -541,10 +541,12 @@ detection_cb(const rtpose_wrapper::SkeletonArrayMsg::ConstPtr& msg)
     // Read transforms between camera frame and world frame:
     if (!extrinsic_calibration)
     {
+	//std::string f = frame_id.replace(pos, std::string("_optical_frame").size(), "");
+
       static tf::TransformBroadcaster world_to_camera_tf_publisher;
       world_to_camera_tf_publisher.sendTransform
           (tf::StampedTransform(world_to_camera_frame_transform,
-                                ros::Time::now(), frame_id_tmp + "_ir_optical_frame", world_frame_id));
+                                ros::Time::now(), "zed_left_camera_frame" , world_frame_id));
     }
 
     //Calculate direct and inverse transforms between camera and world frame:
