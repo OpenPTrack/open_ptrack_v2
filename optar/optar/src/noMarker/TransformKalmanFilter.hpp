@@ -14,6 +14,8 @@ private:
 	double mMeasurementNoiseCovariance;
 	double mPosterioriErrorCovariance;
 
+	bool didEverUpdate = false;
+
 	cv::KalmanFilter kalmanFilter;
 
 public:

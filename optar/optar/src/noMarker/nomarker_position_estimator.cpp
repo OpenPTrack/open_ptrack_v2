@@ -774,7 +774,7 @@ int main(int argc, char** argv)
 	server.setCallback(bindedDynamicParametersCallback);
 
 
-	transformKalmanFilter = std::make_shared<TransformKalmanFilter>(1e-7,1e-2,1);
+	transformKalmanFilter = std::make_shared<TransformKalmanFilter>(1e-5,1,1);
 
 
 	boost::shared_ptr<sensor_msgs::CameraInfo const> kinectCameraInfoPtr;

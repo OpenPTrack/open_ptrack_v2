@@ -95,7 +95,7 @@ add_executable(origin_sender src/withMarker/origin_sender.cpp)
 target_link_libraries(origin_sender ${catkin_LIBRARIES})
 add_dependencies(origin_sender origin_sendercpp)
 
-add_executable(centroid_modifier src/withMarker/centroid_modifier.cpp)
+add_executable(centroid_modifier src/withMarker/centroid_modifier.cpp src/utils.cpp)
 target_link_libraries(centroid_modifier ${catkin_LIBRARIES})
 add_dependencies(centroid_modifier centroid_modifiercpp)
 
