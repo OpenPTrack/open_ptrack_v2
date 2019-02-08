@@ -14,13 +14,10 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "Origin_sender");
   ros::NodeHandle nh_origin;
 
-  tf::TransformListener listener;      
-  tf::StampedTransform transform;
+  tf::TransformListener listener;   
 
   sleep(3.0);
 
-  ros::Rate loop_rate_error(1);
-  bool countClass = false;
 
 
   std::string nameTag;
@@ -32,12 +29,41 @@ int main(int argc, char **argv)
   ROS_WARN("ORIGIN -> Got param output_topic: %s", output_topic.c_str());
 
   ros::Publisher vis_pub = nh_origin.advertise<geometry_msgs::PoseStamped>(output_topic.c_str(), 100);
+  
 
+  ros::Rate loop_rate_error(1);
+  bool countClass = false;
   while(ros::ok())
-  {
-    try{      
-      listener.lookupTransform(nameTag.c_str(), "world", ros::Time(0), transform);
+  {   
+    tf::StampedTransform transform;
+    bool gotTransform = false;
+    std::string targetFrame = nameTag;
+    std::string sourceFrame = "/world";
+    try
+    {
+      listener.waitForTransform(targetFrame, sourceFrame, ros::Time(0), ros::Duration(1));
+      listener.lookupTransform(nameTag, sourceFrame, ros::Time(0), transform);
+      gotTransform = true;
+    }
+    catch (tf::LookupException e)
+    {
+      ROS_WARN_STREAM("Frame doesn't currently exist: what()="<<e.what());
+    }
+    catch(tf::ConnectivityException e)
+    {
+      ROS_ERROR_STREAM("Frames are not connected: what()="<<e.what());
+    }
+    catch(tf::ExtrapolationException e)
+    {
+      ROS_WARN_STREAM("Centroid timestamp is too far off from now: what()="<<e.what());
+    }
+    catch(tf::TransformException e)
+    {
+      ROS_ERROR_STREAM(e.what());
+    }
 
+    if(gotTransform)
+    {
       geometry_msgs::PoseStamped message; 
       message.header.frame_id = nameTag.c_str();
       message.header.stamp = ros::Time::now();
@@ -55,13 +81,6 @@ int main(int argc, char **argv)
         ROS_INFO("ORIGIN -> Write transformation: %s -> %s", nameTag.c_str(), "world");
         countClass = true;
       }
-
-    }
-    catch(tf::TransformException &ex)
-    {
-      ROS_ERROR("ORIGIN -> %s", ex.what());
-      loop_rate_error.sleep();
-      continue;
     }
     ros::spinOnce();
   }

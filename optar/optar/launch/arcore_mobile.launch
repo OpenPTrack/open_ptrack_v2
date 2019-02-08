@@ -19,10 +19,12 @@
 		<arg name="sensor_name" value="$(arg sensor_name)" />
 	</include>
 
+
 	<!-- Server node for mobile comunication -->
-	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+<!--	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
 		<param name="port" value="9090"/>
 	</include>
+-->
 
 	<!-- Mobile node publisher -->
 	<group if="$(arg enable_control)">
