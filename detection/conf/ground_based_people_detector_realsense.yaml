@@ -6,9 +6,9 @@ ground_estimation_mode: 0
 # Flag enabling manual ground selection via ssh:
 remote_ground_selection: true #false
 # Flag stating if the ground should be read from file, if present:
-read_ground_from_file: false
+read_ground_from_file: true
 # Flag that locks the ground plane update:
-lock_ground: false
+lock_ground: true
 # Threshold on the ratio of valid points needed for ground estimation:
 valid_points_threshold: 0.0
 
@@ -51,4 +51,3 @@ apply_denoising: true
 mean_k_denoising: 5
 # Standard deviation for denoising (the lower it is, the stronger is the filtering):
 std_dev_denoising: 0.3
-
