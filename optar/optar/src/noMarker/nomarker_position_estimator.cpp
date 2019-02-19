@@ -752,6 +752,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	tf::Pose filteredArcoreWorld = transformKalmanFilter->update(arcoreWorld);
 	publishTransformAsTfFrame(filteredArcoreWorld,"arcore_world_filtered","/world",arcoreInputMsg->header.stamp);
 	ROS_INFO_STREAM("filtering correction = "<<poseToString(arcoreWorld*filteredArcoreWorld.inverse()));
+	ROS_INFO_STREAM("arcore_world_filtered = "<<poseToString(filteredArcoreWorld));
 
 
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
