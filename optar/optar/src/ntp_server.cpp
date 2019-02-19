@@ -1,3 +1,12 @@
+/**
+ * @file
+ *
+ * @author Carlo Rizzardo
+ *
+ * A simple ntp-like server for synchronizing nodes. Built for synchronizing applications
+ * using rossharp, in particular rossharp on Unity on Android
+ */
+
 #include <ros/ros.h>
 #include <opt_msgs/OptarNtpMessage.h>
 #include <cv_bridge/cv_bridge.h>

@@ -1,3 +1,12 @@
+/**
+ * @file
+ *
+ * @author Carlo Rizzardo
+ *
+ * This file implements a ros node which publishes a dummy opt_msgs::TrackArray topic,
+ * for debug purposes
+ */
+
 #include <ros/ros.h>
 #include <opt_msgs/TrackArray.h>
 #include <cv_bridge/cv_bridge.h>

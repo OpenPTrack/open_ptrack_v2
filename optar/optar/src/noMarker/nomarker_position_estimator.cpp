@@ -1,3 +1,12 @@
+/**
+ * @file
+ *
+ * @author Carlo Rizzardo
+ *
+ * This file implements a ros node which estimates the transformation between an ARCore 
+ * coordinae frame and the ros tf /world frame
+ */
+
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>

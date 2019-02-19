@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @author Carlo Rizzardo
+ *
+ * Collection of utility methods used by the optar module
+ */
+
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
