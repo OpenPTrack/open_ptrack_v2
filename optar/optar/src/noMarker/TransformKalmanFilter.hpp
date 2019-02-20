@@ -1,3 +1,12 @@
+/**
+ * @file
+ *
+ * @author Carlo Rizzardo
+ *
+ * Definition of the TransformKalmanFilter class, which implements a kalman filter for
+ * 3D static poses
+ */
+
 #include <tf/tf.h>
 #include <opencv2/video/tracking.hpp>
 

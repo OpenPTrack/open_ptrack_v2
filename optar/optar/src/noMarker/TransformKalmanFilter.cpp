@@ -1,5 +1,21 @@
+/**
+ * @file
+ *
+ * @author Carlo Rizzardo
+ *
+ * Implementation of the TransformKalmanFilter class, which implements a kalman filter for
+ * 3D static poses
+ */
+
 #include "TransformKalmanFilter.hpp"
 
+
+/**
+ * Construct the kalman filter object, specifying the covariance values to use
+ * @param processNoiseCovariance Process noise covariance, models the variability of the actual real process value
+ * @param measurementNoiseCovariance Measurement noise covariance, models the amount of noise in the measurements
+ * @param posterioriErrorCovariance Initial value for the posteriori error covariance, which will be then actually estimated by the filter
+ */
 TransformKalmanFilter::TransformKalmanFilter(double processNoiseCovariance, double measurementNoiseCovariance, double posterioriErrorCovariance) : 
 	mProcessNoiseCovariance(processNoiseCovariance),
 	mMeasurementNoiseCovariance(measurementNoiseCovariance),
@@ -34,6 +50,13 @@ TransformKalmanFilter::TransformKalmanFilter(double processNoiseCovariance, doub
 
 }
 
+
+/**
+ * Updates the estimation with a new pose measurement
+ * @pram pose The new pose
+ *
+ * @return the new estimate
+ */
 tf::Pose TransformKalmanFilter::update(tf::Pose pose)
 {	
 

@@ -1,3 +1,12 @@
+/**
+ * @file
+ *
+ * @author Carlo Rizzardo
+ *
+ * This file implements a ros node which estimates the transformation between an ARCore 
+ * coordinae frame and the ros tf /world frame
+ */
+
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
@@ -752,6 +761,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	tf::Pose filteredArcoreWorld = transformKalmanFilter->update(arcoreWorld);
 	publishTransformAsTfFrame(filteredArcoreWorld,"arcore_world_filtered","/world",arcoreInputMsg->header.stamp);
 	ROS_INFO_STREAM("filtering correction = "<<poseToString(arcoreWorld*filteredArcoreWorld.inverse()));
+	ROS_INFO_STREAM("arcore_world_filtered = "<<poseToString(filteredArcoreWorld));
 
 
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
