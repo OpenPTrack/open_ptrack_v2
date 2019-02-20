@@ -8,24 +8,22 @@ add_compile_options(-std=c++11 -Wall)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  cmake_modules
   tf
   roscpp
   rospy
-  opt_msgs
-  detection
-  opt_utils
   message_filters
-  bayes
+  dynamic_reconfigure
+  cv_bridge
   opt_msgs
-  dynamic_reconfigure 
   )
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIB_DIR})
 
-find_package(Eigen3 REQUIRED)
-include_directories(${Eigen_INCLUDE_DIRS} include ${catkin_INCLUDE_DIRS})
+find_package(Eigen REQUIRED)
+include_directories(${Eigen_INCLUDE_DIRS})
 
 include_directories( cfg/cpp )
 
@@ -60,8 +58,8 @@ generate_dynamic_reconfigure_options(
 catkin_package(
  INCLUDE_DIRS
  LIBRARIES optar
- CATKIN_DEPENDS geometry_msg roscpp rospy std_msgs detection opt_utils message_filters bayes opt_msgs dynamic_reconfigure
- DEPENDS system_lib
+ CATKIN_DEPENDS geometry_msg roscpp rospy std_msgs message_filters dynamic_reconfigure opt_msgs
+ DEPENDS system_lib Eigen
 )
 
 ###########
@@ -96,7 +94,7 @@ target_link_libraries(origin_sender ${catkin_LIBRARIES})
 add_dependencies(origin_sender origin_sendercpp)
 
 add_executable(centroid_modifier src/withMarker/centroid_modifier.cpp src/utils.cpp)
-target_link_libraries(centroid_modifier ${catkin_LIBRARIES})
+target_link_libraries(centroid_modifier ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(centroid_modifier centroid_modifiercpp)
 
 add_executable(skeleton_modifier src/withMarker/skeleton_modifier.cpp)
@@ -108,15 +106,15 @@ target_link_libraries(motion_control ${catkin_LIBRARIES})
 add_dependencies(motion_control motion_control_cpp)
 
 add_executable(arcore_camera_image_republisher src/arcore_camera_image_republisher.cpp)
-target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES})
+target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/utils.cpp src/noMarker/TransformKalmanFilter.cpp)
-target_link_libraries(nomarker_position_estimator ${catkin_LIBRARIES})
+target_link_libraries(nomarker_position_estimator ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(nomarker_position_estimator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(ntp_server src/ntp_server.cpp src/utils.cpp)
-target_link_libraries(ntp_server ${catkin_LIBRARIES})
+target_link_libraries(ntp_server ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(ntp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # make sure configure headers are built before any node using them
 add_dependencies(nomarker_position_estimator ${PROJECT_NAME}_gencfg)
