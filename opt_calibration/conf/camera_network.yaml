@@ -1,6 +1,6 @@
 
 enable_people_tracking: true
-enable_pose: true
+enable_pose: false
 enable_object: true
 # Camera network parameters
 network:
@@ -20,11 +20,17 @@ network:
         id: "kinect03"
         people_detector: hog
 
-#  - pc: "opt2-chela-master"
+#  - pc: "multi-realsense"
 #    sensors:
-#      - type: kinect2
-#        id: "kinect06"
+#      - type: realsense
+#        id: "realsense1"
 #        people_detector: hog
+#        serial: '123456789'
+#      - type: realsense
+#        id: "realsense2"
+#        people_detector: hog
+#        serial: '123456789'
+
 
 # Checkerboard parameters
 checkerboard:

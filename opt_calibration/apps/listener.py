@@ -224,7 +224,7 @@ class Listener :
       # file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">\n')
       file.write('<include file="$(find realsense2_camera)/launch/rs_rgbd.launch">\n')
       if request.serial != '':
-        file.write('    <arg name="sensor_id"           value="$(arg sensor_id)" />\n')
+        file.write('    <arg name="serial_no"           value="$(arg sensor_id)" />\n')
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_serial).yaml" />\n')
       #else:
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
@@ -423,8 +423,11 @@ class Listener :
       file.write('  <!-- Launch the sensor -->\n')
       file.write('   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">\n')
       file.write('      <arg name="camera"         value="$(arg sensor_name)" />\n')
+      file.write('      <arg name="serial_no"         value="$(arg sensor_id)" />\n')
       file.write('   </include>\n')
       file.write('  <include file="$(find detection)/launch/realsense_frames.launch">\n')
+      file.write('      <arg name="camera"         value="$(arg sensor_name)" />\n')
+      file.write('   </include>\n')
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
       file.write('      <group if="$(arg munaro_detection_enabled)">\n')
@@ -441,7 +444,7 @@ class Listener :
       file.write('      <group unless="$(arg munaro_detection_enabled)" >\n')
       file.write('  	    <include file="$(find yolo_detector)/launch/detect_yolo_object_realsense_network.launch">\n')
       if request.id_num != '':
-        file.write('    	<arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+        file.write('    	<arg name="serial_no"               value="$(arg sensor_id)" />\n')
       file.write('    	        <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
       file.write('    	        <arg name="standalone"              value="false" />\n')
       file.write('  	    </include>\n')
@@ -462,7 +465,7 @@ class Listener :
       file.write('  <group if="$(arg enable_object)">\n')
       file.write('    <include file="$(find yolo_detector)/launch/detect_yolo_object_realsense_network.launch">\n')
       if request.serial != '':
-        file.write('      <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+        file.write('      <arg name="serial_no"               value="$(arg sensor_id)" />\n')
       file.write('      <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
       file.write('    </include>\n\n')
       file.write('  </group>\n\n') 
