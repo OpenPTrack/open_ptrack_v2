@@ -235,7 +235,8 @@ void callback(const Image::ConstPtr& rgb_image,
 			
 			cv::Rect rect(newX, newY, newWidth, newHeight);
 			float medianDepth = median(_depth_image(rect)) / mm_factor;
-			if (medianDepth > 6.25) {
+			// Fixed if medianDepth = 0, the point coordinate change to the cammera itself (0,0,0).
+			if (medianDepth <= 0 || medianDepth > 6.25) {
 				std::cout << "mediandepth " << medianDepth << " rejecting" << std::endl;
 				continue;
 			}			
