@@ -2,12 +2,15 @@
 <launch>
 
   <arg name="sensor_name" default="camera" />
+  <arg name="serial_no" default="" />
   <arg name="standalone" default="false" />
   <arg name="training_set" default="$(optenv OPT_OBJECT_TRAINING coco)" />
 
   <group if="$(arg standalone)" >
     <!-- Start the realsense -->
     <include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/>
+    <arg name="serial_no"            value="$(arg serial_no)" />
+    </include>
   </group>  
   
   
