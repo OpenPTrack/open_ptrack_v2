@@ -13,6 +13,7 @@
 #include <opencv2/core/eigen.hpp>
 #include <visualization_msgs/Marker.h>
 #include <opencv2/core/core.hpp>
+#include <tf/transform_listener.h>
 
 
 
@@ -26,6 +27,7 @@ double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2);
 
 visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
 visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
+visualization_msgs::Marker buildMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
 
 cv::Point2i findNearestNonZeroPixel(const cv::Mat& image, int x, int y, double maxDist);
 cv::Point2i findLowestNonZeroInRing(const cv::Mat& image, int x, int y, double maxRadius, double minRadius);
@@ -45,3 +47,4 @@ std::string poseToString(tf::Pose pose);
 
 
 tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose);
+tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses);

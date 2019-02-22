@@ -74,7 +74,11 @@ include_directories(
 )
 
 
-## Add folders to be run by python nosetests
+# Build the utils file as a library
+add_library(optarUtils src/utils.cpp)
+target_link_libraries(optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 
 add_executable(mobile_receiver src/withMarker/mobile_receiver.cpp)
@@ -93,9 +97,9 @@ add_executable(origin_sender src/withMarker/origin_sender.cpp)
 target_link_libraries(origin_sender ${catkin_LIBRARIES})
 add_dependencies(origin_sender origin_sendercpp)
 
-add_executable(centroid_modifier src/withMarker/centroid_modifier.cpp src/utils.cpp)
-target_link_libraries(centroid_modifier ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(centroid_modifier centroid_modifiercpp)
+add_executable(centroid_modifier src/withMarker/centroid_modifier.cpp)
+target_link_libraries(centroid_modifier optarUtils ${catkin_LIBRARIES} )
+add_dependencies(centroid_modifier centroid_modifiercpp optarUtils)
 
 add_executable(skeleton_modifier src/withMarker/skeleton_modifier.cpp)
 target_link_libraries(skeleton_modifier ${catkin_LIBRARIES})
@@ -105,20 +109,29 @@ add_executable(motion_control src/withMarker/motion_control.cpp)
 target_link_libraries(motion_control ${catkin_LIBRARIES})
 add_dependencies(motion_control motion_control_cpp)
 
+
+
 add_executable(arcore_camera_image_republisher src/arcore_camera_image_republisher.cpp)
 target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/utils.cpp src/noMarker/TransformKalmanFilter.cpp)
-target_link_libraries(nomarker_position_estimator ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(nomarker_position_estimator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/noMarker/TransformKalmanFilter.cpp)
+target_link_libraries(nomarker_position_estimator optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(nomarker_position_estimator optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(dummy_track_publisher src/noMarker/dummyTrackPublisher.cpp src/utils.cpp)
+add_executable(dummy_track_publisher src/noMarker/dummyTrackPublisher.cpp)
 target_link_libraries(dummy_track_publisher ${catkin_LIBRARIES})
 add_dependencies(dummy_track_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(ntp_server src/ntp_server.cpp src/utils.cpp)
-target_link_libraries(ntp_server ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(ntp_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(ntp_server src/ntp_server.cpp)
+target_link_libraries(ntp_server optarUtils ${catkin_LIBRARIES})
+add_dependencies(ntp_server optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(skeleton_centroid_publisher src/skeletonCentroidPublisher.cpp )
+target_link_libraries(skeleton_centroid_publisher optarUtils ${catkin_LIBRARIES})
+add_dependencies(skeleton_centroid_publisher optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+
 # make sure configure headers are built before any node using them
 add_dependencies(nomarker_position_estimator ${PROJECT_NAME}_gencfg)

@@ -140,6 +140,53 @@ int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, f
   	return 0;
 }
 
+
+
+
+/**
+ * Builds a spheric marker for the specified position to view the pose in rviz
+ * @param x the x position to put the marker at
+ * @param y the y position to put the marker at
+ * @param z the z position to put the marker at
+ * @param name the name for the marker
+ * @param r the red component of the color of the marker
+ * @param g the green component of the color of the marker
+ * @param b the blue component of the color of the marker
+ * @param a the alpha component of the color of the marker
+ * @param size the sie of the sphere
+ */
+visualization_msgs::Marker buildMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
+{
+	visualization_msgs::Marker marker_pose;
+	marker_pose.header.frame_id = frame_id;
+	marker_pose.ns = name;
+	marker_pose.type = visualization_msgs::Marker::SPHERE;
+	marker_pose.action = visualization_msgs::Marker::ADD;
+	marker_pose.scale.x = size;
+	marker_pose.scale.y = size;
+	marker_pose.scale.z = size;
+	marker_pose.color.a = a;
+	marker_pose.color.r = r;//float(rand()*256) / 255;
+	marker_pose.color.g = g;//float(rand()*256) / 255;
+	marker_pose.color.b = b;//float(rand()*256) / 255;
+	marker_pose.lifetime = ros::Duration(10);
+
+
+	marker_pose.header.stamp = ros::Time::now();
+	marker_pose.id = 0;
+	marker_pose.pose.position.x = x;
+	marker_pose.pose.position.y = y;
+	marker_pose.pose.position.z = z;
+	marker_pose.pose.orientation.x = 1;
+	marker_pose.pose.orientation.y = 0;
+	marker_pose.pose.orientation.z = 0;
+	marker_pose.pose.orientation.w = 0;
+
+	return marker_pose;
+}
+
+
+
 /**
  * Builds a spheric marker for the specified pose to view the pose in rviz
  * @param marker_pose the marker is returned here
@@ -194,33 +241,9 @@ visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::str
  */
 visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
 {
-	visualization_msgs::Marker marker_pose;
-	marker_pose.header.frame_id = frame_id;
-	marker_pose.ns = name;
-	marker_pose.type = visualization_msgs::Marker::SPHERE;
-	marker_pose.action = visualization_msgs::Marker::ADD;
-	marker_pose.scale.x = size;
-	marker_pose.scale.y = size;
-	marker_pose.scale.z = size;
-	marker_pose.color.a = a;
-	marker_pose.color.r = r;//float(rand()*256) / 255;
-	marker_pose.color.g = g;//float(rand()*256) / 255;
-	marker_pose.color.b = b;//float(rand()*256) / 255;
-	marker_pose.lifetime = ros::Duration(10);
-
-
-	marker_pose.header.stamp = ros::Time::now();
-	marker_pose.id = 0;
-	marker_pose.pose.position.x = position.x;
-	marker_pose.pose.position.y = position.y;
-	marker_pose.pose.position.z = position.z;
-	marker_pose.pose.orientation.x = 1;
-	marker_pose.pose.orientation.y = 0;
-	marker_pose.pose.orientation.z = 0;
-	marker_pose.pose.orientation.w = 0;
-
-	return marker_pose;
+	return buildMarker(position.x, position.y, position.z, name, r, g, b, a, size,  frame_id);
 }
+
 
 /**
  * Computes the euclidean distance between the two provided poses
@@ -510,4 +533,23 @@ tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose)
 	tf::Quaternion rightHandedRotation = tf::Quaternion(tf::Vector3(leftHandedRotationAxis.getX(),-leftHandedRotationAxis.getY(),leftHandedRotationAxis.getZ()),-leftHandedRotationAngle);
 
 	return tf::Transform(rightHandedRotation,rightHandedOrigin);
+}
+
+
+tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses)
+{
+	double x;
+	double y;
+	double z;
+	for(tf::Pose pose : poses)
+	{
+		tf::Vector3 position = pose.getOrigin();
+		x += position.getX();
+		y += position.getY();
+		z += position.getZ(); 
+	}
+	x/=poses.size();
+	y/=poses.size();
+	z/=poses.size();
+	return tf::Vector3(x,y,z);
 }

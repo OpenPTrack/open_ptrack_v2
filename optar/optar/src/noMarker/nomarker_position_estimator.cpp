@@ -67,8 +67,13 @@ static double reprojectionErrorDiscardThreshold = 5;
 static int orbMaxPoints = 500;
 static double orbScaleFactor = 1.2;
 static int orbLevelsNumber = 8;
+static unsigned int startupFramesNum = 10;
+static double phoneOrientationDifferenceThreshold_deg = 45;
 
 static shared_ptr<TransformKalmanFilter> transformKalmanFilter;
+
+
+
 
 class PoseMatch
 {
@@ -98,6 +103,9 @@ public:
 };
 
 std::vector<PoseMatch> poseMatches;
+std::vector<tf::Pose> arcoreWorldHistory;
+
+
 
 
 /**
@@ -204,20 +212,24 @@ std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch
 
 void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint32_t level)
 {
-  ROS_INFO("Reconfigure Request: %f %f %f", 
-            config.nomarker_position_estimator_pnp_iterations,
-            config.nomarker_position_estimator_pnp_confidence, 
-            config.nomarker_position_estimator_pnp_reprojection_error);
-  pnpReprojectionError = config.nomarker_position_estimator_pnp_reprojection_error;
-  pnpConfidence 					= config.nomarker_position_estimator_pnp_confidence;
-  pnpIterations 					= config.nomarker_position_estimator_pnp_iterations;
-  
-  matchingThreshold 				= config.nomarker_position_estimator_matching_threshold;
-  reprojectionErrorDiscardThreshold = config.nomarker_position_estimator_reprojection_discard_threshold;
+	ROS_INFO("Reconfigure Request: %f %f %f", 
+            config.pnp_iterations,
+            config.pnp_confidence, 
+            config.pnp_reprojection_error);
 
-  orbMaxPoints		= config.nomarker_position_estimator_orb_max_points;
-  orbScaleFactor	= config.nomarker_position_estimator_orb_scale_factor;
-  orbLevelsNumber	= config.nomarker_position_estimator_orb_levels_number;
+	pnpReprojectionError = config.pnp_reprojection_error;
+	pnpConfidence 					= config.pnp_confidence;
+	pnpIterations 					= config.pnp_iterations;
+
+	matchingThreshold 				= config.matching_threshold;
+	reprojectionErrorDiscardThreshold = config.reprojection_discard_threshold;
+
+	orbMaxPoints		= config.orb_max_points;
+	orbScaleFactor	= config.orb_scale_factor;
+	orbLevelsNumber	= config.orb_levels_number;
+
+	startupFramesNum	= config.startup_frames_num;
+	phoneOrientationDifferenceThreshold_deg	= config.phone_orientation_diff_thresh;
 }
 
 
@@ -433,8 +445,8 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	tf::poseMsgToTF(arcoreInputMsg->mobileFramePose,phonePoseArcoreFrameUnity);
 	tf::Pose phonePoseArcoreFrame = convertPoseUnityToRos(phonePoseArcoreFrameUnity);
 
-	publishTransformAsTfFrame(phonePoseArcoreFrame,"phone_arcore","/world",arcoreInputMsg->header.stamp);
-	publishTransformAsTfFrame(phonePoseArcoreFrameUnity,"phone_arcore_left","/world",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreFrame,"phone_arcore","/world",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreFrameUnity,"phone_arcore_left","/world",arcoreInputMsg->header.stamp);
 
 	//from x to the right, y up, z back to x to the right, y down, z forward
 	tf::Transform cameraConventionTransform = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0), 3.1415926535897));//rotate 180 degrees around x axis
@@ -446,7 +458,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	//tf::Pose phonePoseArcoreInverted = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0),0),phonePoseArcoreFrame.getOrigin()).inverse() * tf::Transform(phonePoseArcoreFrame.getRotation()).inverse();
 	tf::Pose phonePoseArcoreFrameConverted =  justTranslation *cameraConventionTransform*justRotation;
 	ROS_INFO_STREAM("phonePoseArcoreFrame = "<<poseToString(phonePoseArcoreFrame));
-	publishTransformAsTfFrame(phonePoseArcoreFrameConverted,"phone_arcore_converted","/world",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,"phone_arcore_converted","/world",arcoreInputMsg->header.stamp);
 	//publishTransformAsTfFrame(phonePoseArcoreInverted,"phone_arcore_inv","/world",arcoreInputMsg->header.stamp);
 
 
@@ -682,15 +694,16 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
 
 	//make it stamped
-	geometry_msgs::PoseStamped phonePose;
-	phonePose.pose = poseNotStamped;
-	phonePose.header.frame_id = "kinect01_rgb_optical_frame";
-	phonePose.header.stamp = arcoreInputMsg->header.stamp;
+	geometry_msgs::PoseStamped phonePoseKinect;
+	phonePoseKinect.pose = poseNotStamped;
+	phonePoseKinect.header.frame_id = "kinect01_rgb_optical_frame";
+	phonePoseKinect.header.stamp = arcoreInputMsg->header.stamp;
 
-	ROS_INFO_STREAM("estimated pose before transform: "<<phonePose.pose.position.x<<" "<<phonePose.pose.position.y<<" "<<phonePose.pose.position.z<<" ; "<<phonePose.pose.orientation.x<<" "<<phonePose.pose.orientation.y<<" "<<phonePose.pose.orientation.z<<" "<<phonePose.pose.orientation.w);
+	ROS_INFO_STREAM("estimated pose before transform: "<<phonePoseKinect.pose.position.x<<" "<<phonePoseKinect.pose.position.y<<" "<<phonePoseKinect.pose.position.z<<" ; "<<phonePoseKinect.pose.orientation.x<<" "<<phonePoseKinect.pose.orientation.y<<" "<<phonePoseKinect.pose.orientation.z<<" "<<phonePoseKinect.pose.orientation.w);
 
 	//transform to world frame
-	tf2::doTransform(phonePose,phonePose,transformKinectToWorld);
+	geometry_msgs::PoseStamped phonePose;
+	tf2::doTransform(phonePoseKinect,phonePose,transformKinectToWorld);
 	phonePose.header.frame_id = "/world";
 
 	poseMatches.push_back(PoseMatch(arcoreInputMsg->mobileFramePose, phonePose.pose, arcoreInputMsg->header.stamp));
@@ -749,25 +762,74 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	// so:
 	// A = Pr*Pa^-1
 	tf::Pose arcoreWorld = phonePoseTf * phonePoseArcoreFrameConverted.inverse();
-
 	publishTransformAsTfFrame(arcoreWorld,"arcore_world","/world",arcoreInputMsg->header.stamp);
 	publishTransformAsTfFrame(phonePoseTf,"phone_estimate","/world",arcoreInputMsg->header.stamp);
-	publishTransformAsTfFrame(phonePoseArcoreFrameConverted,"phone_arcore_arcore","/arcore_world",arcoreInputMsg->header.stamp);
-	publishTransformAsTfFrame(phonePoseArcoreFrameConverted.inverse(),"phone_arcore_conv_inv","/phone_estimate",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,"phone_arcore_arcore","/arcore_world",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted.inverse(),"phone_arcore_conv_inv","/phone_estimate",arcoreInputMsg->header.stamp);
 
 
+	tf::Pose phonePoseTfKinect;
+	tf::poseMsgToTF(phonePoseKinect.pose,phonePoseTfKinect);
+	double phoneToCameraRotationAngle = phonePoseTfKinect.getRotation().getAngleShortestPath()*180/3.14159;
+	if(phoneToCameraRotationAngle>phoneOrientationDifferenceThreshold_deg)
+	{
+		ROS_INFO_STREAM("Orientation difference between phone and camera is too high, discarding estimation ("<<phoneToCameraRotationAngle<<")");
+		return;
+	}
 
+	arcoreWorldHistory.push_back(arcoreWorld);
 
-	tf::Pose filteredArcoreWorld = transformKalmanFilter->update(arcoreWorld);
-	publishTransformAsTfFrame(filteredArcoreWorld,"arcore_world_filtered","/world",arcoreInputMsg->header.stamp);
-	ROS_INFO_STREAM("filtering correction = "<<poseToString(arcoreWorld*filteredArcoreWorld.inverse()));
-	ROS_INFO_STREAM("arcore_world_filtered = "<<poseToString(filteredArcoreWorld));
+	//if this is one of the first few frames
+	if(arcoreWorldHistory.size()<=startupFramesNum)
+	{
+		//for the first few frame just use the average
+		tf::Vector3 averagePosition = averagePosePositions(arcoreWorldHistory);
 
+		//if the next frame uses the kalman filter then initialize it with the estimate that is closest to the average
+		if(arcoreWorldHistory.size()==startupFramesNum)
+		{
+			tf::Pose closestEstimate;
+			double minimumDistance = std::numeric_limits<double>::max();
+			for(tf::Pose estimate : arcoreWorldHistory)
+			{
+				double distance = averagePosition.distance(estimate.getOrigin());
+				if(distance<minimumDistance)
+				{
+					minimumDistance=distance;
+					closestEstimate = estimate;
+				}
+			}
+			transformKalmanFilter->update(closestEstimate);
+		}
+	}
+	else
+	{
+		//if we are after the forst few frames use kalman
+		tf::Pose filteredArcoreWorld = transformKalmanFilter->update(arcoreWorld);
+		publishTransformAsTfFrame(filteredArcoreWorld,"arcore_world_filtered","/world",arcoreInputMsg->header.stamp);
+		ROS_INFO_STREAM("filtering correction = "<<poseToString(arcoreWorld*filteredArcoreWorld.inverse()));
+		ROS_INFO_STREAM("arcore_world_filtered = "<<poseToString(filteredArcoreWorld));
+	}
 
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
 	ROS_INFO("total duration is %lu ms",totalDuration);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 int main(int argc, char** argv)
