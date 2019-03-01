@@ -112,15 +112,16 @@ std::vector<tf::Pose> arcoreWorldHistory;
  * Extracts from the provided sequence of poses the longest sequence where
  * the movement from one pose to the next one doesn't require a speed higher than the provided one
  */
+/*
 std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch>& rawPoseMatches)
 {
-	/*
-	ROS_INFO("-----------filterPosesBySpeed:-------------");
-	for(unsigned int i=0;i<rawPoseMatches.size();i++)
-	{
-		ROS_INFO("    %f \t %f \t %f",rawPoseMatches.at(i).getEstimatedPose().position.x,rawPoseMatches.at(i).getEstimatedPose().position.y,rawPoseMatches.at(i).getEstimatedPose().position.z);
-	}
-	*/
+	
+	//ROS_INFO("-----------filterPosesBySpeed:-------------");
+	//for(unsigned int i=0;i<rawPoseMatches.size();i++)
+	//{
+	//	ROS_INFO("    %f \t %f \t %f",rawPoseMatches.at(i).getEstimatedPose().position.x,rawPoseMatches.at(i).getEstimatedPose().position.y,rawPoseMatches.at(i).getEstimatedPose().position.z);
+	//}
+	
 	std::shared_ptr<std::vector<PoseMatch>> longestSequence = std::make_shared<std::vector<PoseMatch>>();
 
 	std::vector<bool> isUsed(rawPoseMatches.size(),false);
@@ -159,11 +160,11 @@ std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch
 						//ROS_INFO("    %f \t %f \t %f accepted",candidate->back().getEstimatedPose().position.x,candidate->back().getEstimatedPose().position.y,candidate->back().getEstimatedPose().position.z);
 					}
 				}
-				/*if(!isUsed[i] && !didSetFirstUnused)//if we still didn't use this pose and we still havent set the first unused
-				{
-					firstUnused = i;
-					didSetFirstUnused=true;
-				}*/
+				if(!isUsed[i] && !didSetFirstUnused)//if we still didn't use this pose and we still havent set the first unused
+				//{
+				//	firstUnused = i;
+				//	didSetFirstUnused=true;
+				//}
 			}
 			else
 			{
@@ -172,23 +173,23 @@ std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch
 			if(i==0)
 				break;
 		}
-		/*
-		if(!didSetFirstUnused)
-		{
-			//this means there are no unused poses
-			startPoint=rawPoseMatches.size();
-		}
-		else
-		{
-			startPoint=firstUnused;
-		}
-		*/
-		/*
-		ROS_INFO("candidate:");
-		for(unsigned int i=0;i<candidate->size();i++)
-		{
-			ROS_INFO("    %f \t %f \t %f",candidate->at(i).getEstimatedPose().position.x,candidate->at(i).getEstimatedPose().position.y,candidate->at(i).getEstimatedPose().position.z);
-		}*/
+		
+		//if(!didSetFirstUnused)
+		//{
+		//	//this means there are no unused poses
+		//	startPoint=rawPoseMatches.size();
+		//}
+		//else
+		//{
+		//	startPoint=firstUnused;
+		//}
+		
+		
+		//ROS_INFO("candidate:");
+		//for(unsigned int i=0;i<candidate->size();i++)
+		//{
+		//	ROS_INFO("    %f \t %f \t %f",candidate->at(i).getEstimatedPose().position.x,candidate->at(i).getEstimatedPose().position.y,candidate->at(i).getEstimatedPose().position.z);
+		//}
 		if(candidate->size()>longestSequence->size())
 		{
 			longestSequence=candidate;
@@ -208,7 +209,7 @@ std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch
 	std::reverse(longestSequence->begin(),longestSequence->end());
 	return longestSequence;
 }
-
+*/
 
 void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint32_t level)
 {
@@ -516,7 +517,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 			double nnzDist = hypot(nnz.x-imgPos.x,nnz.y-imgPos.y);
 			nnz = findLowestNonZeroInRing(kinectDepthImg,imgPos.x,imgPos.y, nnzDist+10, nnzDist);
 
-			ROS_INFO("Got closest non-zero pixel, %d;%d",nnz.x,nnz.y);
+			//ROS_INFO("Got closest non-zero pixel, %d;%d",nnz.x,nnz.y);
 			kinectDepthImg.at<uint16_t>(imgPos)=kinectDepthImg.at<uint16_t>(nnz);
 		}
 
@@ -786,21 +787,23 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 		tf::Vector3 averagePosition = averagePosePositions(arcoreWorldHistory);
 
 		//if the next frame uses the kalman filter then initialize it with the estimate that is closest to the average
-		if(arcoreWorldHistory.size()==startupFramesNum)
+
+		tf::Pose closestEstimate;
+		double minimumDistance = std::numeric_limits<double>::max();
+		for(tf::Pose estimate : arcoreWorldHistory)
 		{
-			tf::Pose closestEstimate;
-			double minimumDistance = std::numeric_limits<double>::max();
-			for(tf::Pose estimate : arcoreWorldHistory)
+			double distance = averagePosition.distance(estimate.getOrigin());
+			if(distance<minimumDistance)
 			{
-				double distance = averagePosition.distance(estimate.getOrigin());
-				if(distance<minimumDistance)
-				{
-					minimumDistance=distance;
-					closestEstimate = estimate;
-				}
+				minimumDistance=distance;
+				closestEstimate = estimate;
 			}
-			transformKalmanFilter->update(closestEstimate);
 		}
+
+		if(arcoreWorldHistory.size()==startupFramesNum)
+			transformKalmanFilter->update(closestEstimate);
+
+		publishTransformAsTfFrame(closestEstimate,"arcore_world_filtered","/world",arcoreInputMsg->header.stamp);
 	}
 	else
 	{
