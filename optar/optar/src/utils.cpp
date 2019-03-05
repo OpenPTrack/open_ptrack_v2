@@ -255,6 +255,17 @@ double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2)
 					 (pose1.position.z*pose1.position.z - pose2.position.z*pose2.position.z));
 }
 
+/**
+ * Computes the euclidean distance between the two provided poses
+ */
+double poseDistance(tf::Pose pose1, tf::Pose pose2)
+{
+	return std::sqrt((pose1.getOrigin().x()*pose1.getOrigin().x() - pose2.getOrigin().x()*pose2.getOrigin().x()) + 
+					 (pose1.getOrigin().y()*pose1.getOrigin().y() - pose2.getOrigin().y()*pose2.getOrigin().y()) +
+					 (pose1.getOrigin().z()*pose1.getOrigin().z() - pose2.getOrigin().z()*pose2.getOrigin().z()));
+}
+
+
 uint16_t getPixelSafe(const Mat& image, const Point2i p, uint16_t outOfBoundsValue)
 {
 	if(p.x<0 || p.y<0 || p.x>=image.cols || p.y>=image.rows)
@@ -512,6 +523,9 @@ geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Q
 	return buildRosPose(position.x(),position.y(),position.z(),orientation.x(),orientation.y(),orientation.z(),orientation.w());
 }
 
+/**
+ * Provides a human-readable string representation of a pose
+ */
 std::string poseToString(tf::Pose pose)
 {
 	return ""+to_string(pose.getOrigin().getX())+";"+to_string(pose.getOrigin().getY())+";"+to_string(pose.getOrigin().getZ())+"      "+to_string(pose.getRotation().getX())+";"+to_string(pose.getRotation().getY())+";"+to_string(pose.getRotation().getZ())+";"+to_string(pose.getRotation().getW());
@@ -535,7 +549,11 @@ tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose)
 	return tf::Transform(rightHandedRotation,rightHandedOrigin);
 }
 
-
+/**
+ * Computes the average position of the provided poses (does not look at the orientations)
+ * @param poses The poses to average
+ * @return the average position
+ */
 tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses)
 {
 	double x;
@@ -552,4 +570,35 @@ tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses)
 	y/=poses.size();
 	z/=poses.size();
 	return tf::Vector3(x,y,z);
+}
+
+
+/**
+ * Checks if the pose is valid, i.e. if it contains nan values or infinite values and if the quaternion is normalized
+ * @param pose the pose to check
+ * @return true if valid, false if invalid
+ */
+bool isPoseValid(const tf::Pose& pose)
+{
+	tf::Vector3 origin = pose.getOrigin();
+	if(std::isnan(origin.getX()) || std::isnan(origin.getY()) || std::isnan(origin.getZ()))
+		return false;
+	if(std::isinf(origin.getX()) || std::isinf(origin.getY()) || std::isinf(origin.getZ()))
+		return false;
+
+	tf::Quaternion orientation = pose.getRotation();
+	if(std::isnan(orientation.getX()) || std::isnan(orientation.getY()) || std::isnan(orientation.getZ()) || std::isnan(orientation.getW()))
+		return false;
+	if(std::isinf(orientation.getX()) || std::isinf(orientation.getY()) || std::isinf(orientation.getZ()) || std::isinf(orientation.getW()))
+		return false;
+
+
+	bool isNormalized = std::abs((orientation.w() * orientation.w()
+                        + orientation.x() * orientation.x()
+                        + orientation.y() * orientation.y()
+                        + orientation.z() * orientation.z()) - 1.0f) < 10e-6;//is this a sensible threshold?
+	if(!isNormalized)
+		return false;
+
+	return true;
 }

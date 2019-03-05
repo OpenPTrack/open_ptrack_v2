@@ -69,6 +69,7 @@ static double orbScaleFactor = 1.2;
 static int orbLevelsNumber = 8;
 static unsigned int startupFramesNum = 10;
 static double phoneOrientationDifferenceThreshold_deg = 45;
+static double estimateDistanceThreshold_meters = 5;
 
 static shared_ptr<TransformKalmanFilter> transformKalmanFilter;
 
@@ -104,6 +105,7 @@ public:
 
 std::vector<PoseMatch> poseMatches;
 std::vector<tf::Pose> arcoreWorldHistory;
+tf::Pose lastEstimate;
 
 
 
@@ -428,9 +430,6 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	cv::resizeWindow("KinectDepth",1280,720);
     cv::imshow("KinectDepth", kinectDepthImg);
 */
-	std::chrono::steady_clock::time_point afterDecoding = std::chrono::steady_clock::now();
-	unsigned long decodingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDecoding - beginning).count();
-	ROS_INFO("Images decoding and initialization took %lu ms",decodingDuration);
 
 
 
@@ -463,8 +462,10 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	//publishTransformAsTfFrame(phonePoseArcoreInverted,"phone_arcore_inv","/world",arcoreInputMsg->header.stamp);
 
 
+	std::chrono::steady_clock::time_point afterDecoding = std::chrono::steady_clock::now();
+	unsigned long decodingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDecoding - beginning).count();
+	ROS_INFO("Images decoding and initialization took %lu ms",decodingDuration);
 
-	//return;
 
 	
 
@@ -523,7 +524,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
 		{
-			ROS_INFO("Dropped match as it had zero depth");
+			//ROS_INFO("Dropped match as it had zero depth");
 		}
 		else
 		{
@@ -534,6 +535,9 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 
+	std::chrono::steady_clock::time_point afterMatchesComputation = std::chrono::steady_clock::now();
+	unsigned long matchesComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesComputation - afterDecoding).count();
+	ROS_INFO("Matches computation took %lu ms",matchesComputationDuration);
 
 
 
@@ -608,6 +612,9 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 
+	std::chrono::steady_clock::time_point after3dpositionsComputation = std::chrono::steady_clock::now();
+	unsigned long _3dPositionsComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(after3dpositionsComputation - afterMatchesComputation).count();
+	ROS_INFO("3D positions computation took %lu ms",_3dPositionsComputationDuration);
 
 
 
@@ -625,7 +632,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 	
-	ROS_INFO_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
+	//ROS_INFO_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
 	cv::Mat tvec;
 	cv::Mat rvec;
 	std::vector<int> inliers;
@@ -641,6 +648,10 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 	ROS_INFO_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
 
+	std::chrono::steady_clock::time_point afterPnpComputation = std::chrono::steady_clock::now();
+	unsigned long pnpComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterPnpComputation - after3dpositionsComputation).count();
+	ROS_INFO("PNP computation took %lu ms",pnpComputationDuration);
+
 	//reproject points to then check reprojection error (and visualize them)
 	std::vector<Point2f> reprojPoints;
 	cv::projectPoints 	(goodMatches3dPos,
@@ -648,6 +659,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 						arcoreCameraMatrix,
 						cv::noArray(),
 						reprojPoints);
+
 
 
 	cv::Mat colorArcoreImg;
@@ -669,11 +681,20 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	ROS_INFO_STREAM("inliers reprojection error = "<<reprojError);
 
 
+	std::chrono::steady_clock::time_point reprojectionComputation = std::chrono::steady_clock::now();
+	unsigned long reprojectionComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(reprojectionComputation- afterPnpComputation).count();
+	ROS_INFO("Reprojection error computation took %lu ms",reprojectionComputationDuration);
+
 	cv::Mat matchesImg;
     cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+
+	std::chrono::steady_clock::time_point afterDrawMatches = std::chrono::steady_clock::now();
+	unsigned long drawMathcesDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawMatches - reprojectionComputation).count();
+	ROS_INFO("draw matches took %lu ms",drawMathcesDuration);
 	prepareOpencvImageForShowing("Matches", matchesImg, 800);
 	prepareOpencvImageForShowing("Reprojection", colorArcoreImg, 400);
-	cv::waitKey(10);
+	cv::waitKey(1);
 
 	//deiscard bad frames
 	if(reprojError>reprojectionErrorDiscardThreshold)
@@ -769,6 +790,12 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted.inverse(),"phone_arcore_conv_inv","/phone_estimate",arcoreInputMsg->header.stamp);
 
 
+	if(!isPoseValid(arcoreWorld))
+	{
+		ROS_WARN_STREAM("Dropping transform estimation as it is invalid");
+		return;
+	}
+
 	tf::Pose phonePoseTfKinect;
 	tf::poseMsgToTF(phonePoseKinect.pose,phonePoseTfKinect);
 	double phoneToCameraRotationAngle = phonePoseTfKinect.getRotation().getAngleShortestPath()*180/3.14159;
@@ -779,6 +806,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	}
 
 	arcoreWorldHistory.push_back(arcoreWorld);
+
 
 	//if this is one of the first few frames
 	if(arcoreWorldHistory.size()<=startupFramesNum)
@@ -804,12 +832,19 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 			transformKalmanFilter->update(closestEstimate);
 
 		publishTransformAsTfFrame(closestEstimate,"arcore_world_filtered","/world",arcoreInputMsg->header.stamp);
+		lastEstimate = closestEstimate;
 	}
 	else
 	{
+		if(poseDistance(arcoreWorld,lastEstimate)>estimateDistanceThreshold_meters)
+		{
+			ROS_INFO_STREAM("New estimation is too different, discarding frame");
+			return;			
+		}
 		//if we are after the forst few frames use kalman
 		tf::Pose filteredArcoreWorld = transformKalmanFilter->update(arcoreWorld);
 		publishTransformAsTfFrame(filteredArcoreWorld,"arcore_world_filtered","/world",arcoreInputMsg->header.stamp);
+		lastEstimate = filteredArcoreWorld;
 		ROS_INFO_STREAM("filtering correction = "<<poseToString(arcoreWorld*filteredArcoreWorld.inverse()));
 		ROS_INFO_STREAM("arcore_world_filtered = "<<poseToString(filteredArcoreWorld));
 	}

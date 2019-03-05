@@ -30,7 +30,8 @@
 					<remap from="kinect_depth" 						to="$(arg sensor_name)/hd/image_depth_rect" />
 					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/hd/camera_info" />
 		</node>
-		<node pkg="optar" type="ntp_server" name="ntp_server" output="screen"/>
 	</group>
+	<node pkg="optar" type="ntp_server"                   name="ntp_server"                   output="screen"/>
+	<node pkg="optar" type="skeleton_centroid_publisher" name="skeleton_centroid_publisher" output="screen"/>
 
 </launch>

@@ -12,7 +12,7 @@ ros::Publisher pubMarker;
 
 void callback(const opt_msgs::SkeletonTrackArray& inMsg)
 {
-	ROS_INFO("received skeletontrack");
+	ROS_DEBUG("received skeleton track");
 
 	
 	opt_msgs::TrackArray msg;
@@ -39,7 +39,7 @@ void callback(const opt_msgs::SkeletonTrackArray& inMsg)
 	pub.publish(msg);
 	pubMarker.publish(markerMsg);
 
-	ROS_INFO("published track");
+	ROS_DEBUG("published centroid track");
 }
 
 

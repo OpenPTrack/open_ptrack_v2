@@ -24,6 +24,7 @@ cv::Mat DoubleMatFromVec3b(cv::Vec3b in);
 void opencvPoseToEigenPose(cv::Vec3d rvec, cv::Vec3d tvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion);
 int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, float qz, float qw, ros::Publisher pose_marker_pub, std::string name, float r, float g, float b, float a, float size);
 double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2);
+double poseDistance(tf::Pose pose1, tf::Pose pose2);
 
 visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
 visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
@@ -48,3 +49,5 @@ std::string poseToString(tf::Pose pose);
 
 tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose);
 tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses);
+
+bool isPoseValid(const tf::Pose& pose);
