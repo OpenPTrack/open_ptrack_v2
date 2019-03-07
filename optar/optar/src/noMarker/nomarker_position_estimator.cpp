@@ -58,6 +58,16 @@ ros::Publisher pose_raw_pub;
 ros::Publisher pose_marker_pub;
 
 
+class PoseEstimation
+{
+public:
+	std::vector<tf::Pose> arcoreWorldHistory;
+	tf::Pose lastEstimate;
+};
+
+
+std::map<std::string, PoseTransformEstimator> phoneEstimations;
+
 //These may be overwritten by dynamic_reconfigure
 static double pnpReprojectionError = 5;
 static double pnpConfidence = 0.99;
@@ -71,147 +81,11 @@ static unsigned int startupFramesNum = 10;
 static double phoneOrientationDifferenceThreshold_deg = 45;
 static double estimateDistanceThreshold_meters = 5;
 
+static bool showImages = true;
 static shared_ptr<TransformKalmanFilter> transformKalmanFilter;
 
 
 
-
-class PoseMatch
-{
-private:
-	geometry_msgs::Pose mobilePose;
-	geometry_msgs::Pose estimatedWorldPose;
-	ros::Time time;
-public:
-	PoseMatch(const geometry_msgs::Pose& mobilePose_in, const geometry_msgs::Pose& estimatedWorldPose_in, const ros::Time& time_in):
-		mobilePose(mobilePose_in),
-		estimatedWorldPose(estimatedWorldPose_in),
-		time(time_in)
-	{
-
-	}
-
-
-	const geometry_msgs::Pose& getEstimatedPose()
-	{
-		return estimatedWorldPose;
-	}
-
-	const ros::Time& getTime()
-	{
-		return time;
-	}
-};
-
-std::vector<PoseMatch> poseMatches;
-std::vector<tf::Pose> arcoreWorldHistory;
-tf::Pose lastEstimate;
-
-
-
-
-/**
- * Extracts from the provided sequence of poses the longest sequence where
- * the movement from one pose to the next one doesn't require a speed higher than the provided one
- */
-/*
-std::shared_ptr<std::vector<PoseMatch>> filterPosesBySpeed(std::vector<PoseMatch>& rawPoseMatches)
-{
-	
-	//ROS_INFO("-----------filterPosesBySpeed:-------------");
-	//for(unsigned int i=0;i<rawPoseMatches.size();i++)
-	//{
-	//	ROS_INFO("    %f \t %f \t %f",rawPoseMatches.at(i).getEstimatedPose().position.x,rawPoseMatches.at(i).getEstimatedPose().position.y,rawPoseMatches.at(i).getEstimatedPose().position.z);
-	//}
-	
-	std::shared_ptr<std::vector<PoseMatch>> longestSequence = std::make_shared<std::vector<PoseMatch>>();
-
-	std::vector<bool> isUsed(rawPoseMatches.size(),false);
-	
-	unsigned int startPoint = rawPoseMatches.size();
-	do
-	{
-		startPoint--;
-		std::shared_ptr<std::vector<PoseMatch>> candidate = std::make_shared<std::vector<PoseMatch>>();
-		//keep track of which is the first unused pose, so on the next cycle we start from it
-		//We also know that at the start of cycle all the poses before the start have been used
-		//so the first unused is the first we skip
-		//int firstUnused = startPoint+1;//in any case we will go at least one pose forward
-		bool didSetFirstUnused=false;
-		//ROS_INFO_STREAM("startPoint = "<<startPoint);
-		for(unsigned int i=startPoint;;i--)
-		{
-			if(!isUsed.at(i))//if not already used
-			{
-				if(candidate->size()==0)//It's the first one, we accept it
-				{
-					isUsed[i]=true;
-					candidate->push_back(rawPoseMatches[i]);
-					//ROS_INFO("    %f \t %f \t %f accepted",candidate->back().getEstimatedPose().position.x,candidate->back().getEstimatedPose().position.y,candidate->back().getEstimatedPose().position.z);
-				}
-				else
-				{
-					//check the speed from the previous pose
-					double distance = poseDistance(rawPoseMatches[i].getEstimatedPose(), candidate->back().getEstimatedPose());
-					double timeDiff = (candidate->back().getTime() - rawPoseMatches[i].getTime()).toSec();
-
-					if(distance/timeDiff<12*std::exp(-timeDiff)+3)
-					{
-						isUsed[i]=true;
-						candidate->push_back(rawPoseMatches[i]);
-						//ROS_INFO("    %f \t %f \t %f accepted",candidate->back().getEstimatedPose().position.x,candidate->back().getEstimatedPose().position.y,candidate->back().getEstimatedPose().position.z);
-					}
-				}
-				if(!isUsed[i] && !didSetFirstUnused)//if we still didn't use this pose and we still havent set the first unused
-				//{
-				//	firstUnused = i;
-				//	didSetFirstUnused=true;
-				//}
-			}
-			else
-			{
-				//ROS_INFO("    %f \t %f \t %f already used",rawPoseMatches.at(i).getEstimatedPose().position.x,rawPoseMatches.at(i).getEstimatedPose().position.y,rawPoseMatches.at(i).getEstimatedPose().position.z);
-			}
-			if(i==0)
-				break;
-		}
-		
-		//if(!didSetFirstUnused)
-		//{
-		//	//this means there are no unused poses
-		//	startPoint=rawPoseMatches.size();
-		//}
-		//else
-		//{
-		//	startPoint=firstUnused;
-		//}
-		
-		
-		//ROS_INFO("candidate:");
-		//for(unsigned int i=0;i<candidate->size();i++)
-		//{
-		//	ROS_INFO("    %f \t %f \t %f",candidate->at(i).getEstimatedPose().position.x,candidate->at(i).getEstimatedPose().position.y,candidate->at(i).getEstimatedPose().position.z);
-		//}
-		if(candidate->size()>longestSequence->size())
-		{
-			longestSequence=candidate;
-			//ROS_INFO("candidate is better");
-		}
-	}while(startPoint>0);
-
-	//check everything went as planned, we should have used every pose
-	for(unsigned int i=0;i<isUsed.size();i++)
-	{
-		if(!isUsed[i])
-		{
-			ROS_WARN("something went wrong, didn't check all the poses (%u is unused)",i);
-		}
-	}
-
-	std::reverse(longestSequence->begin(),longestSequence->end());
-	return longestSequence;
-}
-*/
 
 void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint32_t level)
 {
@@ -348,49 +222,48 @@ int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch
 	return 0;
 }
 
-
-void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
+int readReceivedMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
-					const sensor_msgs::CameraInfo& kinectCameraInfo)
+					const sensor_msgs::CameraInfo& kinectCameraInfo,
+					cv::Mat& arcoreCameraMatrix,
+					cv::Mat& arcoreImg,
+					cv::Mat& kinectCameraImg,
+					cv::Mat& kinectDepthImg,
+					tf::Pose& phonePoseArcoreFrameConverted)
 {
 	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
-	long arcoreTime = arcoreInputMsg->header.stamp.sec*1000000000L + arcoreInputMsg->header.stamp.nsec;
-	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;
-	ROS_INFO("\n\n\n\n\n\nreceived images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
-
-
-
-
-
-
-
-	//:::::::::::::::Decode received images and stuff::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-
-
-
-
-
 
 	//convert the camera matrix in a cv::Mat
-	double arcoreCameraMatrixArr[kinectCameraInfo.P.size()] =	{
-		arcoreInputMsg->focal_length_x_px,	0, 									arcoreInputMsg->principal_point_x_px,
-		0,									arcoreInputMsg->focal_length_y_px,	arcoreInputMsg->principal_point_y_px,
-		0,									0,									1									};
-	cv::Mat arcoreCameraMatrix = cv::Mat(3, 3, CV_64FC1, arcoreCameraMatrixArr);
+	arcoreCameraMatrix = cv::Mat(3, 3, CV_64FC1);
+	arcoreCameraMatrix.at<double>(0,0) = arcoreInputMsg->focal_length_x_px;
+	arcoreCameraMatrix.at<double>(0,1) = 0;
+	arcoreCameraMatrix.at<double>(0,2) = arcoreInputMsg->principal_point_x_px;
+	arcoreCameraMatrix.at<double>(1,0) = 0;
+	arcoreCameraMatrix.at<double>(1,1) = arcoreInputMsg->focal_length_y_px;
+	arcoreCameraMatrix.at<double>(1,2) = arcoreInputMsg->principal_point_y_px;
+	arcoreCameraMatrix.at<double>(2,0) = 0;
+	arcoreCameraMatrix.at<double>(2,1) = 0;
+	arcoreCameraMatrix.at<double>(2,2) = 1;
 
 	//decode arcore image
-	cv::Mat arcoreImg = cv::imdecode(cv::Mat(arcoreInputMsg->image.data),1);//convert compressed image data to cv::Mat
+	cv::Mat rawImageData(cv::Mat(arcoreInputMsg->image.data));
+	if(rawImageData.empty())
+	{
+		ROS_ERROR("Invalid arcore image (it's empty!)");
+		return -1;
+	}
+
+	arcoreImg = cv::imdecode(rawImageData,1);//convert compressed image data to cv::Mat
 	if(!arcoreImg.data)
 	{
 		ROS_ERROR("couldn't decode arcore image");
-		return;
+		return -2;
 	}
 	if(arcoreImg.channels()!=3)
 	{
 		ROS_ERROR("Color image expected from arcore device, received something different");
-		return;
+		return -3;
 	}
 	//The image sent by the Android app is monochrome, but it is stored in a 3-channel PNG image as the red channel
 	//So we extract the red channel and use that.
@@ -407,11 +280,11 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
     //cv::imshow("Arcore", arcoreImg);
 
     //decode kinect rgb image
-	cv::Mat kinectCameraImg = cv_bridge::toCvShare(kinectInputCameraMsg)->image;//convert compressed image data to cv::Mat
+	kinectCameraImg = cv_bridge::toCvShare(kinectInputCameraMsg)->image;//convert compressed image data to cv::Mat
 	if(!kinectCameraImg.data)
 	{
 		ROS_ERROR("couldn't extract kinect camera opencv image");
-		return;
+		return -4;
 	}
     ROS_INFO("decoded kinect camera image");
 	cv::equalizeHist(kinectCameraImg,kinectCameraImg);
@@ -419,11 +292,11 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
     //decode kinect depth image
-	cv::Mat kinectDepthImg = cv_bridge::toCvShare(kinectInputDepthMsg)->image;//convert compressed image data to cv::Mat
+	kinectDepthImg = cv_bridge::toCvShare(kinectInputDepthMsg)->image;//convert compressed image data to cv::Mat
 	if(!kinectDepthImg.data)
 	{
 		ROS_ERROR("couldn't extract kinect depth opencv image");
-		return;
+		return -5;
 	}
     ROS_INFO("decoded kinect depth image");
   /*  cv::namedWindow("KinectDepth", cv::WINDOW_NORMAL);
@@ -456,7 +329,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	tf::Transform justTranslation = tf::Transform(tf::Quaternion(1,0,0,0),phonePoseArcoreFrame.getOrigin());
 
 	//tf::Pose phonePoseArcoreInverted = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0),0),phonePoseArcoreFrame.getOrigin()).inverse() * tf::Transform(phonePoseArcoreFrame.getRotation()).inverse();
-	tf::Pose phonePoseArcoreFrameConverted =  justTranslation *cameraConventionTransform*justRotation;
+	phonePoseArcoreFrameConverted =  justTranslation *cameraConventionTransform*justRotation;
 	ROS_INFO_STREAM("phonePoseArcoreFrame = "<<poseToString(phonePoseArcoreFrame));
 	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,"phone_arcore_converted","/world",arcoreInputMsg->header.stamp);
 	//publishTransformAsTfFrame(phonePoseArcoreInverted,"phone_arcore_inv","/world",arcoreInputMsg->header.stamp);
@@ -466,9 +339,116 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	unsigned long decodingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDecoding - beginning).count();
 	ROS_INFO("Images decoding and initialization took %lu ms",decodingDuration);
 
+	return 0;
+}
 
+
+/**
+ * Checks the provided matches to ensure they have valid depth info. If the depth is not available in the depth image
+ * this funciton will try to fix the image by getting the closest depth value. If the closest valid pixel is too far
+ * the match will be dropped.
+ */
+int fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& kinectKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches)
+{
+	outputMatches.clear();
+	for( unsigned int i = 0; i < inputMatches.size(); i++ )
+	{
+		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
+		cv::Point2f imgPos = kinectKeypoints.at(inputMatches.at(i).trainIdx).pt;
+		//try to find the depth using the closest pixel
+		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
+		{
+			Point2i nnz = findNearestNonZeroPixel(kinectDepthImg,imgPos.x,imgPos.y,100);
+			double nnzDist = hypot(nnz.x-imgPos.x,nnz.y-imgPos.y);
+			nnz = findLowestNonZeroInRing(kinectDepthImg,imgPos.x,imgPos.y, nnzDist+10, nnzDist);
+
+			//ROS_INFO("Got closest non-zero pixel, %d;%d",nnz.x,nnz.y);
+			kinectDepthImg.at<uint16_t>(imgPos)=kinectDepthImg.at<uint16_t>(nnz);
+		}
+
+		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
+		{
+			//ROS_INFO("Dropped match as it had zero depth");
+		}
+		else
+		{
+			outputMatches.push_back(inputMatches.at(i));
+		}
+	}
+	return 0;
+}
+
+
+int get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
+	const std::vector<cv::KeyPoint>& kinectKeypoints,
+	const std::vector<cv::KeyPoint>& arcoreKeypoints,
+	const cv::Mat& kinectDepthImg,
+	const sensor_msgs::CameraInfo& kinectCameraInfo, 
+    std::vector<cv::Point3f>& matches3dPos,
+    std::vector<cv::Point2f>& matchesImgPos)
+{
+	matches3dPos.clear();
+	matchesImgPos.clear();
+	for( unsigned int i = 0; i < inputMatches.size(); i++ )
+	{
+		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
+		cv::Point2f kinectPixelPos	= kinectKeypoints.at(inputMatches.at(i).trainIdx).pt;
+		cv::Point2f arcorePixelPos	= arcoreKeypoints.at(inputMatches.at(i).queryIdx).pt;
+		cv::Point3f pos3d 			= get3dPoint(	kinectPixelPos.x,kinectPixelPos.y,
+													kinectDepthImg.at<uint16_t>(kinectPixelPos),
+													kinectCameraInfo.P[0+4*0],kinectCameraInfo.P[1+4*1],kinectCameraInfo.P[2+4*0],kinectCameraInfo.P[2+4*1]);
+		matches3dPos.push_back(pos3d);
+		matchesImgPos.push_back(arcorePixelPos);
+
+
+		ROS_DEBUG_STREAM("good match between "<<kinectPixelPos.x<<";"<<kinectPixelPos.y<<" \tand \t"<<arcorePixelPos.x<<";"<<arcorePixelPos.y<<" \tdistance = "<<inputMatches.at(i).distance);
+		//ROS_INFO_STREAM("depth = "<<kinectDepthImg.at<uint16_t>(kinectPixelPos));
+	}
+	return 0;
+}
+
+void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
+					const sensor_msgs::CameraInfo& kinectCameraInfo)
+{
+	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
+	long arcoreTime = arcoreInputMsg->header.stamp.sec*1000000000L + arcoreInputMsg->header.stamp.nsec;
+	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;
+	ROS_INFO("\n\n\n\n\n\nreceived images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
+
+
+
+
+
+
+
+	//:::::::::::::::Decode received images and stuff::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+	int r;
+
+
+
+	cv::Mat arcoreCameraMatrix;
+	cv::Mat arcoreImg;
+	cv::Mat kinectCameraImg;
+	cv::Mat kinectDepthImg;
+	tf::Pose phonePoseArcoreFrameConverted;
+	r = readReceivedMessages( arcoreInputMsg,
+					kinectInputCameraMsg,
+					kinectInputDepthMsg,
+					kinectCameraInfo,
+					arcoreCameraMatrix,
+					arcoreImg,
+					kinectCameraImg,
+					kinectDepthImg,
+					phonePoseArcoreFrameConverted);
+	if(r<0)
+	{
+		ROS_ERROR("Invalid input messages. Dropping frame");
+		return;
+	}
 	
-
 
 
 	//:::::::::::::::Find the matches between the images::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -481,12 +461,13 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 
+	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
 
 	//find matches
     std::vector<cv::DMatch> matches;
     std::vector<cv::KeyPoint>  arcoreKeypoints;
     std::vector<cv::KeyPoint>  kinectKeypoints;
-    int r = findOrbMatches(arcoreImg, kinectCameraImg, matches, arcoreKeypoints, kinectKeypoints);
+    r = findOrbMatches(arcoreImg, kinectCameraImg, matches, arcoreKeypoints, kinectKeypoints);
     if(r<0)
     {
     	ROS_ERROR("error finding matches");
@@ -507,36 +488,18 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
   	//On the kinect side the depth could be zero at the match location
   	//we try to get the nearest non-zero depth, if it's too far we discard the match
 	std::vector< cv::DMatch > goodMatches;
-	for( unsigned int i = 0; i < goodMatchesWithNull.size(); i++ )
-	{
-		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
-		cv::Point2f imgPos = kinectKeypoints.at(goodMatchesWithNull.at(i).trainIdx).pt;
-		//try to find the depth using the closest pixel
-		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
-		{
-			Point2i nnz = findNearestNonZeroPixel(kinectDepthImg,imgPos.x,imgPos.y,100);
-			double nnzDist = hypot(nnz.x-imgPos.x,nnz.y-imgPos.y);
-			nnz = findLowestNonZeroInRing(kinectDepthImg,imgPos.x,imgPos.y, nnzDist+10, nnzDist);
-
-			//ROS_INFO("Got closest non-zero pixel, %d;%d",nnz.x,nnz.y);
-			kinectDepthImg.at<uint16_t>(imgPos)=kinectDepthImg.at<uint16_t>(nnz);
-		}
-
-		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
-		{
-			//ROS_INFO("Dropped match as it had zero depth");
-		}
-		else
-		{
-			goodMatches.push_back(goodMatchesWithNull.at(i));
-		}
-	}
+	r = fixMatchesDepthOrDrop(goodMatchesWithNull, kinectKeypoints, kinectDepthImg ,goodMatches);
+  	if(r<0)
+  	{
+  		ROS_ERROR("error fixing matches depth");
+  		return;
+  	}
   	ROS_INFO_STREAM("got "<<goodMatches.size()<<" actually good matches");
 
 
 
 	std::chrono::steady_clock::time_point afterMatchesComputation = std::chrono::steady_clock::now();
-	unsigned long matchesComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesComputation - afterDecoding).count();
+	unsigned long matchesComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesComputation - beforeMatching).count();
 	ROS_INFO("Matches computation took %lu ms",matchesComputationDuration);
 
 
@@ -556,55 +519,43 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 
-	//used to publish visualizations to rviz
-	visualization_msgs::MarkerArray markerArray;
 
 
-    //find the 3d poses corrseponding to the goodMatches, these will be relative to the kinect frame
+    //find the 3d poses corresponding to the goodMatches, these will be relative to the kinect frame
     std::vector<cv::Point3f> goodMatches3dPos;
     std::vector<cv::Point2f> goodMatchesImgPos;
 
-	for( unsigned int i = 0; i < goodMatches.size(); i++ )
+	r = get3dPositionsAndImagePositions(goodMatches,kinectKeypoints, arcoreKeypoints, kinectDepthImg,kinectCameraInfo,goodMatches3dPos, goodMatchesImgPos);
+	if(r<0)
 	{
-		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
-		cv::Point2f kinectPixelPos	= kinectKeypoints.at(goodMatches.at(i).trainIdx).pt;
-		cv::Point2f arcorePixelPos	= arcoreKeypoints.at(goodMatches.at(i).queryIdx).pt;
-		cv::Point3f pos3d 			= get3dPoint(	kinectPixelPos.x,kinectPixelPos.y,
-													kinectDepthImg.at<uint16_t>(kinectPixelPos),
-													kinectCameraInfo.P[0+4*0],kinectCameraInfo.P[1+4*1],kinectCameraInfo.P[2+4*0],kinectCameraInfo.P[2+4*1]);
-		goodMatches3dPos.push_back(pos3d);
-		goodMatchesImgPos.push_back(arcorePixelPos);
-
-		markerArray.markers.push_back( buildMarker(	pos3d,
-													"match"+std::to_string(i),
-													0,0,1,1, 0.2, kinectInputCameraMsg->header.frame_id));//matches are blue
-
-		ROS_DEBUG_STREAM("good match between "<<kinectPixelPos.x<<";"<<kinectPixelPos.y<<" \tand \t"<<arcorePixelPos.x<<";"<<arcorePixelPos.y<<" \tdistance = "<<goodMatches.at(i).distance);
-		//ROS_INFO_STREAM("depth = "<<kinectDepthImg.at<uint16_t>(kinectPixelPos));
+  		ROS_ERROR("error getting matching points");
+  		return;		
 	}
 
-	//draw squares around the match on arcore side
-	for(cv::Point2f pix : goodMatchesImgPos)
-	{
-		cv::rectangle(	arcoreImg,
-						cv::Point((int)pix.x-10,(int)pix.y-10),
-						cv::Point((int)pix.x+10,(int)pix.y+10),
-						cv::Scalar(1,1,1),4);
-	}
+	
 	
 
-
+	//used to publish visualizations to rviz
+	visualization_msgs::MarkerArray markerArray;
+	for(unsigned int i=0; i<goodMatches3dPos.size(); i++)//build the rviz markers
+	{	
+		cv::Point3f pos3d = goodMatches3dPos.at(i);
+		markerArray.markers.push_back( buildMarker(	pos3d,"match"+std::to_string(i),0,0,1,1, 0.2, kinectInputCameraMsg->header.frame_id));//matches are blue
+	}
+	pose_marker_pub.publish(markerArray);		
+	cv::Mat matchesImg;
+	if(showImages)
+		cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 	//If we have less than 4 matches we cannot procede
 	if(goodMatches.size()<4)
 	{
-		cv::Mat matchesImg;
 		//cv::drawKeypoints(arcoreImg,arcoreKeypoints)
-	    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-		prepareOpencvImageForShowing("Matches", matchesImg, matchesImg.rows * 1920/matchesImg.cols);
-	    cv::waitKey(10);
-
-		pose_marker_pub.publish(markerArray);
-		ROS_INFO("not enough matches to determine position");
+		if(showImages)
+		{
+			prepareOpencvImageForShowing("Matches", matchesImg, matchesImg.rows * 1920/matchesImg.cols);
+		    cv::waitKey(1);
+		}
+		ROS_WARN("not enough matches to determine position");
 		return;
 	}
 
@@ -632,7 +583,7 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 	
-	//ROS_INFO_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
+	ROS_INFO_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
 	cv::Mat tvec;
 	cv::Mat rvec;
 	std::vector<int> inliers;
@@ -663,20 +614,25 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 
 
 	cv::Mat colorArcoreImg;
-	cvtColor(arcoreImg, colorArcoreImg, CV_GRAY2RGB);
+	if(showImages)
+		cvtColor(arcoreImg, colorArcoreImg, CV_GRAY2RGB);
 	double reprojError = 0;
-	//calculater reprojection error mean and draw reprojections
+	//calculate reprojection error mean and draw reprojections
 	for(unsigned int i=0;i<inliers.size();i++)
 	{
 		Point2f pix = goodMatchesImgPos.at(inliers.at(i));
 		Point2f reprojPix = reprojPoints.at(inliers.at(i));
 		reprojError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojPoints.size();
-		cv::circle(colorArcoreImg,pix,15,Scalar(128,128,128),5);
-		int r = ((double)rand())/RAND_MAX*255;
-		int g = ((double)rand())/RAND_MAX*255;
-		int b = ((double)rand())/RAND_MAX*255;
-		Scalar color = Scalar(r,g,b);
-		cv::line(colorArcoreImg,pix,reprojPix,color,3);
+
+		if(showImages)
+		{
+			cv::circle(colorArcoreImg,pix,15,Scalar(128,128,128),5);
+			int r = ((double)rand())/RAND_MAX*255;
+			int g = ((double)rand())/RAND_MAX*255;
+			int b = ((double)rand())/RAND_MAX*255;
+			Scalar color = Scalar(r,g,b);
+			cv::line(colorArcoreImg,pix,reprojPix,color,3);
+		}
 	}
 	ROS_INFO_STREAM("inliers reprojection error = "<<reprojError);
 
@@ -685,18 +641,20 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	unsigned long reprojectionComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(reprojectionComputation- afterPnpComputation).count();
 	ROS_INFO("Reprojection error computation took %lu ms",reprojectionComputationDuration);
 
-	cv::Mat matchesImg;
-    cv::drawMatches(arcoreImg, arcoreKeypoints, kinectCameraImg, kinectKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+	if(showImages)
+	{
+		prepareOpencvImageForShowing("Matches", matchesImg, 800);
+		prepareOpencvImageForShowing("Reprojection", colorArcoreImg, 400);
+		cv::waitKey(1);
+	}
 
 
 	std::chrono::steady_clock::time_point afterDrawMatches = std::chrono::steady_clock::now();
 	unsigned long drawMathcesDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawMatches - reprojectionComputation).count();
 	ROS_INFO("draw matches took %lu ms",drawMathcesDuration);
-	prepareOpencvImageForShowing("Matches", matchesImg, 800);
-	prepareOpencvImageForShowing("Reprojection", colorArcoreImg, 400);
-	cv::waitKey(1);
 
-	//deiscard bad frames
+
+	//discard bad frames
 	if(reprojError>reprojectionErrorDiscardThreshold)
 	{
 		ROS_WARN("Reprojection error beyond threshold, discarding frame");
@@ -708,42 +666,25 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 	Eigen::Quaterniond rotation;
 	opencvPoseToEigenPose(rvec,tvec,position,rotation);
 	geometry_msgs::Pose poseNotStamped = buildRosPose(position,rotation);
-
-
-	//invert the pose, because yes
+	//invert the pose, because that's what you do
 	tf::Pose poseTf;
 	tf::poseMsgToTF(poseNotStamped,poseTf);
 	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
-
 	//make it stamped
 	geometry_msgs::PoseStamped phonePoseKinect;
 	phonePoseKinect.pose = poseNotStamped;
 	phonePoseKinect.header.frame_id = "kinect01_rgb_optical_frame";
 	phonePoseKinect.header.stamp = arcoreInputMsg->header.stamp;
-
-	ROS_INFO_STREAM("estimated pose before transform: "<<phonePoseKinect.pose.position.x<<" "<<phonePoseKinect.pose.position.y<<" "<<phonePoseKinect.pose.position.z<<" ; "<<phonePoseKinect.pose.orientation.x<<" "<<phonePoseKinect.pose.orientation.y<<" "<<phonePoseKinect.pose.orientation.z<<" "<<phonePoseKinect.pose.orientation.w);
-
 	//transform to world frame
 	geometry_msgs::PoseStamped phonePose;
 	tf2::doTransform(phonePoseKinect,phonePose,transformKinectToWorld);
 	phonePose.header.frame_id = "/world";
 
-	poseMatches.push_back(PoseMatch(arcoreInputMsg->mobileFramePose, phonePose.pose, arcoreInputMsg->header.stamp));
-
+	//ROS_INFO_STREAM("estimated pose before transform: "<<phonePoseKinect.pose.position.x<<" "<<phonePoseKinect.pose.position.y<<" "<<phonePoseKinect.pose.position.z<<" ; "<<phonePoseKinect.pose.orientation.x<<" "<<phonePoseKinect.pose.orientation.y<<" "<<phonePoseKinect.pose.orientation.z<<" "<<phonePoseKinect.pose.orientation.w);
 
 	pose_raw_pub.publish(phonePose);
 	//publishPoseAsTfFrame(phonePose,"mobile_pose");
-	markerArray.markers.push_back(buildMarker(phonePose.pose,	"nomarker_raw_pose", 1,0,0,1, 0.2, phonePose.header.frame_id));//raw is red
 
-/*
-	std::shared_ptr<std::vector<PoseMatch>> filteredPoseMatches = filterPosesBySpeed(poseMatches);
-	markerArray.markers.push_back(	buildMarker(filteredPoseMatches->back().getEstimatedPose(),
-												"nomarker_filtered_pose",
-												0,1,0,1, 0.25, "world"));//filtered is green and bigger	
-	ROS_INFO("filtered estimated pose is %f \t%f \t%f",filteredPoseMatches->back().getEstimatedPose().position.x,filteredPoseMatches->back().getEstimatedPose().position.y,filteredPoseMatches->back().getEstimatedPose().position.z);
-*/
-
-	pose_marker_pub.publish(markerArray);
 
 	ROS_INFO_STREAM("estimated pose is                "<<phonePose.pose.position.x<<" "<<phonePose.pose.position.y<<" "<<phonePose.pose.position.z<<" ; "<<phonePose.pose.orientation.x<<" "<<phonePose.pose.orientation.y<<" "<<phonePose.pose.orientation.z<<" "<<phonePose.pose.orientation.w);
 
