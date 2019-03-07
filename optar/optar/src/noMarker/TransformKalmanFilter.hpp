@@ -6,6 +6,9 @@
  * Definition of the TransformKalmanFilter class, which implements a kalman filter for
  * 3D static poses
  */
+#ifndef TRANSFORM_KALMAN_FILTER_HPP
+#define TRANSFORM_KALMAN_FILTER_HPP
+
 
 #include <tf/tf.h>
 #include <opencv2/video/tracking.hpp>
@@ -33,3 +36,6 @@ public:
 	tf::Pose update(tf::Pose pose);
 
 };
+
+
+#endif

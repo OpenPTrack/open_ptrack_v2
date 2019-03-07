@@ -5,6 +5,8 @@
  *
  * Collection of utility methods used by the optar module
  */
+#ifndef OPTAR_UTILS_HPP_06032019
+#define OPTAR_UTILS_HPP_06032019
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
@@ -51,3 +53,5 @@ tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose);
 tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses);
 
 bool isPoseValid(const tf::Pose& pose);
+
+#endif

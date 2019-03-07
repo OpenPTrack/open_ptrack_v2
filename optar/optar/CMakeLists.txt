@@ -115,7 +115,7 @@ add_executable(arcore_camera_image_republisher src/arcore_camera_image_republish
 target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/noMarker/TransformKalmanFilter.cpp)
+add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/noMarker/TransformKalmanFilter.cpp src/noMarker/ARDeviceRegistrationEstimator.cpp)
 target_link_libraries(nomarker_position_estimator optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(nomarker_position_estimator optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
