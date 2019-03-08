@@ -67,6 +67,8 @@ static int orbLevelsNumber = 8;
 static unsigned int startupFramesNum = 10;
 static double phoneOrientationDifferenceThreshold_deg = 45;
 static double estimateDistanceThreshold_meters = 5;
+static bool showImages = false;
+static bool useCuda = false;
 
 
 void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint32_t level)
@@ -89,6 +91,7 @@ void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint
 
 	startupFramesNum	= config.startup_frames_num;
 	phoneOrientationDifferenceThreshold_deg	= config.phone_orientation_diff_thresh;
+	showImages	= config.show_images;
 
 	for(auto const& keyValuePair: estimators)
 	{
@@ -102,7 +105,9 @@ void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint
 						orbLevelsNumber,
 						startupFramesNum,
 						phoneOrientationDifferenceThreshold_deg,
-						estimateDistanceThreshold_meters);
+						estimateDistanceThreshold_meters,
+						showImages,
+						useCuda);
 
 	}
 }
@@ -112,25 +117,38 @@ void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo)
 {
-	if(estimators.size()==0)
+	string deviceName = arcoreInputMsg->deviceId;
+	auto it = estimators.find(deviceName);
+	if(it==estimators.end())//if it dowsn't exist, create it
 	{
-		shared_ptr<ARDeviceRegistrationEstimator> newEstimator = make_shared<ARDeviceRegistrationEstimator>("arcore_device", *nodeHandle, transformKinectToWorld);
+		shared_ptr<ARDeviceRegistrationEstimator> newEstimator = make_shared<ARDeviceRegistrationEstimator>(deviceName, *nodeHandle, transformKinectToWorld);
 		estimators.insert(std::map<string, shared_ptr<ARDeviceRegistrationEstimator>>::value_type(newEstimator->getARDeviceId(),newEstimator));
-		estimators.at("arcore_device")->setupParameters(pnpReprojectionError,
-						pnpConfidence,
-						pnpIterations,
-						matchingThreshold,
-						reprojectionErrorDiscardThreshold,
-						orbMaxPoints,
-						orbScaleFactor,
-						orbLevelsNumber,
-						startupFramesNum,
-						phoneOrientationDifferenceThreshold_deg,
-						estimateDistanceThreshold_meters);
+		estimators.at(deviceName)->setupParameters(pnpReprojectionError,
+													pnpConfidence,
+													pnpIterations,
+													matchingThreshold,
+													reprojectionErrorDiscardThreshold,
+													orbMaxPoints,
+													orbScaleFactor,
+													orbLevelsNumber,
+													startupFramesNum,
+													phoneOrientationDifferenceThreshold_deg,
+													estimateDistanceThreshold_meters,
+													showImages,
+													useCuda);
 	}
+	shared_ptr<ARDeviceRegistrationEstimator> estimator = estimators.find(deviceName)->second;
 
-	estimators.at("arcore_device")->update(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,kinectCameraInfo);
-	publishTransformAsTfFrame(estimators.at("arcore_device")->getEstimation(),estimators.at("arcore_device")->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
+	int r = estimator->update(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,kinectCameraInfo);
+	if(r<0)
+	{
+		ROS_WARN_STREAM("estimation for device "<<deviceName<<" failed with code "<<r);
+	}
+	else
+	{
+		publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
+		ROS_INFO("Published transform");
+	}
 
 }
 

@@ -16,9 +16,12 @@ private:
 	std::vector<tf::Pose> arcoreWorldHistory;
 	tf::Pose lastEstimate;
 	bool didComputeEstimation=false;
+	bool createdMatchesWindow = false;
+	bool createdReprojectionWindow = false;
+
+
 	std::string ARDeviceId;
 
-	bool showImages = true;
 
 	ros::Publisher pose_raw_pub;
 	ros::Publisher pose_marker_pub;
@@ -26,10 +29,12 @@ private:
 	geometry_msgs::TransformStamped transformKinectToWorld;
 	std::shared_ptr<TransformKalmanFilter> transformKalmanFilter;
 
+	const std::string namespaceName = "optar";
+	const std::string outputPoseRaw_topicName			= "no_marker_pose_raw";
+	const std::string outputPoseMarker_topicName		= "pose_marker";
 
-	const std::string output_pose_raw_topic			= "optar/no_marker_pose_raw";
-	const std::string output_pose_marker_topic		= "optar/pose_marker";
-
+	std::string matchesWindowName;
+	std::string reprojectionWindowName;
 
 
 
@@ -45,6 +50,8 @@ private:
 	double phoneOrientationDifferenceThreshold_deg = 45;
 	double estimateDistanceThreshold_meters = 5;
 
+	bool showImages = true;
+	bool useCuda = true;
 
 
 public:
@@ -63,7 +70,9 @@ public:
 						int orbLevelsNumber,
 						unsigned int startupFramesNum,
 						double phoneOrientationDifferenceThreshold_deg,
-						double estimateDistanceThreshold_meters);
+						double estimateDistanceThreshold_meters,
+						bool showImages,
+						bool useCuda);
 
 
 	int update(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
@@ -117,6 +126,8 @@ int get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
     std::vector<cv::Point3f>& matches3dPos,
     std::vector<cv::Point2f>& matchesImgPos);
 
+
+void closeWindows();
 
 };
 

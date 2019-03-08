@@ -26,3 +26,6 @@ float64 principal_point_y_px
 float64 pixel_size_x_mm
 float64 pixel_size_y_mm
 
+# Unique identifier of the phone sending the data
+string deviceId
+
