@@ -24,7 +24,7 @@ void callback(const opt_msgs::OptarNtpMessagePtr& inMsg)
 		response.clientRequestTime = inMsg->clientRequestTime;
 		response.id = inMsg->id;
 		pub.publish(response);
-		ROS_INFO_STREAM("handled query from "<<inMsg->id<<"    partial time diff "<<(response.serverTime-response.clientRequestTime));
+		ROS_DEBUG_STREAM("handled query from "<<inMsg->id<<"    partial time diff "<<(response.serverTime-response.clientRequestTime));
 	}
 }
 

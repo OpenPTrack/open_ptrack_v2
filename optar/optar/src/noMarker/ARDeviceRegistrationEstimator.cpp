@@ -228,7 +228,11 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 	}
 
 	
-	
+	std::chrono::steady_clock::time_point after3dpositionsComputation = std::chrono::steady_clock::now();
+	unsigned long _3dPositionsComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(after3dpositionsComputation - afterMatchesComputation).count();
+	//ROS_DEBUG("3D positions computation took %lu ms",_3dPositionsComputationDuration);
+
+
 
 	//used to publish visualizations to rviz
 	visualization_msgs::MarkerArray markerArray;
@@ -259,11 +263,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 
 
 
-	std::chrono::steady_clock::time_point after3dpositionsComputation = std::chrono::steady_clock::now();
-	unsigned long _3dPositionsComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(after3dpositionsComputation - afterMatchesComputation).count();
-	//ROS_DEBUG("3D positions computation took %lu ms",_3dPositionsComputationDuration);
-
-
+	
 
 
 
@@ -335,7 +335,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 
 	std::chrono::steady_clock::time_point reprojectionComputation = std::chrono::steady_clock::now();
 	unsigned long reprojectionComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(reprojectionComputation- afterPnpComputation).count();
-	//ROS_DEBUG("Reprojection error computation took %lu ms",reprojectionComputationDuration);
+	ROS_DEBUG("Reprojection error computation took %lu ms",reprojectionComputationDuration);
 
 	if(showImages)
 	{
@@ -349,7 +349,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 
 	std::chrono::steady_clock::time_point afterDrawMatches = std::chrono::steady_clock::now();
 	unsigned long drawMatchesDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawMatches - reprojectionComputation).count();
-	//ROS_DEBUG("draw matches took %lu ms",drawMatchesDuration);
+	ROS_DEBUG("draw matches took %lu ms",drawMatchesDuration);
 
 
 	//discard bad frames
