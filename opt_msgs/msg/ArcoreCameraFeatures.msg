@@ -1,4 +1,4 @@
-# This message is used to transfer the camera image from ARCore devices
+# This message is used to transfer the detected features from ARCore devices
 # together with the pose estimated by ARcore and the camera intrinsic
 # parameters.
 #
@@ -24,9 +24,10 @@ int32 image_height_px
 float64 principal_point_x_px
 float64 principal_point_y_px
 
-# The pixel size in millimiters
-float64 pixel_size_x_mm
-float64 pixel_size_y_mm
+
+KeyPoint[] keypoints;
+uint8[] descriptors;
+int32 descriptors_mat_type;
 
 # Unique identifier of the phone sending the data
 string deviceId
