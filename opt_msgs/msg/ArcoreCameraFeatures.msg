@@ -25,9 +25,9 @@ float64 principal_point_x_px
 float64 principal_point_y_px
 
 
-KeyPoint[] keypoints;
-uint8[] descriptors;
-int32 descriptors_mat_type;
+opt_msgs/KeyPoint[] keypoints
+uint8[] descriptors
+int32 descriptors_mat_type
 
 # Unique identifier of the phone sending the data
-string deviceId
+std_msgs/string deviceId
