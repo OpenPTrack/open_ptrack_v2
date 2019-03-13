@@ -35,6 +35,7 @@ private:
 	std::string cameraInfoTopicName;
 	std::string debugImagesTopic;
 	std::string arDeviceCameraMsgTopicName;
+	std::string arDeviceFeaturesMsgTopicName;
 
 	geometry_msgs::TransformStamped transformKinectToWorld;
 	sensor_msgs::CameraInfo cameraInfo;
@@ -48,6 +49,12 @@ private:
 	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> kinect_depth_sub;
 
 
+	//subscribers and synchronizer for phone-side feature computation
+	typedef message_filters::sync_policies::ApproximateTime<opt_msgs::ArcoreCameraFeatures, sensor_msgs::Image, sensor_msgs::Image> FeaturesApproximateSynchronizationPolicy;
+	std::shared_ptr<message_filters::Synchronizer<FeaturesApproximateSynchronizationPolicy>> featuresTpc_synchronizer;
+	std::shared_ptr<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>> featuresTpc_arcore_sub;
+	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> featuresTpc_kinect_img_sub;
+	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> featuresTpc_kinect_depth_sub;
 
 	double pnpReprojectionError = 5;
 	double pnpConfidence = 0.99;
@@ -91,6 +98,9 @@ private:
 	void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 						const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 						const sensor_msgs::ImageConstPtr& kinectInputDepthMsg);
+	void featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg);
 };
 
 #endif

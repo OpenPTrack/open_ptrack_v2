@@ -31,7 +31,32 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 		return;
 	}
 
-	int r = estimator->update(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,cameraInfo);
+	int r = estimator->imagesCallback(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,cameraInfo);
+	if(r<0)
+	{
+		ROS_WARN_STREAM("estimation for device "<<ARDeviceId<<" failed with code "<<r);
+	}
+	else
+	{
+		publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
+		ROS_INFO("Published transform");
+	}
+}
+
+
+void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg)
+{
+	ROS_INFO_STREAM("featuresCallback for device "<<ARDeviceId);
+	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM("ARDeviceHandler.imagesCallback(): failed to get mutex. Skipping message. ARDeviceId = "<<ARDeviceId);
+		return;
+	}
+
+	int r = estimator->featuresCallback(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,cameraInfo);
 	if(r<0)
 	{
 		ROS_WARN_STREAM("estimation for device "<<ARDeviceId<<" failed with code "<<r);
@@ -53,7 +78,8 @@ ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTo
 	this->cameraInfoTopicName = cameraInfoTopicName;
 	this->debugImagesTopic = debugImagesTopic;
 
-	arDeviceCameraMsgTopicName = "/optar/"+ARDeviceId+"/camera";
+	arDeviceCameraMsgTopicName = "optar/"+ARDeviceId+"/camera";
+	arDeviceFeaturesMsgTopicName = "optar/"+ARDeviceId+"/features";
 
 }
 
@@ -157,11 +183,44 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 	//registers the callback
 	auto f = boost::bind( &ARDeviceHandler::imagesCallback, this, _1, _2, _3);
 
-	ROS_INFO_STREAM("Setup listener for topics: "<<endl<<
+	ROS_INFO_STREAM("Setting up images synchronizer with topics:"<<endl<<
 		ros::names::remap(arDeviceCameraMsgTopicName)<<endl<<
 		ros::names::remap(cameraRgbTopicName)<<endl<<
 		ros::names::remap(cameraDepthTopicName)<<endl);
 	synchronizer->registerCallback(f);
+
+
+
+
+
+
+
+	//instantiate and set up the policy
+	FeaturesApproximateSynchronizationPolicy featuresPolicy = FeaturesApproximateSynchronizationPolicy(60);//instatiate setting up the queue size
+	//We set a lower bound of half the period of the slower publisher, this should mek the algorithm behave better (according to the authors)
+	featuresPolicy.setInterMessageLowerBound(0,ros::Duration(0,250000000));// 2fps
+	featuresPolicy.setInterMessageLowerBound(1,ros::Duration(0,15000000));// about 30 fps but sometimes more
+	featuresPolicy.setInterMessageLowerBound(2,ros::Duration(0,15000000));// about 30 fps but sometimes more
+
+
+	featuresTpc_arcore_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>>(*nodeHandle, arDeviceFeaturesMsgTopicName, 1);
+	featuresTpc_kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraRgbTopicName, 1);
+	featuresTpc_kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraDepthTopicName, 1);
+
+	//Instantiate a Synchronizer with our policy.
+	featuresTpc_synchronizer = std::make_shared<message_filters::Synchronizer<FeaturesApproximateSynchronizationPolicy>>(FeaturesApproximateSynchronizationPolicy(featuresPolicy), *featuresTpc_arcore_sub, *featuresTpc_kinect_img_sub, *featuresTpc_kinect_depth_sub);
+	
+
+
+	//registers the callback
+	auto featuresCallbackFunction = boost::bind( &ARDeviceHandler::featuresCallback, this, _1, _2, _3);
+
+	ROS_INFO_STREAM("Setting up images-features synchronizer with topics:"<<endl<<
+		ros::names::remap(arDeviceFeaturesMsgTopicName)<<endl<<
+		ros::names::remap(cameraRgbTopicName)<<endl<<
+		ros::names::remap(cameraDepthTopicName)<<endl);
+	featuresTpc_synchronizer->registerCallback(featuresCallbackFunction);
+
 	return 0;
 }
 

@@ -27,7 +27,7 @@ private:
 
 	ros::Publisher pose_raw_pub;
 	ros::Publisher pose_marker_pub;
-	image_transport::Publisher debug_images_pub;
+	image_transport::Publisher matches_images_pub;
 	image_transport::Publisher reproj_images_pub;
 	geometry_msgs::TransformStamped transformKinectToWorld;
 	std::shared_ptr<TransformKalmanFilter> transformKalmanFilter;
@@ -83,7 +83,26 @@ public:
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo);
 
-	int featuresCallback()
+	int featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
+					const sensor_msgs::CameraInfo& kinectCameraInfo);
+
+	int update(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
+				const cv::Mat& arcoreDescriptors,
+				const std::vector<cv::KeyPoint>& fixedKeypoints,
+				const cv::Mat& fixedDescriptors,
+				const cv::Size& arcoreImageSize,
+				const cv::Size& kinectImageSize,
+				const cv::Mat& arcoreCameraMatrix,
+				const cv::Mat& fixedCameraMatrix,
+				cv::Mat& kinectDepthImage,
+				const cv::Mat& kinectMonoImage,
+				const cv::Mat& arcoreImage,
+				const tf::Pose& phonePoseArcoreFrameConverted,
+				const ros::Time& timestamp,
+				const std::string fixedCameraFrameId);
+
 	tf::Transform getEstimation();
 
 	std::string getARDeviceId();
@@ -124,6 +143,7 @@ int readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& 
 					cv::Mat& arcoreDescriptors,
 					std::vector<cv::KeyPoint>& arcoreKeypoints,
 					cv::Size& arcoreImageSize,
+					cv::Mat& kinectCameraMatrix,
 					cv::Mat& kinectCameraImg,
 					cv::Mat& kinectDepthImg,
 					tf::Pose& phonePoseArcoreFrameConverted);
