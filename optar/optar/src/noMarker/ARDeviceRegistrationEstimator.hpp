@@ -28,7 +28,7 @@ private:
 	ros::Publisher pose_raw_pub;
 	ros::Publisher pose_marker_pub;
 	image_transport::Publisher debug_images_pub;
-
+	image_transport::Publisher reproj_images_pub;
 	geometry_msgs::TransformStamped transformKinectToWorld;
 	std::shared_ptr<TransformKalmanFilter> transformKalmanFilter;
 
@@ -78,11 +78,12 @@ public:
 						bool useCuda);
 
 
-	int update(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
+	int imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo);
 
+	int featuresCallback()
 	tf::Transform getEstimation();
 
 	std::string getARDeviceId();
@@ -93,8 +94,8 @@ private:
 
 
 
-int computeOrbFeatures(const cv::Mat& image, 
-					std::vector<cv::KeyPoint>& keypoints, 
+int computeOrbFeatures(const cv::Mat& image,
+					std::vector<cv::KeyPoint>& keypoints,
 					cv::Mat& descriptors);
 
 int findOrbMatches(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
@@ -111,6 +112,7 @@ int readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreI
 					const sensor_msgs::CameraInfo& kinectCameraInfo,
 					cv::Mat& arcoreCameraMatrix,
 					cv::Mat& arcoreImg,
+					cv::Mat& kinectCameraMatrix,
 					cv::Mat& kinectCameraImg,
 					cv::Mat& kinectDepthImg,
 					tf::Pose& phonePoseArcoreFrameConverted);
@@ -139,7 +141,7 @@ int get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
 	const std::vector<cv::KeyPoint>& kinectKeypoints,
 	const std::vector<cv::KeyPoint>& arcoreKeypoints,
 	const cv::Mat& kinectDepthImg,
-	const sensor_msgs::CameraInfo& kinectCameraInfo, 
+	const cv::Mat& kinectCameraMatrix,
     std::vector<cv::Point3f>& matches3dPos,
     std::vector<cv::Point2f>& matchesImgPos);
 
@@ -151,4 +153,3 @@ void closeWindows();
 
 
 #endif
-
