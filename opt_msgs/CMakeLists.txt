@@ -37,6 +37,8 @@ add_message_files(FILES
   NameArray.msg
   ArcoreCameraImage.msg
   OptarNtpMessage.msg
+  KeyPoint.msg
+  ArcoreCameraFeatures.msg
   )
 
 add_service_files(FILES OPTSensor.srv OPTTransform.srv)

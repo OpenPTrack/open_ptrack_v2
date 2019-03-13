@@ -3,10 +3,12 @@
 
 #include <ros/ros.h>
 #include <opt_msgs/ArcoreCameraImage.h>
+#include <opt_msgs/ArcoreCameraFeatures.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <cv_bridge/cv_bridge.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <image_transport/image_transport.h>
 
 #include  "TransformKalmanFilter.hpp"
 
@@ -25,6 +27,7 @@ private:
 
 	ros::Publisher pose_raw_pub;
 	ros::Publisher pose_marker_pub;
+	image_transport::Publisher debug_images_pub;
 
 	geometry_msgs::TransformStamped transformKinectToWorld;
 	std::shared_ptr<TransformKalmanFilter> transformKalmanFilter;
@@ -56,7 +59,7 @@ private:
 
 public:
 
-	ARDeviceRegistrationEstimator(std::string ARDeviceId, ros::NodeHandle& nh, geometry_msgs::TransformStamped transformKinectToWorld);
+	ARDeviceRegistrationEstimator(std::string ARDeviceId, ros::NodeHandle& nh, geometry_msgs::TransformStamped transformKinectToWorld, std::string debugImagesTopic);
 
 
 
@@ -90,21 +93,35 @@ private:
 
 
 
+int computeOrbFeatures(const cv::Mat& image, 
+					std::vector<cv::KeyPoint>& keypoints, 
+					cv::Mat& descriptors);
 
-int findOrbMatches(	const cv::Mat& arcoreImg, 
-					const cv::Mat& kinectCameraImg, 
-					std::vector<cv::DMatch>& matches, 
-					std::vector<cv::KeyPoint>& arcoreKeypoints, 
-					std::vector<cv::KeyPoint>& kinectKeypoints);
+int findOrbMatches(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
+					const cv::Mat& arcoreDescriptors,
+					const std::vector<cv::KeyPoint>& kinectKeypoints,
+					const cv::Mat& kinectDescriptors,
+					std::vector<cv::DMatch>& matches);
 
 int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches);
 
-int readReceivedMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
+int readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo,
 					cv::Mat& arcoreCameraMatrix,
 					cv::Mat& arcoreImg,
+					cv::Mat& kinectCameraImg,
+					cv::Mat& kinectDepthImg,
+					tf::Pose& phonePoseArcoreFrameConverted);
+int readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
+					const sensor_msgs::CameraInfo& kinectCameraInfo,
+					cv::Mat& arcoreCameraMatrix,
+					cv::Mat& arcoreDescriptors,
+					std::vector<cv::KeyPoint>& arcoreKeypoints,
+					cv::Size& arcoreImageSize,
 					cv::Mat& kinectCameraImg,
 					cv::Mat& kinectDepthImg,
 					tf::Pose& phonePoseArcoreFrameConverted);

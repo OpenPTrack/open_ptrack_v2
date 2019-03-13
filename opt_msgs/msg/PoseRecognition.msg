@@ -1,3 +1,3 @@
-
+int32 id
 opt_msgs/PosePredictionResult best_prediction_result
 opt_msgs/PosePredictionResult[] gallery_poses 

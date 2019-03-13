@@ -33,6 +33,7 @@ private:
 	std::string cameraRgbTopicName;
 	std::string cameraDepthTopicName;
 	std::string cameraInfoTopicName;
+	std::string debugImagesTopic;
 	std::string arDeviceCameraMsgTopicName;
 
 	geometry_msgs::TransformStamped transformKinectToWorld;
@@ -66,7 +67,7 @@ private:
 	std::timed_mutex objectMutex;
 
 public:
-	ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName);
+	ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName, std::string debugImagesTopic);
 	int start(std::shared_ptr<ros::NodeHandle> NodeHandle);
 	int stop();
 

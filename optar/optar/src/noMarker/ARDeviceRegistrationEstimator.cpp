@@ -22,6 +22,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <tf/transform_broadcaster.h>
+#include <image_transport/image_transport.h>
 
 #ifdef USE_CUDA_OPENCV
 	#include <opencv2/cudafeatures2d.hpp>
@@ -36,13 +37,17 @@
 using namespace std;
 using namespace cv;
 
-ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, ros::NodeHandle& nh, geometry_msgs::TransformStamped transformKinectToWorld)
+ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, ros::NodeHandle& nh, geometry_msgs::TransformStamped transformKinectToWorld, std::string debugImagesTopic)
 {
 	this->transformKinectToWorld = transformKinectToWorld;
 	this->ARDeviceId = ARDeviceId;
 	pose_raw_pub = nh.advertise<geometry_msgs::PoseStamped>("optar/"+ARDeviceId+"/"+outputPoseRaw_topicName, 10);
 	pose_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
-	transformKalmanFilter = std::make_shared<TransformKalmanFilter>(1e-5,1,1);
+
+	image_transport::ImageTransport it(nh);
+	debug_images_pub = it.advertise(debugImagesTopic, 1);
+  	
+  	transformKalmanFilter = std::make_shared<TransformKalmanFilter>(1e-5,1,1);
 	matchesWindowName = "Matches "+ARDeviceId;
 	reprojectionWindowName = "Reprojection "+ARDeviceId;
 }
@@ -129,7 +134,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 	cv::Mat kinectCameraImg;
 	cv::Mat kinectDepthImg;
 	tf::Pose phonePoseArcoreFrameConverted;
-	r = readReceivedMessages( arcoreInputMsg,
+	r = readReceivedImageMessages( arcoreInputMsg,
 					kinectInputCameraMsg,
 					kinectInputDepthMsg,
 					kinectCameraInfo,
@@ -161,12 +166,27 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 	//find matches
     std::vector<cv::DMatch> matches;
     std::vector<cv::KeyPoint>  arcoreKeypoints;
+    cv::Mat arcoreDescriptors;
+    r = computeOrbFeatures(arcoreImg, arcoreKeypoints, arcoreDescriptors);
+    if(r<0)
+    {
+    	ROS_ERROR("error computing arcore features");
+    	return -12;
+    }
     std::vector<cv::KeyPoint>  kinectKeypoints;
-    r = findOrbMatches(arcoreImg, kinectCameraImg, matches, arcoreKeypoints, kinectKeypoints);
+    cv::Mat kinectDescriptors;
+    r =computeOrbFeatures(kinectCameraImg, kinectKeypoints, kinectDescriptors);
+    if(r<0)
+    {
+    	ROS_ERROR("error computing camera features");
+    	return -13;
+    }
+
+    r = findOrbMatches(arcoreKeypoints, arcoreDescriptors, kinectKeypoints, kinectDescriptors, matches);
     if(r<0)
     {
     	ROS_ERROR("error finding matches");
-    	return -12;
+    	return -14;
     }
   	ROS_DEBUG_STREAM("got "<<matches.size()<<" matches");
 
@@ -176,7 +196,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
   	if(r<0)
   	{
   		ROS_ERROR("error filtering matches");
-  		return -13;
+  		return -15;
   	}
   	ROS_DEBUG("Got %lu good matches, but some could be invalid",goodMatchesWithNull.size());
 
@@ -187,7 +207,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
   	if(r<0)
   	{
   		ROS_ERROR("error fixing matches depth");
-  		return -14;
+  		return -16;
   	}
   	ROS_INFO_STREAM("got "<<goodMatches.size()<<" actually good matches");
 
@@ -224,7 +244,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 	if(r<0)
 	{
   		ROS_ERROR("error getting matching points");
-  		return -15;		
+  		return -17;		
 	}
 
 	
@@ -251,12 +271,14 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 		//cv::drawKeypoints(arcoreImg,arcoreKeypoints)
 		if(showImages)
 		{
-			prepareOpencvImageForShowing(matchesWindowName, matchesImg, matchesImg.rows * 1920/matchesImg.cols);
-			createdMatchesWindow = true;
-		    cv::waitKey(1);
+			sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", matchesImg).toImageMsg();
+			debug_images_pub.publish(msg);
+			//prepareOpencvImageForShowing(matchesWindowName, matchesImg, matchesImg.rows * 1920/matchesImg.cols);
+			//createdMatchesWindow = true;
+		    //cv::waitKey(1);
 		}
 		ROS_WARN("not enough matches to determine position");
-		return -16;
+		return -18;
 	}
 
 
@@ -339,11 +361,14 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 
 	if(showImages)
 	{
-		prepareOpencvImageForShowing(matchesWindowName, matchesImg, 800);
-		createdMatchesWindow = true;
-		prepareOpencvImageForShowing(reprojectionWindowName, colorArcoreImg, 400);
-		createdReprojectionWindow = true;	
-		cv::waitKey(1);
+
+		sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", matchesImg).toImageMsg();
+		debug_images_pub.publish(msg);
+		//prepareOpencvImageForShowing(matchesWindowName, matchesImg, 800);
+		//createdMatchesWindow = true;
+		//prepareOpencvImageForShowing(reprojectionWindowName, colorArcoreImg, 400);
+		//createdReprojectionWindow = true;	
+		//cv::waitKey(1);
 	}
 
 
@@ -356,7 +381,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 	if(reprojError>reprojectionErrorDiscardThreshold)
 	{
 		ROS_WARN("Reprojection error beyond threshold, discarding frame");
-		return -17;
+		return -19;
 	}
 
 	//convert to ros format
@@ -432,7 +457,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 	if(!isPoseValid(arcoreWorld))
 	{
 		ROS_WARN_STREAM("Dropping transform estimation as it is invalid");
-		return -18;
+		return -20;
 	}
 
 	tf::Pose phonePoseTf_kinectFrame;
@@ -445,7 +470,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 	if(phoneToCameraRotationAngle>phoneOrientationDifferenceThreshold_deg)
 	{
 		ROS_INFO_STREAM("Orientation difference between phone and camera is too high, discarding estimation ("<<phoneToCameraRotationAngle<<")");
-		return -19;
+		return -21;
 	}
 
 	arcoreWorldHistory.push_back(arcoreWorld);
@@ -482,7 +507,7 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 		if(poseDistance(arcoreWorld,lastEstimate)>estimateDistanceThreshold_meters)
 		{
 			ROS_WARN_STREAM("New estimation is too different, discarding frame");
-			return -20;			
+			return -22;			
 		}
 		//if we are after the forst few frames use kalman
 		arcoreWorldFiltered = transformKalmanFilter->update(arcoreWorld);
@@ -517,18 +542,12 @@ int ARDeviceRegistrationEstimator::update(const opt_msgs::ArcoreCameraImageConst
 
 
 
-
-
-
-
-int ARDeviceRegistrationEstimator::findOrbMatches(	const cv::Mat& arcoreImg, 
-					const cv::Mat& kinectCameraImg, 
-					std::vector<cv::DMatch>& matches, 
-					std::vector<cv::KeyPoint>& arcoreKeypoints, 
-					std::vector<cv::KeyPoint>& kinectKeypoints)
+int ARDeviceRegistrationEstimator::computeOrbFeatures(const cv::Mat& image, 
+					std::vector<cv::KeyPoint>& keypoints, 
+					cv::Mat& descriptors)
 {
-	matches.clear();
-    cv::Ptr<cv::ORB> orb;
+	keypoints.clear();
+	cv::Ptr<cv::ORB> orb;
 
     #ifdef USE_CUDA_OPENCV
     	if(useCuda)
@@ -541,47 +560,32 @@ int ARDeviceRegistrationEstimator::findOrbMatches(	const cv::Mat& arcoreImg,
 	    orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber);	
     #endif
 
-    //detect keypoints on both images
-   	std::chrono::steady_clock::time_point beforeDetection = std::chrono::steady_clock::now();
-    orb->detect(kinectCameraImg, kinectKeypoints);
-    orb->detect(arcoreImg, arcoreKeypoints);
-   	std::chrono::steady_clock::time_point afterDetection = std::chrono::steady_clock::now();
-    unsigned long detectionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDetection - beforeDetection).count();
-	ROS_DEBUG("Keypoints detection took %lu ms",detectionDuration);
-	ROS_DEBUG_STREAM("Found "<<arcoreKeypoints.size()<<" keypoints for arcore, "<<kinectKeypoints.size()<<" for kinect");
 
-	if ( kinectKeypoints.empty() )
+    orb->detect(image, keypoints);
+	if ( keypoints.empty() )
 	{
-		ROS_ERROR("No keypoints found for kinect");
+		ROS_ERROR("No keypoints found");
 		return -1;
 	}
-	if ( arcoreKeypoints.empty() )
+
+	orb->compute(image,keypoints,descriptors);
+	if ( descriptors.empty() )
 	{
-		ROS_ERROR("No keypoints found for arcore");
+		ROS_ERROR("No descriptors");
 		return -2;
 	}
+	return 0;
+}
 
-	//compute descriptors for the keypoints in both images
-   	std::chrono::steady_clock::time_point beforeDescriptors = std::chrono::steady_clock::now();
-    cv::Mat kinectDescriptors;
-    cv::Mat arcoreDescriptors;
-    orb->compute(kinectCameraImg,kinectKeypoints,kinectDescriptors);
-	orb->compute(arcoreImg,arcoreKeypoints,arcoreDescriptors);
-   	std::chrono::steady_clock::time_point aftereDescriptors = std::chrono::steady_clock::now();
-	unsigned long descriptorsDuration = std::chrono::duration_cast<std::chrono::milliseconds>(aftereDescriptors - beforeDescriptors).count();
-	ROS_DEBUG("Descriptors computation took %lu ms",descriptorsDuration);
 
-	if ( kinectDescriptors.empty() )
-	{
-		ROS_ERROR("No descriptors for kinect");
-		return -3;
-	}
-	if ( arcoreDescriptors.empty() )
-	{
-		ROS_ERROR("no descriptors for arcore");
-		return -4;
-	}
-  	 
+
+int ARDeviceRegistrationEstimator::findOrbMatches(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
+													const cv::Mat& arcoreDescriptors,
+													const std::vector<cv::KeyPoint>& kinectKeypoints,
+													const cv::Mat& kinectDescriptors,
+													std::vector<cv::DMatch>& matches)
+{
+ 	 
   	//find matches between the descriptors
    	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
     cv::BFMatcher::create(cv::NORM_HAMMING)->match(arcoreDescriptors,kinectDescriptors,matches);//arcore is query, kinect is trains
@@ -644,7 +648,7 @@ int ARDeviceRegistrationEstimator::filterMatches(const std::vector<cv::DMatch>& 
 	return 0;
 }
 
-int ARDeviceRegistrationEstimator::readReceivedMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
+int ARDeviceRegistrationEstimator::readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo,
@@ -697,7 +701,7 @@ int ARDeviceRegistrationEstimator::readReceivedMessages(const opt_msgs::ArcoreCa
 	cv::flip(arcoreImg,flippedArcoreImg,0);
 	arcoreImg=flippedArcoreImg;
 	//cv::xphoto::createSimpleWB()->balanceWhite(flippedArcoreImg,arcoreImg);
-	cv::equalizeHist(arcoreImg,arcoreImg);
+	//cv::equalizeHist(arcoreImg,arcoreImg);
     ROS_DEBUG("decoded arcore image");
     //cv::imshow("Arcore", arcoreImg);
 
@@ -709,7 +713,7 @@ int ARDeviceRegistrationEstimator::readReceivedMessages(const opt_msgs::ArcoreCa
 		return -4;
 	}
     ROS_DEBUG("decoded kinect camera image");
-	cv::equalizeHist(kinectCameraImg,kinectCameraImg);
+	//cv::equalizeHist(kinectCameraImg,kinectCameraImg);
     //cv::imshow("Kinect", kinectCameraImg);
 
 
@@ -764,6 +768,127 @@ int ARDeviceRegistrationEstimator::readReceivedMessages(const opt_msgs::ArcoreCa
 	return 0;
 }
 
+
+
+int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
+					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
+					const sensor_msgs::CameraInfo& kinectCameraInfo,
+					cv::Mat& arcoreCameraMatrix,
+					cv::Mat& arcoreDescriptors,
+					std::vector<cv::KeyPoint>& arcoreKeypoints,
+					cv::Size& arcoreImageSize,
+					cv::Mat& kinectCameraImg,
+					cv::Mat& kinectDepthImg,
+					tf::Pose& phonePoseArcoreFrameConverted)
+{
+	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
+
+	//convert the camera matrix in a cv::Mat
+	arcoreCameraMatrix = cv::Mat(3, 3, CV_64FC1);
+	arcoreCameraMatrix.at<double>(0,0) = arcoreInputMsg->focal_length_x_px;
+	arcoreCameraMatrix.at<double>(0,1) = 0;
+	arcoreCameraMatrix.at<double>(0,2) = arcoreInputMsg->principal_point_x_px;
+	arcoreCameraMatrix.at<double>(1,0) = 0;
+	arcoreCameraMatrix.at<double>(1,1) = arcoreInputMsg->focal_length_y_px;
+	arcoreCameraMatrix.at<double>(1,2) = arcoreInputMsg->principal_point_y_px;
+	arcoreCameraMatrix.at<double>(2,0) = 0;
+	arcoreCameraMatrix.at<double>(2,1) = 0;
+	arcoreCameraMatrix.at<double>(2,2) = 1;
+
+	//decode arcore image
+	cv::Mat rawImageData(cv::Mat(arcoreInputMsg->image.data));
+	if(rawImageData.empty())
+	{
+		ROS_ERROR("Invalid arcore image (it's empty!)");
+		return -1;
+	}
+
+	
+	arcoreImageSize.width = arcoreInputMsg->image_width_px;
+	arcoreImageSize.height = arcoreInputMsg->image_height_px;
+
+	for(unsigned int i=0;i<arcoreInputMsg->keypoints.size(); i++)
+	{
+		arcoreKeypoints.push_back(cv::KeyPoint(cv::Point2f(arcoreInputMsg->keypoints[i].x_pos,arcoreInputMsg->keypoints[i].y_pos),
+									arcoreInputMsg->keypoints[i].size,
+									arcoreInputMsg->keypoints[i].angle,
+									arcoreInputMsg->keypoints[i].response,
+									arcoreInputMsg->keypoints[i].octave,
+									arcoreInputMsg->keypoints[i].class_id));
+	}
+
+	cv::Mat receivedDescriptors( arcoreInputMsg->descriptors_mat_rows, arcoreInputMsg->descriptors_mat_cols,  arcoreInputMsg->descriptors_mat_type,  (void*)&(arcoreInputMsg->descriptors_mat_data)[0]);
+	arcoreDescriptors = receivedDescriptors;
+
+
+
+
+
+
+
+    //decode kinect rgb image
+	kinectCameraImg = cv_bridge::toCvShare(kinectInputCameraMsg)->image;//convert compressed image data to cv::Mat
+	if(!kinectCameraImg.data)
+	{
+		ROS_ERROR("couldn't extract kinect camera opencv image");
+		return -4;
+	}
+    ROS_DEBUG("decoded kinect camera image");
+	//cv::equalizeHist(kinectCameraImg,kinectCameraImg);
+    //cv::imshow("Kinect", kinectCameraImg);
+
+
+    //decode kinect depth image
+	kinectDepthImg = cv_bridge::toCvShare(kinectInputDepthMsg)->image;//convert compressed image data to cv::Mat
+	if(!kinectDepthImg.data)
+	{
+		ROS_ERROR("couldn't extract kinect depth opencv image");
+		return -5;
+	}
+    ROS_DEBUG("decoded kinect depth image");
+  /*  cv::namedWindow("KinectDepth", cv::WINDOW_NORMAL);
+	cv::resizeWindow("KinectDepth",1280,720);
+    cv::imshow("KinectDepth", kinectDepthImg);
+*/
+
+
+
+
+
+
+	// Convert phone arcore pose
+	// ARCore on Unity uses Unity's coordinate systema, which is left-handed, normally in arcore for Android the arcore 
+	// camera position is defined with x pointing right, y pointing up and -z pointing where the camera is facing.
+	// As provided from all ARCore APIs, Poses always describe the transformation from object's local coordinate space 
+	// to the world coordinate space. This is the usual pose representation, same as ROS
+	tf::Pose phonePoseArcoreFrameUnity;
+	tf::poseMsgToTF(arcoreInputMsg->mobileFramePose,phonePoseArcoreFrameUnity);
+	tf::Pose phonePoseArcoreFrame = convertPoseUnityToRos(phonePoseArcoreFrameUnity);
+
+	//publishTransformAsTfFrame(phonePoseArcoreFrame,"phone_arcore","/world",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreFrameUnity,"phone_arcore_left","/world",arcoreInputMsg->header.stamp);
+
+	//from x to the right, y up, z back to x to the right, y down, z forward
+	tf::Transform cameraConventionTransform = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0), 3.1415926535897));//rotate 180 degrees around x axis
+	//assuming z is pointing foward:
+	tf::Transform portraitToLandscape = tf::Transform(tf::Quaternion(tf::Vector3(0,0,1), 3.1415926535897/2));//rotate +90 degrees around z axis
+	tf::Transform justRotation = tf::Transform(phonePoseArcoreFrame.getRotation()) * portraitToLandscape;
+	tf::Transform justTranslation = tf::Transform(tf::Quaternion(1,0,0,0),phonePoseArcoreFrame.getOrigin());
+
+	//tf::Pose phonePoseArcoreInverted = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0),0),phonePoseArcoreFrame.getOrigin()).inverse() * tf::Transform(phonePoseArcoreFrame.getRotation()).inverse();
+	phonePoseArcoreFrameConverted =  justTranslation *cameraConventionTransform*justRotation;
+	ROS_DEBUG_STREAM("phonePoseArcoreFrame = "<<poseToString(phonePoseArcoreFrame));
+	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,"phone_arcore_converted","/world",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreInverted,"phone_arcore_inv","/world",arcoreInputMsg->header.stamp);
+
+
+	std::chrono::steady_clock::time_point afterDecoding = std::chrono::steady_clock::now();
+	unsigned long decodingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDecoding - beginning).count();
+	ROS_DEBUG("Images decoding and initialization took %lu ms",decodingDuration);
+
+	return 0;
+}
 
 /**
  * Checks the provided matches to ensure they have valid depth info. If the depth is not available in the depth image
@@ -837,12 +962,12 @@ void ARDeviceRegistrationEstimator::closeWindows()
 {
 	if(createdMatchesWindow)
 	{
-		destroyWindow(matchesWindowName);
+		//destroyWindow(matchesWindowName);
 		createdMatchesWindow = false;
 	}
 	if(createdReprojectionWindow)
 	{
-		destroyWindow(reprojectionWindowName);
+		//destroyWindow(reprojectionWindowName);
 		createdReprojectionWindow = false;
 	}
 }

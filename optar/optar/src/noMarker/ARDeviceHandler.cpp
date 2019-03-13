@@ -43,7 +43,7 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 	}
 }
 
-ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName)
+ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName, std::string debugImagesTopic)
 {
 
 	this->ARDeviceId = ARDeviceId;
@@ -51,6 +51,7 @@ ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTo
 	this->cameraRgbTopicName = cameraRgbTopicName;
 	this->cameraDepthTopicName = cameraDepthTopicName;
 	this->cameraInfoTopicName = cameraInfoTopicName;
+	this->debugImagesTopic = debugImagesTopic;
 
 	arDeviceCameraMsgTopicName = "/optar/"+ARDeviceId+"/camera";
 
@@ -120,7 +121,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 
-	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld);
+	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, debugImagesTopic);
 	estimator->setupParameters(pnpReprojectionError,
 								pnpConfidence,
 								pnpIterations,

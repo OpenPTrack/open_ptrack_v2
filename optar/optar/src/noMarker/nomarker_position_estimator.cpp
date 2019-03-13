@@ -49,6 +49,7 @@ const string input_kinect_camera_topic		= "kinect_camera" ;
 const string input_kinect_depth_topic		= "kinect_depth";
 const string input_kinect_camera_info_topic	= "kinect_camera_info" ;
 const string devices_heartbeats_topicName	= "/optar/heartbeats" ;
+const string debug_images_topic				= "debug_images_topic" ;
 
 std::map<string, shared_ptr<ARDeviceHandler>> handlers;
 std::shared_ptr<ros::NodeHandle> nodeHandle;
@@ -120,7 +121,7 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 	if(it==handlers.end())//if it dowsn't exist, create it
 	{
 		ROS_INFO_STREAM("New device detected, id="<<deviceName);
-		shared_ptr<ARDeviceHandler> newHandler = make_shared<ARDeviceHandler>(deviceName, input_kinect_camera_topic, input_kinect_depth_topic, input_kinect_camera_info_topic);
+		shared_ptr<ARDeviceHandler> newHandler = make_shared<ARDeviceHandler>(deviceName, input_kinect_camera_topic, input_kinect_depth_topic, input_kinect_camera_info_topic, debug_images_topic);
 		int r = newHandler->setupParameters(pnpReprojectionError,
 									pnpConfidence,
 									pnpIterations,

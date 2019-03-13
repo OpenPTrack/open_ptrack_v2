@@ -15,6 +15,7 @@
 					<remap from="kinect_camera" 					to="$(arg sensor_name)/hd/image_mono_rect_bag" />
 					<remap from="kinect_depth" 						to="$(arg sensor_name)/hd/image_depth_rect_bag" />
 					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/hd/camera_info_bag" />
+					<remap from="debug_images_topic" 				to="optar/$(arg sensor_name)/debug_images" />
 					<remap from="tf"		 						to="tf_bag" /> 
 					<remap from="tf_static" 						to="tf_static_bag" /> 
 		</node>
@@ -29,6 +30,7 @@
 					<remap from="kinect_camera" 					to="$(arg sensor_name)/hd/image_mono_rect" />
 					<remap from="kinect_depth" 						to="$(arg sensor_name)/hd/image_depth_rect" />
 					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/hd/camera_info" />
+					<remap from="debug_images_topic" 				to="optar/$(arg sensor_name)/debug_images" />
 		</node>
 	</group>
 	<node pkg="optar" type="ntp_server"                   name="ntp_server"                   output="screen"/>

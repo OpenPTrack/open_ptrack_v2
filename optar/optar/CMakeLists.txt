@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   cv_bridge
   opt_msgs
+  image_transport
   )
 
 
