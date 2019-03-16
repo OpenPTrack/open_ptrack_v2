@@ -107,6 +107,21 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 	long arcoreTime = arcoreInputMsg->header.stamp.sec*1000000000L + arcoreInputMsg->header.stamp.nsec;
 	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;
 	ROS_INFO_STREAM("\n\n\n\nUpdating "<<ARDeviceId);
+	
+	ROS_INFO_STREAM("Parameters: "<<endl<<
+            "pnp iterations = "<<pnpIterations<<endl<<
+            "pnp confidence = "<<pnpConfidence<<endl<<
+            "pnp reporjection error = "<<pnpReprojectionError<<endl<<
+            "matching threshold ="<<matchingThreshold<<endl<<
+			"reporjection discard threshold =" <<reprojectionErrorDiscardThreshold<<endl<<
+			"orb max points = "<<orbMaxPoints<<endl<<
+			"orb scale factor = "<<orbScaleFactor<<endl<<
+			"orb levels number = "<<orbLevelsNumber<<endl<<
+			"startup frames number = "<<startupFramesNum<<endl<<
+			"phone orientation difference threshold = "<<phoneOrientationDifferenceThreshold_deg<<endl<<
+			"estimate distance threshold = "<<estimateDistanceThreshold_meters<<endl<<
+			"show images = "<<showImages);
+
 	ROS_DEBUG("Received images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
 
 
@@ -128,7 +143,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 	cv::Mat kinectCameraImg;
 	cv::Mat kinectDepthImg;
 	tf::Pose phonePoseArcoreFrameConverted;
-
+	cv::Mat arcoreImage;
 	r = readReceivedMessages_features(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,kinectCameraInfo,
 					arcoreCameraMatrix,
 					arcoreDescriptors,
@@ -137,7 +152,8 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 					kinectCameraMatrix,
 					kinectCameraImg,
 					kinectDepthImg,
-					phonePoseArcoreFrameConverted);
+					phonePoseArcoreFrameConverted,
+					arcoreImage);
 	if(r<0)
 	{
 		ROS_ERROR("Invalid input messages. Dropping frame");
@@ -177,7 +193,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 				kinectCameraMatrix,
 				kinectDepthImg,
 				kinectCameraImg,
-				cv::Mat(),
+				arcoreImage,
 				phonePoseArcoreFrameConverted,
 				arcoreInputMsg->header.stamp,
 				kinectInputCameraMsg->header.frame_id);
@@ -307,11 +323,19 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 				const cv::Mat& fixedCameraMatrix,
 				cv::Mat& kinectDepthImage,
 				const cv::Mat& kinectMonoImage,
-				const cv::Mat& arcoreImage,
+				const cv::Mat& arcoreImageDbg,
 				const tf::Pose& phonePoseArcoreFrameConverted,
 				const ros::Time& timestamp,
 				const std::string fixedCameraFrameId)
 {
+
+	//if arcoreImage is not set just use a black image, it's just for visualization
+	cv::Mat arcoreImage;
+	if(!arcoreImageDbg.data)
+		arcoreImage = cv::Mat(arcoreImageSize.height, arcoreImageSize.width, CV_8UC1, Scalar(0,0,0));
+	else
+		arcoreImage = arcoreImageDbg;
+
 
 	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
 
@@ -399,7 +423,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	}
 	pose_marker_pub.publish(markerArray);
 	cv::Mat matchesImg;
-	if(showImages && arcoreImage.data)
+	if(showImages)
 		cv::drawMatches(arcoreImage, arcoreKeypoints, kinectMonoImage, fixedKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 	//If we have less than 4 matches we cannot procede
 	if(goodMatches.size()<4)
@@ -465,7 +489,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 
 	cv::Mat reprojectionImg;
-	if(showImages && arcoreImage.data)
+	if(showImages)
 		cvtColor(arcoreImage, reprojectionImg, CV_GRAY2RGB);
 	double reprojError = 0;
 	//calculate reprojection error mean and draw reprojections
@@ -922,7 +946,8 @@ int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs:
 					cv::Mat& kinectCameraMatrix,
 					cv::Mat& kinectCameraImg,
 					cv::Mat& kinectDepthImg,
-					tf::Pose& phonePoseArcoreFrameConverted)
+					tf::Pose& phonePoseArcoreFrameConverted,
+					cv::Mat& debugArcoreImage)
 {
 	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
 
@@ -951,14 +976,6 @@ int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs:
 	kinectCameraMatrix.at<double>(2,2) = kinectCameraInfo.P[4*2+2];
 
 	
-	//decode arcore image
-	cv::Mat rawImageData(cv::Mat(arcoreInputMsg->image.data));
-	if(rawImageData.empty())
-	{
-		ROS_ERROR("Invalid arcore image (it's empty!)");
-		return -1;
-	}
-
 
 	arcoreImageSize.width = arcoreInputMsg->image_width_px;
 	arcoreImageSize.height = arcoreInputMsg->image_height_px;
@@ -979,8 +996,49 @@ int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs:
 
 
 
+	
+	//decode arcore image if present
+	if(arcoreInputMsg->image.data.size()>0)
+	{
+		debugArcoreImage = cv_bridge::toCvCopy(arcoreInputMsg->image)->image;//convert compressed image data to cv::Mat
 
-
+		if(!debugArcoreImage.data)
+		{
+			ROS_ERROR("couldn't decode arcore image");
+			return -2;
+		}
+		if(debugArcoreImage.channels()==3)
+		{
+			//The image sent by the Android app is monochrome, but it is stored in a 3-channel PNG image as the red channel
+			//So we extract the red channel and use that.
+			//Also the image is flipped on the y axis
+			//take red channel
+			cv::Mat planes[3];
+			split(debugArcoreImage,planes);  // planes[2] is the red channel
+			debugArcoreImage = planes[2];
+			cv::Mat flippedArcoreImg;
+			cv::flip(debugArcoreImage,flippedArcoreImg,0);
+			debugArcoreImage=flippedArcoreImg;
+		}
+		else if(debugArcoreImage.channels()==1)
+		{
+			cv::Mat flippedArcoreImg;
+			cv::flip(debugArcoreImage,flippedArcoreImg,0);
+			debugArcoreImage=flippedArcoreImg;
+		}
+		else
+		{
+			ROS_ERROR("received an invalid image, should have either one or three channels");
+			return -3;
+		}
+		//the debug image is not at full resolution, scale it up
+		if(debugArcoreImage.cols!=arcoreImageSize.width || debugArcoreImage.rows!=arcoreImageSize.height)
+		{
+			cv::Mat scaledMat;
+			cv::resize(debugArcoreImage,scaledMat,arcoreImageSize,CV_INTER_LINEAR);//resize image
+			debugArcoreImage = scaledMat;
+		}
+	}
 
     //decode kinect rgb image
 	kinectCameraImg = cv_bridge::toCvShare(kinectInputCameraMsg)->image;//convert compressed image data to cv::Mat

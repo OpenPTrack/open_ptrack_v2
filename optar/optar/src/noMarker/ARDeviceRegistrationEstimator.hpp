@@ -146,7 +146,8 @@ int readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& 
 					cv::Mat& kinectCameraMatrix,
 					cv::Mat& kinectCameraImg,
 					cv::Mat& kinectDepthImg,
-					tf::Pose& phonePoseArcoreFrameConverted);
+					tf::Pose& phonePoseArcoreFrameConverted,
+					cv::Mat& debugArcoreImage);
 
 
 /**

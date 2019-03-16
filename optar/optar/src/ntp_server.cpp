@@ -18,13 +18,14 @@ void callback(const opt_msgs::OptarNtpMessagePtr& inMsg)
 {
 	if(inMsg->type==opt_msgs::OptarNtpMessage::QUERY)
 	{
+		ROS_DEBUG_STREAM("received ntp query from "<<inMsg->id);
 		opt_msgs::OptarNtpMessage response;
 		response.type = opt_msgs::OptarNtpMessage::REPLY;
 		response.serverTime = ros::Time::now();
 		response.clientRequestTime = inMsg->clientRequestTime;
 		response.id = inMsg->id;
 		pub.publish(response);
-		ROS_DEBUG_STREAM("handled query from "<<inMsg->id<<"    partial time diff "<<(response.serverTime-response.clientRequestTime));
+		ROS_DEBUG_STREAM("handled ntp query from "<<inMsg->id<<"    partial time diff "<<(response.serverTime-response.clientRequestTime));
 	}
 }
 

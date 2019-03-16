@@ -74,25 +74,35 @@ const unsigned int threadsNumber = 8;
 
 void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint32_t level)
 {
-	ROS_INFO("Reconfigure Request: %f %f %f", 
-            config.pnp_iterations,
-            config.pnp_confidence, 
-            config.pnp_reprojection_error);
+	ROS_INFO_STREAM("Reconfigure Request: "<<endl<<
+            "pnp iterations = "<<config.pnp_iterations<<endl<<
+            "pnp confidence = "<<config.pnp_confidence<<endl<<
+            "pnp reporjection error = "<<config.pnp_reprojection_error<<endl<<
+            "matching threshold ="<<config.matching_threshold<<endl<<
+			"reporjection discard threshold =" <<config.reprojection_discard_threshold<<endl<<
+			"orb max points = "<<config.orb_max_points<<endl<<
+			"orb scale factor = "<<config.orb_scale_factor<<endl<<
+			"orb levels number = "<<config.orb_levels_number<<endl<<
+			"startup frames number = "<<config.startup_frames_num<<endl<<
+			"phone orientation difference threshold = "<<config.phone_orientation_diff_thresh<<endl<<
+			"show images = "<<config.show_images);
 
-	pnpReprojectionError = config.pnp_reprojection_error;
-	pnpConfidence 					= config.pnp_confidence;
-	pnpIterations 					= config.pnp_iterations;
 
-	matchingThreshold 				= config.matching_threshold;
-	reprojectionErrorDiscardThreshold = config.reprojection_discard_threshold;
+
+	pnpIterations 			= config.pnp_iterations;
+	pnpReprojectionError 	= config.pnp_reprojection_error;
+	pnpConfidence 			= config.pnp_confidence;
+
+	matchingThreshold 					= config.matching_threshold;
+	reprojectionErrorDiscardThreshold 	= config.reprojection_discard_threshold;
 
 	orbMaxPoints		= config.orb_max_points;
-	orbScaleFactor	= config.orb_scale_factor;
-	orbLevelsNumber	= config.orb_levels_number;
+	orbScaleFactor		= config.orb_scale_factor;
+	orbLevelsNumber		= config.orb_levels_number;
 
-	startupFramesNum	= config.startup_frames_num;
+	startupFramesNum						= config.startup_frames_num;
 	phoneOrientationDifferenceThreshold_deg	= config.phone_orientation_diff_thresh;
-	showImages	= config.show_images;
+	showImages								= config.show_images;
 
 	for(auto const& keyValuePair: handlers)
 	{

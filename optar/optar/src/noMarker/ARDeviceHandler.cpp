@@ -165,9 +165,9 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 
-	arcoreCamera_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraImage>>(*nodeHandle, arDeviceCameraMsgTopicName, 1);
-	kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraRgbTopicName, 1);
-	kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraDepthTopicName, 1);
+	arcoreCamera_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraImage>>(*nodeHandle, arDeviceCameraMsgTopicName, 5);
+	kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraRgbTopicName, 30*10);
+	kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraDepthTopicName, 30*10);
 	
 
 	//instantiate and set up the policy
@@ -176,6 +176,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 	policy.setInterMessageLowerBound(0,ros::Duration(0,250000000));// 2fps
 	policy.setInterMessageLowerBound(1,ros::Duration(0,15000000));// about 30 fps but sometimes more
 	policy.setInterMessageLowerBound(2,ros::Duration(0,15000000));// about 30 fps but sometimes more
+	policy.setMaxIntervalDuration(ros::Duration(5,0));// 5 seconds
 
 	//Instantiate a Synchronizer with our policy.
 	synchronizer = std::make_shared<message_filters::Synchronizer<MyApproximateSynchronizationPolicy>>(MyApproximateSynchronizationPolicy(policy), *arcoreCamera_sub, *kinect_img_sub, *kinect_depth_sub);
@@ -194,13 +195,13 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 
-
 	//instantiate and set up the policy
 	FeaturesApproximateSynchronizationPolicy featuresPolicy = FeaturesApproximateSynchronizationPolicy(60);//instatiate setting up the queue size
 	//We set a lower bound of half the period of the slower publisher, this should mek the algorithm behave better (according to the authors)
 	featuresPolicy.setInterMessageLowerBound(0,ros::Duration(0,250000000));// 2fps
 	featuresPolicy.setInterMessageLowerBound(1,ros::Duration(0,15000000));// about 30 fps but sometimes more
 	featuresPolicy.setInterMessageLowerBound(2,ros::Duration(0,15000000));// about 30 fps but sometimes more
+	featuresPolicy.setMaxIntervalDuration(ros::Duration(5,0));// 5 seconds
 
 
 	featuresTpc_arcore_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>>(*nodeHandle, arDeviceFeaturesMsgTopicName, 1);
