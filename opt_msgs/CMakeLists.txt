@@ -39,7 +39,10 @@ add_message_files(FILES
   OptarNtpMessage.msg
   KeyPoint.msg
   ArcoreCameraFeatures.msg
+  ARDevicePose.msg
+  ARDevicePoseArray.msg
   )
+
 
 add_service_files(FILES OPTSensor.srv OPTTransform.srv)
 

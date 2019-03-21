@@ -10,7 +10,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <image_transport/image_transport.h>
 
-#include  "TransformKalmanFilter.hpp"
+#include  "TransformFilterKalman.hpp"
 
 class ARDeviceRegistrationEstimator
 {
@@ -30,7 +30,7 @@ private:
 	image_transport::Publisher matches_images_pub;
 	image_transport::Publisher reproj_images_pub;
 	geometry_msgs::TransformStamped transformKinectToWorld;
-	std::shared_ptr<TransformKalmanFilter> transformKalmanFilter;
+	std::shared_ptr<TransformFilterKalman> transformFilterKalman;
 
 	const std::string namespaceName = "optar";
 	const std::string outputPoseRaw_topicName			= "no_marker_pose_raw";
@@ -38,7 +38,6 @@ private:
 
 	std::string matchesWindowName;
 	std::string reprojectionWindowName;
-
 
 
 	double pnpReprojectionError = 5;
@@ -55,6 +54,7 @@ private:
 
 	bool showImages = true;
 	bool useCuda = true;
+
 
 
 public:
@@ -168,6 +168,10 @@ int get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
 
 
 void closeWindows();
+
+bool detectAndFollowTransformJump();
+
+static double getDistanceVariance(std::deque<tf::Transform>& transforms, int firstIndex, int endIndex);
 
 };
 

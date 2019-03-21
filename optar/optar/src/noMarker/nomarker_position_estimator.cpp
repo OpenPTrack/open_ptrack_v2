@@ -48,7 +48,7 @@ const string input_arcore_topic				= "arcore_camera";
 const string input_kinect_camera_topic		= "kinect_camera" ;
 const string input_kinect_depth_topic		= "kinect_depth";
 const string input_kinect_camera_info_topic	= "kinect_camera_info" ;
-const string devices_heartbeats_topicName	= "/optar/heartbeats" ;
+const string devices_heartbeats_topicName	= "heartbeats_topic" ;
 const string debug_images_topic				= "debug_images_topic" ;
 
 std::map<string, shared_ptr<ARDeviceHandler>> handlers;

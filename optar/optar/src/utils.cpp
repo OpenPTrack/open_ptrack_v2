@@ -187,6 +187,68 @@ visualization_msgs::Marker buildMarker(float x, float y, float z, std::string na
 
 
 
+
+/**
+ * Builds an arrow marker for the specified pose to view in rviz
+ * @param x the x position to put the marker at
+ * @param y the y position to put the marker at
+ * @param z the z position to put the marker at
+ * @param name the name for the marker
+ * @param r the red component of the color of the marker
+ * @param g the green component of the color of the marker
+ * @param b the blue component of the color of the marker
+ * @param a the alpha component of the color of the marker
+ * @param size the sie of the sphere
+ * @param x quaternion orientation x
+ * @param y quaternion orientation y
+ * @param z quaternion orientation z
+ * @param w quaternion orientation w
+ */
+visualization_msgs::Marker buildArrowMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id,float orient_x,float orient_y,float orient_z,float orient_w)
+{
+	visualization_msgs::Marker marker_pose;
+	marker_pose.header.frame_id = frame_id;
+	marker_pose.ns = name;
+	marker_pose.type = visualization_msgs::Marker::ARROW;
+	marker_pose.action = visualization_msgs::Marker::ADD;
+	marker_pose.scale.x = size;
+	marker_pose.scale.y = size/5;
+	marker_pose.scale.z = size/5;
+	marker_pose.color.a = a;
+	marker_pose.color.r = r;//float(rand()*256) / 255;
+	marker_pose.color.g = g;//float(rand()*256) / 255;
+	marker_pose.color.b = b;//float(rand()*256) / 255;
+	marker_pose.lifetime = ros::Duration(10);
+
+
+	marker_pose.header.stamp = ros::Time::now();
+	marker_pose.id = 0;
+	marker_pose.pose.position.x = x;
+	marker_pose.pose.position.y = y;
+	marker_pose.pose.position.z = z;
+	marker_pose.pose.orientation.x = orient_x;
+	marker_pose.pose.orientation.y = orient_y;
+	marker_pose.pose.orientation.z = orient_z;
+	marker_pose.pose.orientation.w = orient_w;
+
+	return marker_pose;
+}
+
+/**
+ * Builds a marker that deletes an already published marker
+ * @param name the name for the marker to delete
+ */
+visualization_msgs::Marker buildDeletingMarker(std::string name)
+{
+	visualization_msgs::Marker marker_pose;
+	marker_pose.ns = name;
+	marker_pose.action = visualization_msgs::Marker::DELETE;
+
+	return marker_pose;
+}
+
+
+
 /**
  * Builds a spheric marker for the specified pose to view the pose in rviz
  * @param marker_pose the marker is returned here

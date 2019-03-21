@@ -163,7 +163,7 @@ add_executable(arcore_camera_image_republisher src/arcore_camera_image_republish
 target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
-add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/noMarker/TransformKalmanFilter.cpp src/noMarker/ARDeviceRegistrationEstimator.cpp src/noMarker/ARDeviceHandler.cpp)
+add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/ARDeviceRegistrationEstimator.cpp src/noMarker/ARDeviceHandler.cpp)
 target_link_libraries(nomarker_position_estimator optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(nomarker_position_estimator optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
@@ -178,6 +178,11 @@ add_dependencies(ntp_server optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${cat
 add_executable(skeleton_centroid_publisher src/skeletonCentroidPublisher.cpp )
 target_link_libraries(skeleton_centroid_publisher optarUtils ${catkin_LIBRARIES})
 add_dependencies(skeleton_centroid_publisher optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+
+
+add_executable(ardevice_poses_republisher src/noMarker/ardevice_poses_republisher.cpp )
+target_link_libraries(ardevice_poses_republisher optarUtils ${catkin_LIBRARIES})
+add_dependencies(ardevice_poses_republisher optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 
 

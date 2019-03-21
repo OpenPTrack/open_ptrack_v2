@@ -32,7 +32,7 @@
 #include <optar/OptarDynamicParametersConfig.h>
 
 #include "../utils.hpp"
-#include  "TransformKalmanFilter.hpp"
+#include  "TransformFilterKalman.hpp"
 
 using namespace std;
 using namespace cv;
@@ -48,7 +48,7 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, 
 	matches_images_pub = it.advertise("optar/"+ARDeviceId+"/img_matches", 1);
 	reproj_images_pub = it.advertise("optar/"+ARDeviceId+"/img_reprojection", 1);
 
-	transformKalmanFilter = std::make_shared<TransformKalmanFilter>(1e-5,1,1);
+	transformFilterKalman = std::make_shared<TransformFilterKalman>(1e-5,1,1);
 }
 
 
@@ -605,7 +605,6 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	// A = Pr*Pa^-1
 	tf::Pose arcoreWorld = phonePoseTf * phonePoseArcoreFrameConverted.inverse();
 	//publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world","/world",arcoreInputMsg->header.stamp);
-	publishTransformAsTfFrame(phonePoseTf,ARDeviceId+"_estimate","/world",timestamp);
 	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,ARDeviceId+"/"+"phone_arcore_arcore","/arcore_world",arcoreInputMsg->header.stamp);
 	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted.inverse(),ARDeviceId+"/"+"phone_arcore_conv_inv","/phone_estimate",arcoreInputMsg->header.stamp);
 
@@ -629,13 +628,15 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		return -21;
 	}
 
-	arcoreWorldHistory.push_back(arcoreWorld);
+	publishTransformAsTfFrame(phonePoseTf,ARDeviceId+"_estimate","/world",timestamp);
+	publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world","/world",timestamp);
 
 
 	tf::Pose arcoreWorldFiltered;
 	//if this is one of the first few frames
 	if(arcoreWorldHistory.size()<=startupFramesNum)
 	{
+		arcoreWorldHistory.push_back(arcoreWorld);
 		//for the first few frame just use the average
 		tf::Vector3 averagePosition = averagePosePositions(arcoreWorldHistory);
 
@@ -654,7 +655,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		}
 
 		if(arcoreWorldHistory.size()==startupFramesNum)
-			transformKalmanFilter->update(closestEstimate);
+			transformFilterKalman->update(closestEstimate);
 
 		arcoreWorldFiltered = closestEstimate;
 	}
@@ -666,7 +667,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 			return -22;
 		}
 		//if we are after the forst few frames use kalman
-		arcoreWorldFiltered = transformKalmanFilter->update(arcoreWorld);
+		arcoreWorldFiltered = transformFilterKalman->update(arcoreWorld);
 		ROS_DEBUG_STREAM("filtering correction = "<<poseToString(arcoreWorld*arcoreWorldFiltered.inverse()));
 		ROS_INFO_STREAM("arcore_world_filtered = "<<poseToString(arcoreWorldFiltered));
 	}

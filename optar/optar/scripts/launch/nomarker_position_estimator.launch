@@ -16,6 +16,8 @@
 					<remap from="kinect_depth" 						to="$(arg sensor_name)/hd/image_depth_rect_bag" />
 					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/hd/camera_info_bag" />
 					<remap from="debug_images_topic" 				to="optar/$(arg sensor_name)/debug_images" />
+					<remap from="heartbeats_topic" 					to="optar/heartbeats" />
+
 					<remap from="tf"		 						to="tf_bag" /> 
 					<remap from="tf_static" 						to="tf_static_bag" /> 
 		</node>
@@ -31,9 +33,17 @@
 					<remap from="kinect_depth" 						to="$(arg sensor_name)/hd/image_depth_rect" />
 					<remap from="kinect_camera_info" 				to="$(arg sensor_name)/hd/camera_info" />
 					<remap from="debug_images_topic" 				to="optar/$(arg sensor_name)/debug_images" />
+					<remap from="heartbeats_topic" 					to="optar/heartbeats" />
+
 		</node>
 	</group>
 	<node pkg="optar" type="ntp_server"                   name="ntp_server"                   output="screen"/>
 	<node pkg="optar" type="skeleton_centroid_publisher" name="skeleton_centroid_publisher" output="screen"/>
+
+	<node pkg="optar" type="ardevice_poses_republisher" name="ardevice_poses_republisher" output="screen">
+			<remap from="ardevice_poses_output" 						to="optar/device_poses" /> 
+			<remap from="ardevice_poses_output_markers" 				to="optar/device_poses_markers" /> 
+			<remap from="heartbeats_topic" 								to="optar/heartbeats" />
+	</node>
 
 </launch>

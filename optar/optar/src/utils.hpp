@@ -31,6 +31,8 @@ double poseDistance(tf::Pose pose1, tf::Pose pose2);
 visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
 visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
 visualization_msgs::Marker buildMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id);
+visualization_msgs::Marker buildDeletingMarker(std::string name);
+visualization_msgs::Marker buildArrowMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id,float orient_x,float orient_y,float orient_z,float orient_w);
 
 cv::Point2i findNearestNonZeroPixel(const cv::Mat& image, int x, int y, double maxDist);
 cv::Point2i findLowestNonZeroInRing(const cv::Mat& image, int x, int y, double maxRadius, double minRadius);
