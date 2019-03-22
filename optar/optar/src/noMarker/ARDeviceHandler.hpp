@@ -36,6 +36,9 @@ private:
 	std::string debugImagesTopic;
 	std::string arDeviceCameraMsgTopicName;
 	std::string arDeviceFeaturesMsgTopicName;
+	std::string outputRawEstimationTopic;
+
+	std::string fixed_sensor_name;
 
 	geometry_msgs::TransformStamped transformKinectToWorld;
 	sensor_msgs::CameraInfo cameraInfo;
@@ -55,6 +58,8 @@ private:
 	std::shared_ptr<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>> featuresTpc_arcore_sub;
 	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> featuresTpc_kinect_img_sub;
 	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> featuresTpc_kinect_depth_sub;
+
+	ros::Publisher rawEstimationPublisher;
 
 	double pnpReprojectionError = 5;
 	double pnpConfidence = 0.99;
@@ -78,7 +83,13 @@ private:
    	bool stopped = false;
 
 public:
-	ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName, std::string debugImagesTopic);
+	ARDeviceHandler(std::string ARDeviceId,
+					 std::string cameraRgbTopicName,
+					 std::string cameraDepthTopicName,
+					 std::string cameraInfoTopicName,
+					 std::string debugImagesTopic,
+					 std::string fixed_sensor_name,
+					 std::string outputRawEstimationTopic);
 
 	~ARDeviceHandler();
 	int start(std::shared_ptr<ros::NodeHandle> NodeHandle);
@@ -101,7 +112,6 @@ public:
 	std::string getARDeviceId();
 
 	int millisecondsSinceLastMessage();
-
 
 private:
 	void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,

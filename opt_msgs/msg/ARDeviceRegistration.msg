@@ -14,3 +14,13 @@ geometry_msgs/TransformStamped transform
 
 # Unique identifier of the AR device
 string deviceId
+
+# Fixed camera used to compute this estimation
+string fixed_sensor_name
+
+# Number of matches found between the two camera image and the AR camera image.
+# More matches imply a more realiable estimation as these are used to compute the AR device pose with PnP
+int32 matches_number
+
+# Reprojection error of the matches using the estimated pose. Usually less then 2 pixels for good estimations
+float64 reprojection_error

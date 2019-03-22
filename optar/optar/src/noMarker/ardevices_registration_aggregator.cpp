@@ -10,10 +10,25 @@
  */
 
 #include <ros/ros.h>
+#include <chrono>
+#include <mutex>
+#include <memory> //shared_ptr
+#include <opt_msgs/ARDeviceRegistration.h>
 
-const string NODE_NAME 	= "ardevices_registration_aggregator"
-const int threadsNumber = 2;
+#include "TransformFilterKalman.hpp"
+#include "../utils.hpp"
 
+
+using namespace std;
+
+static const string NODE_NAME 	= "ardevices_registration_aggregator";
+static const string inputRawEstimationTopic		= "input_raw_transform_topic";
+
+static const int threadsNumber = 2;
+
+static unsigned long  handler_no_msg_timeout_millis = 5000;
+static int startupFramesNum = 5;
+static double estimateDistanceThreshold_meters = 5;
 
 class FilterTimestampCouple
 {
@@ -25,13 +40,20 @@ public:
 	{
 		this->filter = filter;
 	}
+
+	unsigned long getTimeSinceUsedMillis()
+	{
+		std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+		return  std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimeUsed).count();
+	}
+
 };
 
 static std::map<string, shared_ptr<FilterTimestampCouple>> filters;
 static std::timed_mutex filtersMutex;
 
 
-void onRegistrationReceived(const opt_msgs::ARDeviceRegistration& inputRegistration)
+void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputRegistration)
 {
 	string deviceId = inputRegistration->deviceId;
 
@@ -42,11 +64,13 @@ void onRegistrationReceived(const opt_msgs::ARDeviceRegistration& inputRegistrat
 		return;
 	}
 
+	ROS_INFO_STREAM("received input transform from "<<inputRegistration->fixed_sensor_name<<" for device "<<inputRegistration->deviceId);
+
 	auto it = filters.find(deviceId);
 	if(it==filters.end())//if it dowsn't exist, create it
 	{
 		ROS_INFO_STREAM("New device detected, id="<<deviceId);
-		shared_ptr<TransformFilterKalman> newFilter = std::make_shared<TransformFilterKalman>(1e-5,1,1, 5, 5)
+		shared_ptr<TransformFilterKalman> newFilter = std::make_shared<TransformFilterKalman>(1e-5,1,1, 5, 5);
 		newFilter->setupParameters(startupFramesNum,estimateDistanceThreshold_meters);
 		shared_ptr<FilterTimestampCouple> couple = make_shared<FilterTimestampCouple>(newFilter);
 		
@@ -57,11 +81,14 @@ void onRegistrationReceived(const opt_msgs::ARDeviceRegistration& inputRegistrat
 	shared_ptr<FilterTimestampCouple> couple = filters.find(deviceId)->second;
 	couple->lastTimeUsed = std::chrono::steady_clock::now();
 
-	tf::Pose filteredRegistration = couple->filter->update(inputRegistration->transform);
+	tf::StampedTransform inputTransform;
+	tf::transformStampedMsgToTF(inputRegistration->transform, inputTransform);
+	tf::Pose filteredRegistration = couple->filter->update(inputTransform);
 	publishTransformAsTfFrame(filteredRegistration,
 		inputRegistration->transform.child_frame_id+"_filtered",
 		inputRegistration->transform.header.frame_id,
 		inputRegistration->transform.header.stamp);
+	ROS_INFO_STREAM("Published filterd transform for device "<<inputRegistration->deviceId);
 }
 
 
@@ -76,10 +103,10 @@ void removeOldFilters()
 
 	for (auto it = filters.cbegin(); it != filters.cend();)
 	{
-		int millisSinceMsg = filters.find(deviceId)->second->getTimeSinceUsed() ;
+		unsigned int millisSinceMsg = it->second->getTimeSinceUsedMillis() ;
 		ROS_INFO_STREAM(""<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
 
-		if (millisSinceMsg > handler_no_msg_timeout)
+		if (millisSinceMsg > handler_no_msg_timeout_millis)
 		{
 			ROS_INFO_STREAM("removing filter for "<<it->first);
 			filters.erase(it++);
@@ -101,7 +128,7 @@ int main(int argc, char** argv)
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
 	
 	//This will not launch concurrent callbacks even if we have multiple spinners. That would need to be enabled explicitly somewhere
-	ros::Subscriber sub = nh.subscribe("input_topic", 1, onRegistrationReceived);
+	ros::Subscriber sub = nh.subscribe(inputRawEstimationTopic, 1, onRegistrationReceived);
 
 	if(threadsNumber>1)
 	{

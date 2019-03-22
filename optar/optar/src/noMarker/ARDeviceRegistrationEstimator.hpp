@@ -15,7 +15,9 @@
 class ARDeviceRegistrationEstimator
 {
 private:
-	tf::Pose lastEstimate;
+	geometry_msgs::TransformStamped lastEstimate;
+	int lastEstimateMatchesNumber = -1;
+	double lastEstimateReprojectionError = -1;
 	bool didComputeEstimation=false;
 	bool createdMatchesWindow = false;
 	bool createdReprojectionWindow = false;
@@ -29,7 +31,6 @@ private:
 	image_transport::Publisher matches_images_pub;
 	image_transport::Publisher reproj_images_pub;
 	geometry_msgs::TransformStamped transformKinectToWorld;
-	std::shared_ptr<TransformFilterKalman> transformFilterKalman;
 
 	const std::string namespaceName = "optar";
 	const std::string outputPoseRaw_topicName			= "no_marker_pose_raw";
@@ -101,11 +102,15 @@ public:
 				const ros::Time& timestamp,
 				const std::string fixedCameraFrameId);
 
-	tf::Transform getEstimation();
+	geometry_msgs::TransformStamped getLastEstimate();
 
 	std::string getARDeviceId();
 
 	bool hasEstimate();
+
+	int getLastEstimateMatchesNumber();
+
+	double getLastEstimateReprojectionError();
 
 private:
 

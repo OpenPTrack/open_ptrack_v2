@@ -43,13 +43,15 @@ using namespace cv;
 using namespace std;
 
 
-const string NODE_NAME 						= "ardevices_registration_single_camera_raw";
-const string input_arcore_topic				= "arcore_camera";
-const string input_kinect_camera_topic		= "kinect_camera" ;
-const string input_kinect_depth_topic		= "kinect_depth";
-const string input_kinect_camera_info_topic	= "kinect_camera_info" ;
-const string devices_heartbeats_topicName	= "heartbeats_topic" ;
-const string debug_images_topic				= "debug_images_topic" ;
+static const string NODE_NAME 						= "ardevices_registration_single_camera_raw";
+static const string input_arcore_topic				= "arcore_camera";
+static const string input_kinect_camera_topic		= "kinect_camera" ;
+static const string input_kinect_depth_topic		= "kinect_depth";
+static const string input_kinect_camera_info_topic	= "kinect_camera_info" ;
+static const string devices_heartbeats_topicName	= "heartbeats_topic" ;
+static const string debug_images_topic				= "debug_images_topic" ;
+static const string output_raw_transform_topic		= "output_raw_transform_topic";
+static string fixed_sensor_name						= "fixed_sensor_name";
 
 std::map<string, shared_ptr<ARDeviceHandler>> handlers;
 std::timed_mutex handlersMutex;
@@ -134,7 +136,7 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 	std::unique_lock<std::timed_mutex> lock(handlersMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("removeOldHandlers(): failed to get mutex. Skipping heartbeat for "<<deviceName);
+		ROS_ERROR_STREAM("deviceHeartbeatsCallback(): failed to get mutex. Skipping heartbeat for "<<deviceName);
 		return;
 	}
 
@@ -142,7 +144,13 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 	if(it==handlers.end())//if it dowsn't exist, create it
 	{
 		ROS_INFO_STREAM("New device detected, id="<<deviceName);
-		shared_ptr<ARDeviceHandler> newHandler = make_shared<ARDeviceHandler>(deviceName, input_kinect_camera_topic, input_kinect_depth_topic, input_kinect_camera_info_topic, debug_images_topic);
+		shared_ptr<ARDeviceHandler> newHandler = make_shared<ARDeviceHandler>(deviceName,
+																			 input_kinect_camera_topic,
+																			 input_kinect_depth_topic,
+																			 input_kinect_camera_info_topic,
+																			 debug_images_topic,
+																			 fixed_sensor_name,
+																			 output_raw_transform_topic);
 		int r = newHandler->setupParameters(pnpReprojectionError,
 									pnpConfidence,
 									pnpIterations,
@@ -207,7 +215,7 @@ int main(int argc, char** argv)
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
 
 
-
+	fixed_sensor_name = ros::names::remap(fixed_sensor_name);
 
 	dynamic_reconfigure::Server<optar::OptarDynamicParametersConfig> server;
 	dynamic_reconfigure::Server<optar::OptarDynamicParametersConfig>::CallbackType bindedDynamicParametersCallback;

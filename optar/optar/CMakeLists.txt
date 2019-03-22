@@ -180,9 +180,14 @@ target_link_libraries(skeleton_centroid_publisher optarUtils ${catkin_LIBRARIES}
 add_dependencies(skeleton_centroid_publisher optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 
-add_executable(ardevice_poses_republisher src/noMarker/ardevice_poses_republisher.cpp )
-target_link_libraries(ardevice_poses_republisher optarUtils ${catkin_LIBRARIES})
-add_dependencies(ardevice_poses_republisher optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+add_executable(ardevices_poses_republisher src/noMarker/ardevices_poses_republisher.cpp )
+target_link_libraries(ardevices_poses_republisher optarUtils ${catkin_LIBRARIES})
+add_dependencies(ardevices_poses_republisher optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+
+
+add_executable(ardevices_registration_aggregator src/noMarker/ardevices_registration_aggregator.cpp src/noMarker/TransformFilterKalman.cpp)
+target_link_libraries(ardevices_registration_aggregator optarUtils ${catkin_LIBRARIES})
+add_dependencies(ardevices_registration_aggregator optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 
 

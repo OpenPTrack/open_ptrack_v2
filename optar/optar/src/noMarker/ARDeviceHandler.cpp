@@ -14,6 +14,7 @@
 
 #include "../utils.hpp"
 #include "ARDeviceHandler.hpp"
+#include "opt_msgs/ARDeviceRegistration.h"
 
 
 
@@ -42,7 +43,18 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 	}
 	else
 	{
-		publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
+		//publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
+
+		
+		
+
+		opt_msgs::ARDeviceRegistration outputRegistrationMsg;
+		outputRegistrationMsg.deviceId = getARDeviceId();
+		outputRegistrationMsg.fixed_sensor_name = fixed_sensor_name;
+		outputRegistrationMsg.matches_number = estimator->getLastEstimateMatchesNumber();
+		outputRegistrationMsg.reprojection_error = estimator->getLastEstimateReprojectionError();
+		outputRegistrationMsg.transform = estimator->getLastEstimate();
+		rawEstimationPublisher.publish(outputRegistrationMsg);
 		ROS_INFO("Published transform");
 	}
 }
@@ -69,20 +81,30 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 	}
 	else
 	{
-		publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
+		//publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
+		
+		opt_msgs::ARDeviceRegistration outputRegistrationMsg;
+		outputRegistrationMsg.deviceId = getARDeviceId();
+		outputRegistrationMsg.fixed_sensor_name = fixed_sensor_name;
+		outputRegistrationMsg.matches_number = estimator->getLastEstimateMatchesNumber();
+		outputRegistrationMsg.reprojection_error = estimator->getLastEstimateReprojectionError();
+		outputRegistrationMsg.transform = estimator->getLastEstimate();
+		outputRegistrationMsg.header.stamp = arcoreInputMsg->header.stamp;
+		rawEstimationPublisher.publish(outputRegistrationMsg);
 		ROS_INFO("Published transform");
 	}
 }
 
-ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName, std::string debugImagesTopic)
+ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName, std::string debugImagesTopic, std::string fixed_sensor_name, std::string outputRawEstimationTopic)
 {
 
 	this->ARDeviceId = ARDeviceId;
-
+	this->fixed_sensor_name = fixed_sensor_name;
 	this->cameraRgbTopicName = cameraRgbTopicName;
 	this->cameraDepthTopicName = cameraDepthTopicName;
 	this->cameraInfoTopicName = cameraInfoTopicName;
 	this->debugImagesTopic = debugImagesTopic;
+	this->outputRawEstimationTopic = outputRawEstimationTopic;
 
 	arDeviceCameraMsgTopicName = "optar/"+ARDeviceId+"/camera";
 	arDeviceFeaturesMsgTopicName = "optar/"+ARDeviceId+"/features";
@@ -117,13 +139,14 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 		return -1;
 	}
 
-	
+	rawEstimationPublisher = nodeHandle->advertise<opt_msgs::ARDeviceRegistration>(outputRawEstimationTopic, 10);
+
 
 
 	//get camera info
 	boost::shared_ptr<sensor_msgs::CameraInfo const> cameraInfoPtr;
 	ROS_INFO_STREAM("waiting for cameraInfo on topic "<<ros::names::remap(cameraInfoTopicName));
-	cameraInfoPtr = ros::topic::waitForMessage<sensor_msgs::CameraInfo>(cameraInfoTopicName);
+	cameraInfoPtr = ros::topic::waitForMessage<sensor_msgs::CameraInfo>(cameraInfoTopicName, ros::Duration(5));
 	if(cameraInfoPtr == NULL)
 	{
 		ROS_ERROR_STREAM("couldn't get camera_info from topic "<<ros::names::remap(cameraInfoTopicName)<<", did the node shut down? I'll shut down.");

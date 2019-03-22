@@ -1,15 +1,12 @@
 
 
 #include "ARDeviceRegistrationEstimator.hpp"
+#include <opencv2/highgui/highgui.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
 #include <opt_msgs/ArcoreCameraImage.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/xphoto.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/features2d/features2d.hpp>
@@ -28,11 +25,8 @@
 	#include <opencv2/cudafeatures2d.hpp>
 #endif
 
-#include <dynamic_reconfigure/server.h>
-#include <optar/OptarDynamicParametersConfig.h>
 
 #include "../utils.hpp"
-#include  "TransformFilterKalman.hpp"
 
 using namespace std;
 using namespace cv;
@@ -48,7 +42,6 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, 
 	matches_images_pub = it.advertise("optar/"+ARDeviceId+"/img_matches", 1);
 	reproj_images_pub = it.advertise("optar/"+ARDeviceId+"/img_reprojection", 1);
 
-	transformFilterKalman = std::make_shared<TransformFilterKalman>(1e-5,1,1, 5, 5);
 }
 
 
@@ -79,23 +72,8 @@ void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 	this->showImages = showImages;
 	this->useCuda = useCuda;
 
-	transformFilterKalman->setupParameters(startupFramesNum,estimateDistanceThreshold_meters);
 }
 
-string ARDeviceRegistrationEstimator::getARDeviceId()
-{
-	return ARDeviceId;
-}
-
-tf::Transform ARDeviceRegistrationEstimator::getEstimation()
-{
-	return lastEstimate;
-}
-
-bool ARDeviceRegistrationEstimator::hasEstimate()
-{
-	return didComputeEstimation;
-}
 
 int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
@@ -423,7 +401,10 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	pose_marker_pub.publish(markerArray);
 	cv::Mat matchesImg;
 	if(showImages)
+	{
 		cv::drawMatches(arcoreImage, arcoreKeypoints, kinectMonoImage, fixedKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+		cv::putText(matchesImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,matchesImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar::all(255),3);
+	}
 	//If we have less than 4 matches we cannot procede
 	if(goodMatches.size()<4)
 	{
@@ -632,9 +613,13 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world","/world",timestamp);
 
 
-	tf::Pose arcoreWorldFiltered = transformFilterKalman->update(arcoreWorld);
+	tf::StampedTransform stampedTransform(arcoreWorld, timestamp, "/world", getARDeviceId()+"_world");
+	geometry_msgs::TransformStamped stampedTransformMsg;
+	tf::transformStampedTFToMsg(stampedTransform,stampedTransformMsg);
 
-	lastEstimate = arcoreWorldFiltered;
+	lastEstimate = stampedTransformMsg;
+	lastEstimateMatchesNumber = goodMatches.size();
+	lastEstimateReprojectionError = reprojError;
 	didComputeEstimation=true;
 
 	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
@@ -1128,4 +1113,30 @@ int ARDeviceRegistrationEstimator::get3dPositionsAndImagePositions(const std::ve
 		//ROS_INFO_STREAM("depth = "<<kinectDepthImg.at<uint16_t>(kinectPixelPos));
 	}
 	return 0;
+}
+
+
+int ARDeviceRegistrationEstimator::getLastEstimateMatchesNumber()
+{
+	return lastEstimateMatchesNumber;
+}
+
+double ARDeviceRegistrationEstimator::getLastEstimateReprojectionError()
+{
+	return lastEstimateReprojectionError;
+}
+
+geometry_msgs::TransformStamped ARDeviceRegistrationEstimator::getLastEstimate()
+{
+	return lastEstimate;
+}
+
+string ARDeviceRegistrationEstimator::getARDeviceId()
+{
+	return ARDeviceId;
+}
+
+bool ARDeviceRegistrationEstimator::hasEstimate()
+{
+	return didComputeEstimation;
 }
