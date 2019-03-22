@@ -7,8 +7,8 @@
 
 	<group if="$(arg bag)">
 		<node pkg="optar"
-					type="nomarker_position_estimator"
-					name="nomarker_position_estimator"
+					type="ardevices_registration_single_camera_raw"
+					name="ardevices_registration_single_camera_raw"
 					output="screen"
 					args="">
 					<remap from="arcore_camera" 					to="optar/arcore_camera_bag" />
@@ -24,8 +24,8 @@
 	</group>
 	<group unless="$(arg bag)">	
 		<node pkg="optar"
-					type="nomarker_position_estimator"
-					name="nomarker_position_estimator"
+					type="ardevices_registration_single_camera_raw"
+					name="ardevices_registration_single_camera_raw"
 					output="screen"
 					args="">
 					<remap from="arcore_camera" 					to="optar/arcore_camera" />

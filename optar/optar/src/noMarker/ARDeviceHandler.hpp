@@ -73,8 +73,14 @@ private:
 
 	std::timed_mutex objectMutex;
 
+   	std::chrono::steady_clock::time_point lastTimeReceivedMessage;
+
+   	bool stopped = false;
+
 public:
 	ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName, std::string debugImagesTopic);
+
+	~ARDeviceHandler();
 	int start(std::shared_ptr<ros::NodeHandle> NodeHandle);
 	int stop();
 
@@ -93,6 +99,9 @@ public:
 						bool useCuda);
 
 	std::string getARDeviceId();
+
+	int millisecondsSinceLastMessage();
+
 
 private:
 	void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,

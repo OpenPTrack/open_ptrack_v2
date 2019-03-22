@@ -31,6 +31,10 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 		return;
 	}
 
+
+	lastTimeReceivedMessage = std::chrono::steady_clock::now();
+
+
 	int r = estimator->imagesCallback(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,cameraInfo);
 	if(r<0)
 	{
@@ -56,6 +60,8 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 		return;
 	}
 
+	lastTimeReceivedMessage = std::chrono::steady_clock::now();
+
 	int r = estimator->featuresCallback(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,cameraInfo);
 	if(r<0)
 	{
@@ -80,7 +86,24 @@ ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTo
 
 	arDeviceCameraMsgTopicName = "optar/"+ARDeviceId+"/camera";
 	arDeviceFeaturesMsgTopicName = "optar/"+ARDeviceId+"/features";
+	lastTimeReceivedMessage = std::chrono::steady_clock::now();
 
+}
+
+ARDeviceHandler::~ARDeviceHandler()
+{
+	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM("~ARDeviceHandler(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
+	}
+	if(!stopped)
+	{
+		//ROS_INFO_STREAM("Stopping listener for "<<ARDeviceId);
+		synchronizer.reset();
+		featuresTpc_synchronizer.reset();
+		//ROS_INFO_STREAM("Stopped listener for "<<ARDeviceId);
+	}
 }
 
 
@@ -222,6 +245,9 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 		ros::names::remap(cameraDepthTopicName)<<endl);
 	featuresTpc_synchronizer->registerCallback(featuresCallbackFunction);
 
+	lastTimeReceivedMessage = std::chrono::steady_clock::now();
+
+
 	return 0;
 }
 
@@ -233,8 +259,12 @@ int ARDeviceHandler::stop()
 		ROS_ERROR_STREAM("ARDeviceHandler.stop(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
 		return -1;
 	}
-	ROS_INFO_STREAM("Stopping listener for "<<ARDeviceId);
+	if(stopped)
+		return 0;
+	//ROS_INFO_STREAM("Stopping listener for "<<ARDeviceId);
 	synchronizer.reset();
+	featuresTpc_synchronizer.reset();
+	//ROS_INFO_STREAM("Stopped listener for "<<ARDeviceId);
 	return 0;
 }
 
@@ -295,4 +325,17 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 string ARDeviceHandler::getARDeviceId()
 {
 	return ARDeviceId;
+}
+
+
+int ARDeviceHandler::millisecondsSinceLastMessage()
+{
+	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM("ARDeviceHandler.setupParameters(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
+		return -1;
+	}
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	return  std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimeReceivedMessage).count();
 }

@@ -43,7 +43,7 @@ using namespace cv;
 using namespace std;
 
 
-const string NODE_NAME 						= "nomarker_position_estimator";
+const string NODE_NAME 						= "ardevices_registration_single_camera_raw";
 const string input_arcore_topic				= "arcore_camera";
 const string input_kinect_camera_topic		= "kinect_camera" ;
 const string input_kinect_depth_topic		= "kinect_depth";
@@ -52,6 +52,8 @@ const string devices_heartbeats_topicName	= "heartbeats_topic" ;
 const string debug_images_topic				= "debug_images_topic" ;
 
 std::map<string, shared_ptr<ARDeviceHandler>> handlers;
+std::timed_mutex handlersMutex;
+
 std::shared_ptr<ros::NodeHandle> nodeHandle;
 
 
@@ -70,6 +72,8 @@ static bool showImages = false;
 static bool useCuda = false;
 
 const unsigned int threadsNumber = 8;
+
+static int handler_no_msg_timeout = 5000;
 
 
 void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint32_t level)
@@ -127,6 +131,13 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 {
 	string deviceName = msg->data;
 
+	std::unique_lock<std::timed_mutex> lock(handlersMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM("removeOldHandlers(): failed to get mutex. Skipping heartbeat for "<<deviceName);
+		return;
+	}
+
 	auto it = handlers.find(deviceName);
 	if(it==handlers.end())//if it dowsn't exist, create it
 	{
@@ -161,6 +172,34 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 	}
 }
 
+void removeOldHandlers()
+{
+	std::unique_lock<std::timed_mutex> lock(handlersMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM("removeOldHandlers(): failed to get mutex. Skipping.");
+		return;
+	}
+
+	for (auto it = handlers.cbegin(); it != handlers.cend();)
+	{
+		int millisSinceMsg = it->second->millisecondsSinceLastMessage() ;
+		ROS_INFO_STREAM(""<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
+
+		if (millisSinceMsg > handler_no_msg_timeout)
+		{
+			ROS_INFO_STREAM("removing handler for "<<it->first);
+			it->second->stop();
+			handlers.erase(it++);
+		}
+		else
+		{
+			//ROS_INFO_STREAM("keeping handler for "<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
+			++it;	
+		}
+	}
+}
+
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, NODE_NAME);
@@ -186,9 +225,19 @@ int main(int argc, char** argv)
 	ros::Subscriber sub = nodeHandle->subscribe(devices_heartbeats_topicName, 10, deviceHeartbeatsCallback);
 	ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(devices_heartbeats_topicName));
 
-	ros::MultiThreadedSpinner spinner(threadsNumber); // Use 4 threads
-	spinner.spin(); // spin() will not return until the node has been shutdown
-	ros::spin();
+	ros::AsyncSpinner spinner(threadsNumber); // Use 4 threads
+	spinner.start();
+
+	ros::Rate loop_rate(1);
+
+	while (ros::ok())
+	{
+
+		removeOldHandlers();
+
+		ros::spinOnce();
+		loop_rate.sleep();
+	}
 
 	return 0;
 }

@@ -8,6 +8,7 @@
  */
 
 #include "TransformFilterKalman.hpp"
+#include "../utils.hpp"
 
 
 /**
@@ -16,7 +17,7 @@
  * @param measurementNoiseCovariance Measurement noise covariance, models the amount of noise in the measurements
  * @param posterioriErrorCovariance Initial value for the posteriori error covariance, which will be then actually estimated by the filter
  */
-TransformFilterKalman::TransformFilterKalman(double processNoiseCovariance, double measurementNoiseCovariance, double posterioriErrorCovariance) : 
+TransformFilterKalman::TransformFilterKalman(double processNoiseCovariance, double measurementNoiseCovariance, double posterioriErrorCovariance, int startupFramesNum, double estimateDistanceThreshold_meters) : 
 	mProcessNoiseCovariance(processNoiseCovariance),
 	mMeasurementNoiseCovariance(measurementNoiseCovariance),
 	mPosterioriErrorCovariance(posterioriErrorCovariance)
@@ -48,6 +49,18 @@ TransformFilterKalman::TransformFilterKalman(double processNoiseCovariance, doub
 	//  [0 0 0 0 0 1]
 	cv::setIdentity(kalmanFilter.measurementMatrix, cv::Scalar(1)); 
 
+	setupParameters(startupFramesNum, estimateDistanceThreshold_meters);
+}
+
+
+/**
+ * Sets up the filter parameters
+ * @param startupFramesNum number of frames used to initialize the filter before starting to use Kalman
+ */
+void TransformFilterKalman::setupParameters(int startupFramesNum, double estimateDistanceThreshold_meters)
+{
+	this->startupFramesNum = startupFramesNum;
+	this->estimateDistanceThreshold_meters = estimateDistanceThreshold_meters;
 }
 
 
@@ -57,7 +70,7 @@ TransformFilterKalman::TransformFilterKalman(double processNoiseCovariance, doub
  *
  * @return the new estimate
  */
-tf::Pose TransformFilterKalman::update(const tf::Pose& pose)
+tf::Pose TransformFilterKalman::updateKalman(const tf::Pose& pose)
 {	
 
 	cv::Mat measurement = poseToMat(pose);
@@ -74,19 +87,65 @@ tf::Pose TransformFilterKalman::update(const tf::Pose& pose)
 	cv::Mat filtered = kalmanFilter.correct(measurement);
 
 
-
-	transformJumpDetectorHistory.push_back(pose);
-	if(transformJumpDetectorHistory.size()>transformJumpDetectorLength)
-		transformJumpDetectorHistory.pop_front();
-	if(transformJumpDetectorHistory.size()>=transformJumpDetectorLength)
-	{
-		detectAndFollowTransformJump();
-	}
-
 	return matToPose(kalmanFilter.statePost);
 }
 
+tf::Pose TransformFilterKalman::update(const tf::Pose& pose)
+{
 
+	tf::Pose arcoreWorldFiltered;
+	//if this is one of the first few frames
+	if(rawEstimationsHistory.size()<=startupFramesNum)
+	{
+		rawEstimationsHistory.push_back(pose);
+		//for the first few frame just use the average
+		tf::Vector3 averagePosition = averagePosePositions(rawEstimationsHistory);
+
+		//if the next frame uses the kalman filter then initialize it with the estimate that is closest to the average
+
+		tf::Pose closestEstimate;
+		double minimumDistance = std::numeric_limits<double>::max();
+		for(tf::Pose estimate : rawEstimationsHistory)
+		{
+			double distance = averagePosition.distance(estimate.getOrigin());
+			if(distance<minimumDistance)
+			{
+				minimumDistance=distance;
+				closestEstimate = estimate;
+			}
+		}
+
+		if(rawEstimationsHistory.size()==startupFramesNum)
+			updateKalman(closestEstimate);
+
+		arcoreWorldFiltered = closestEstimate;
+	}
+	else
+	{
+		if(poseDistance(pose,lastEstimate)>estimateDistanceThreshold_meters)
+		{
+			ROS_WARN_STREAM("New estimation is too different, discarding frame");
+			return lastEstimate;
+		}
+		//if we are after the forst few frames use kalman
+		arcoreWorldFiltered = updateKalman(pose);
+
+
+		transformJumpDetectorHistory.push_back(pose);
+		if(transformJumpDetectorHistory.size()>transformJumpDetectorLength)
+			transformJumpDetectorHistory.pop_front();
+		if(transformJumpDetectorHistory.size()>=transformJumpDetectorLength)
+		{
+			detectAndFollowTransformJump();
+		}
+
+		ROS_DEBUG_STREAM("filtering correction = "<<poseToString(pose*arcoreWorldFiltered.inverse()));
+		ROS_INFO_STREAM("arcore_world_filtered = "<<poseToString(arcoreWorldFiltered));
+	}
+
+	lastEstimate = arcoreWorldFiltered;
+	return lastEstimate;
+}
 
 /**
  * Forces the filter to this state

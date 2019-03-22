@@ -163,9 +163,9 @@ add_executable(arcore_camera_image_republisher src/arcore_camera_image_republish
 target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
-add_executable(nomarker_position_estimator src/noMarker/nomarker_position_estimator.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/ARDeviceRegistrationEstimator.cpp src/noMarker/ARDeviceHandler.cpp)
-target_link_libraries(nomarker_position_estimator optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(nomarker_position_estimator optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+add_executable(ardevices_registration_single_camera_raw src/noMarker/ardevices_registration_single_camera_raw.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/ARDeviceRegistrationEstimator.cpp src/noMarker/ARDeviceHandler.cpp)
+target_link_libraries(ardevices_registration_single_camera_raw optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(ardevices_registration_single_camera_raw optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(dummy_track_publisher src/noMarker/dummyTrackPublisher.cpp)
 target_link_libraries(dummy_track_publisher ${catkin_LIBRARIES})
@@ -187,4 +187,4 @@ add_dependencies(ardevice_poses_republisher optarUtils ${${PROJECT_NAME}_EXPORTE
 
 
 # make sure configure headers are built before any node using them
-add_dependencies(nomarker_position_estimator ${PROJECT_NAME}_gencfg)
+add_dependencies(ardevices_registration_single_camera_raw ${PROJECT_NAME}_gencfg)

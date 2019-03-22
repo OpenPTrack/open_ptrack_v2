@@ -41,6 +41,7 @@ add_message_files(FILES
   ArcoreCameraFeatures.msg
   ARDevicePose.msg
   ARDevicePoseArray.msg
+  ARDeviceRegistration.msg
   )
 
 

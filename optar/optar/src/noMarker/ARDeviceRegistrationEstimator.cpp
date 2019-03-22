@@ -48,7 +48,7 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, 
 	matches_images_pub = it.advertise("optar/"+ARDeviceId+"/img_matches", 1);
 	reproj_images_pub = it.advertise("optar/"+ARDeviceId+"/img_reprojection", 1);
 
-	transformFilterKalman = std::make_shared<TransformFilterKalman>(1e-5,1,1);
+	transformFilterKalman = std::make_shared<TransformFilterKalman>(1e-5,1,1, 5, 5);
 }
 
 
@@ -75,12 +75,11 @@ void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 	this->orbMaxPoints=orbMaxPoints;
 	this->orbScaleFactor=orbScaleFactor;
 	this->orbLevelsNumber=orbLevelsNumber;
-	this->startupFramesNum=startupFramesNum;
 	this->phoneOrientationDifferenceThreshold_deg=phoneOrientationDifferenceThreshold_deg;
-	this->estimateDistanceThreshold_meters=estimateDistanceThreshold_meters;
 	this->showImages = showImages;
 	this->useCuda = useCuda;
 
+	transformFilterKalman->setupParameters(startupFramesNum,estimateDistanceThreshold_meters);
 }
 
 string ARDeviceRegistrationEstimator::getARDeviceId()
@@ -119,7 +118,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 			"orb levels number = "<<orbLevelsNumber<<endl<<
 			"startup frames number = "<<startupFramesNum<<endl<<
 			"phone orientation difference threshold = "<<phoneOrientationDifferenceThreshold_deg<<endl<<
-			"estimate distance threshold = "<<estimateDistanceThreshold_meters<<endl<<
+			//"estimate distance threshold = "<<estimateDistanceThreshold_meters<<endl<<
 			"show images = "<<showImages);
 
 	ROS_DEBUG("Received images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
@@ -615,6 +614,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		return -20;
 	}
 
+	//compute orientation difference with respect to the fixed camera
 	tf::Pose phonePoseTf_kinectFrame;
 	tf::poseMsgToTF(phonePoseKinect.pose,phonePoseTf_kinectFrame);
 	tf::Vector3 zUnitVector(0,0,1);
@@ -632,45 +632,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world","/world",timestamp);
 
 
-	tf::Pose arcoreWorldFiltered;
-	//if this is one of the first few frames
-	if(arcoreWorldHistory.size()<=startupFramesNum)
-	{
-		arcoreWorldHistory.push_back(arcoreWorld);
-		//for the first few frame just use the average
-		tf::Vector3 averagePosition = averagePosePositions(arcoreWorldHistory);
-
-		//if the next frame uses the kalman filter then initialize it with the estimate that is closest to the average
-
-		tf::Pose closestEstimate;
-		double minimumDistance = std::numeric_limits<double>::max();
-		for(tf::Pose estimate : arcoreWorldHistory)
-		{
-			double distance = averagePosition.distance(estimate.getOrigin());
-			if(distance<minimumDistance)
-			{
-				minimumDistance=distance;
-				closestEstimate = estimate;
-			}
-		}
-
-		if(arcoreWorldHistory.size()==startupFramesNum)
-			transformFilterKalman->update(closestEstimate);
-
-		arcoreWorldFiltered = closestEstimate;
-	}
-	else
-	{
-		if(poseDistance(arcoreWorld,lastEstimate)>estimateDistanceThreshold_meters)
-		{
-			ROS_WARN_STREAM("New estimation is too different, discarding frame");
-			return -22;
-		}
-		//if we are after the forst few frames use kalman
-		arcoreWorldFiltered = transformFilterKalman->update(arcoreWorld);
-		ROS_DEBUG_STREAM("filtering correction = "<<poseToString(arcoreWorld*arcoreWorldFiltered.inverse()));
-		ROS_INFO_STREAM("arcore_world_filtered = "<<poseToString(arcoreWorldFiltered));
-	}
+	tf::Pose arcoreWorldFiltered = transformFilterKalman->update(arcoreWorld);
 
 	lastEstimate = arcoreWorldFiltered;
 	didComputeEstimation=true;

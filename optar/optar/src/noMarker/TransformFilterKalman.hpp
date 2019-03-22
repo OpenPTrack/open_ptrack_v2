@@ -33,6 +33,11 @@ private:
 
 	std::deque<tf::Transform> transformJumpDetectorHistory;
 	size_t transformJumpDetectorLength = 10;
+	unsigned int startupFramesNum = 10;
+	double estimateDistanceThreshold_meters = 5;
+
+	std::vector<tf::Pose> rawEstimationsHistory;
+	tf::Pose lastEstimate;
 
 
 	double		getDistanceVariance(std::deque<tf::Transform>& transforms, int firstIndex, int endIndex, const tf::Vector3& positionMean);
@@ -40,14 +45,16 @@ private:
 	bool 		detectAndFollowTransformJump();
 	tf::Pose	matToPose(const cv::Mat& state);
 	cv::Mat 	poseToMat(const tf::Pose& pose);
+	tf::Pose updateKalman(const tf::Pose& pose);
 
 public:
-	TransformFilterKalman(double processNoiseCovariance, double measurementNoiseCovariance, double posterioriErrorCovariance);
+	TransformFilterKalman(double processNoiseCovariance, double measurementNoiseCovariance, double posterioriErrorCovariance, int startupFramesNum, double estimateDistanceThreshold_meters);
 
 	virtual tf::Pose update(const tf::Pose& pose) override;
 
 	void forceState(const tf::Pose& pose);
 
+	void setupParameters(int startupFramesNum, double estimateDistanceThreshold_meters);
 };
 
 

@@ -15,7 +15,6 @@
 class ARDeviceRegistrationEstimator
 {
 private:
-	std::vector<tf::Pose> arcoreWorldHistory;
 	tf::Pose lastEstimate;
 	bool didComputeEstimation=false;
 	bool createdMatchesWindow = false;
@@ -50,7 +49,6 @@ private:
 	int orbLevelsNumber = 8;
 	unsigned int startupFramesNum = 10;
 	double phoneOrientationDifferenceThreshold_deg = 45;
-	double estimateDistanceThreshold_meters = 5;
 
 	bool showImages = true;
 	bool useCuda = true;
