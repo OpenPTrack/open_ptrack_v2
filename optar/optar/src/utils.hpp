@@ -23,7 +23,8 @@
 
 cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double focalLengthY, double principalPointX, double principalPointY);
 cv::Mat DoubleMatFromVec3b(cv::Vec3b in);
-void opencvPoseToEigenPose(cv::Vec3d rvec, cv::Vec3d tvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion);
+void opencvPoseToEigenPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion);
+void tfPoseToOpenCvPose(const tf::Pose& pose, cv::Vec3d& rvec, cv::Vec3d& tvec);
 int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, float qz, float qw, ros::Publisher pose_marker_pub, std::string name, float r, float g, float b, float a, float size);
 double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2);
 double poseDistance(tf::Pose pose1, tf::Pose pose2);

@@ -216,6 +216,13 @@ int main(int argc, char** argv)
 
 
 	fixed_sensor_name = ros::names::remap(fixed_sensor_name);
+	//remove spaces and '/'
+	std::string::iterator end_pos = std::remove(fixed_sensor_name.begin(), fixed_sensor_name.end(), ' ');
+	fixed_sensor_name.erase(end_pos, fixed_sensor_name.end());
+	if(fixed_sensor_name.at(0)=='/')
+		fixed_sensor_name = fixed_sensor_name.substr(1);
+
+
 
 	dynamic_reconfigure::Server<optar::OptarDynamicParametersConfig> server;
 	dynamic_reconfigure::Server<optar::OptarDynamicParametersConfig>::CallbackType bindedDynamicParametersCallback;

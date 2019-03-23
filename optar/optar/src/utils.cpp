@@ -63,7 +63,7 @@ cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double f
  * @param Translate Eigen position vector
  * @param quats Eigen quaternion
  */
-void opencvPoseToEigenPose(cv::Vec3d rvec, cv::Vec3d tvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion)
+void opencvPoseToEigenPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion)
 {
 
     cv::Mat R;
@@ -76,6 +76,27 @@ void opencvPoseToEigenPose(cv::Vec3d rvec, cv::Vec3d tvec, Eigen::Vector3d &tran
     translation.x() = tvec[0];
     translation.y() = tvec[1];
     translation.z() = tvec[2];
+}
+
+/**
+ * @brief      convert a tf pose to the opencv rvec-tvec representation
+ *
+ * @param[in]  pose  The tf pose
+ * @param      rvec  The rvec
+ * @param      tvec  The tvec
+ */
+void tfPoseToOpenCvPose(const tf::Pose& pose, cv::Vec3d& rvec, cv::Vec3d& tvec)
+{
+	tf::Quaternion tfQuat = pose.getRotation();
+	Eigen::Quaterniond eigenQuat(tfQuat.getW(),tfQuat.getX(),tfQuat.getY(),tfQuat.getZ());
+    cv::Mat cvRotMat;
+    eigen2cv(eigenQuat.toRotationMatrix() ,cvRotMat);
+    cv::Mat cvRvec;
+    cv::Rodrigues(cvRotMat, cvRvec);
+
+    tvec[0] = pose.getOrigin().x();
+    tvec[1] = pose.getOrigin().y();
+    tvec[2] = pose.getOrigin().z();
 }
 
 /**

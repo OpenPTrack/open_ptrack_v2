@@ -39,8 +39,8 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, 
 	pose_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
 
 	image_transport::ImageTransport it(nh);
-	matches_images_pub = it.advertise("optar/"+ARDeviceId+"/img_matches"+fixed_sensor_name, 1);
-	reproj_images_pub = it.advertise("optar/"+ARDeviceId+"/img_reprojection"+fixed_sensor_name, 1);
+	matches_images_pub = it.advertise("optar/"+ARDeviceId+"/img_matches_"+fixed_sensor_name, 1);
+	reproj_images_pub = it.advertise("optar/"+ARDeviceId+"/img_reprojection_"+fixed_sensor_name, 1);
 
 }
 
@@ -420,7 +420,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	if(showImages)
 	{
 		cv::drawMatches(arcoreImage, arcoreKeypoints, kinectMonoImage, fixedKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-		cv::putText(matchesImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,matchesImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar::all(255),3);
+		cv::putText(matchesImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,matchesImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
 	}
 	//If we have less than 4 matches we cannot procede
 	if(goodMatches.size()<4)
@@ -456,14 +456,20 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 
 	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
-	cv::Mat tvec;
-	cv::Mat rvec;
+	cv::Vec3d tvec;
+	cv::Vec3d rvec;
+	if(didComputeEstimation) //initialize with the previous estimate
+	{
+		tf::Pose lastEstimateTf;
+		tf::transformMsgToTF(lastEstimate.transform,lastEstimateTf);
+		tfPoseToOpenCvPose(lastEstimateTf, rvec, tvec);
+	}
 	std::vector<int> inliers;
 	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
 	cv::solvePnPRansac(	goodMatches3dPos,goodMatchesImgPos,
 						arcoreCameraMatrix,cv::noArray(),
 						rvec,tvec,
-						false,
+						didComputeEstimation,
 						pnpIterations,
 						pnpReprojectionError,
 						pnpConfidence,
@@ -506,6 +512,8 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 			cv::line(reprojectionImg,pix,reprojPix,color,3);
 		}
 	}
+	cv::putText(reprojectionImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
+
 	ROS_INFO_STREAM("inliers reprojection error = "<<reprojError);
 
 
