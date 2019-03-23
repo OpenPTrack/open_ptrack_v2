@@ -94,6 +94,7 @@ tf::Pose TransformFilterKalman::update(const tf::Pose& pose)
 {
 
 	tf::Pose arcoreWorldFiltered;
+	ROS_INFO_STREAM("Updating filter with raw transform "<<poseToString(pose));
 	//if this is one of the first few frames
 	if(rawEstimationsHistory.size()<=startupFramesNum)
 	{

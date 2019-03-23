@@ -41,6 +41,10 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 	{
 		ROS_WARN_STREAM("estimation for device "<<ARDeviceId<<" failed with code "<<r);
 	}
+	else if(r>0)
+	{
+		ROS_INFO_STREAM("skipping frame, update returned "<<r);
+	}
 	else
 	{
 		//publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
@@ -55,7 +59,10 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 		outputRegistrationMsg.reprojection_error = estimator->getLastEstimateReprojectionError();
 		outputRegistrationMsg.transform = estimator->getLastEstimate();
 		rawEstimationPublisher.publish(outputRegistrationMsg);
-		ROS_INFO("Published transform");
+
+		tf::StampedTransform tfTransform;
+		transformStampedMsgToTF(estimator->getLastEstimate(),tfTransform);
+		ROS_INFO_STREAM("Published transform = "<<poseToString(tfTransform));
 	}
 }
 
@@ -79,6 +86,10 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 	{
 		ROS_WARN_STREAM("estimation for device "<<ARDeviceId<<" failed with code "<<r);
 	}
+	else if(r>0)
+	{
+		ROS_INFO_STREAM("skipping frame, update returned "<<r);
+	}
 	else
 	{
 		//publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
@@ -91,7 +102,10 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 		outputRegistrationMsg.transform = estimator->getLastEstimate();
 		outputRegistrationMsg.header.stamp = arcoreInputMsg->header.stamp;
 		rawEstimationPublisher.publish(outputRegistrationMsg);
-		ROS_INFO("Published transform");
+
+		tf::StampedTransform tfTransform;
+		transformStampedMsgToTF(estimator->getLastEstimate(),tfTransform);
+		ROS_INFO_STREAM("Published transform = "<<poseToString(tfTransform));
 	}
 }
 

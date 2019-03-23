@@ -27,7 +27,7 @@ static const string inputRawEstimationTopic		= "input_raw_transform_topic";
 static const int threadsNumber = 2;
 
 static unsigned long  handler_no_msg_timeout_millis = 5000;
-static int startupFramesNum = 5;
+static int startupFramesNum = 3;
 static double estimateDistanceThreshold_meters = 5;
 
 class FilterTimestampCouple
@@ -66,6 +66,15 @@ void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputR
 
 	ROS_INFO_STREAM("received input transform from "<<inputRegistration->fixed_sensor_name<<" for device "<<inputRegistration->deviceId);
 
+
+	tf::StampedTransform inputTransform;
+	tf::transformStampedMsgToTF(inputRegistration->transform, inputTransform);
+	if(!isPoseValid(inputTransform))
+	{
+		ROS_WARN_STREAM("Dropping transform as it is invalid");
+		return;
+	}
+
 	auto it = filters.find(deviceId);
 	if(it==filters.end())//if it dowsn't exist, create it
 	{
@@ -81,8 +90,6 @@ void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputR
 	shared_ptr<FilterTimestampCouple> couple = filters.find(deviceId)->second;
 	couple->lastTimeUsed = std::chrono::steady_clock::now();
 
-	tf::StampedTransform inputTransform;
-	tf::transformStampedMsgToTF(inputRegistration->transform, inputTransform);
 	tf::Pose filteredRegistration = couple->filter->update(inputTransform);
 	publishTransformAsTfFrame(filteredRegistration,
 		inputRegistration->transform.child_frame_id+"_filtered",
