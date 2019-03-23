@@ -35,6 +35,8 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, 
 {
 	this->transformKinectToWorld = transformKinectToWorld;
 	this->ARDeviceId = ARDeviceId;
+	this->fixed_sensor_name = fixed_sensor_name;
+	
 	pose_raw_pub = nh.advertise<geometry_msgs::PoseStamped>("optar/"+ARDeviceId+"/"+outputPoseRaw_topicName, 10);
 	pose_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
 
@@ -634,8 +636,8 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		return 3;
 	}
 
-	publishTransformAsTfFrame(phonePoseTf,ARDeviceId+"_estimate","/world",timestamp);
-	publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world","/world",timestamp);
+	publishTransformAsTfFrame(phonePoseTf,ARDeviceId+"_estimate_"+fixed_sensor_name,"/world",timestamp);
+	publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world_"+fixed_sensor_name,"/world",timestamp);
 
 
 	tf::StampedTransform stampedTransform(arcoreWorld, timestamp, "/world", getARDeviceId()+"_world");

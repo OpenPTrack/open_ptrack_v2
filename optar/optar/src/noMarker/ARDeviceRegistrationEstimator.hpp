@@ -35,10 +35,7 @@ private:
 	const std::string namespaceName = "optar";
 	const std::string outputPoseRaw_topicName			= "no_marker_pose_raw";
 	const std::string outputPoseMarker_topicName		= "pose_marker";
-
-	std::string matchesWindowName;
-	std::string reprojectionWindowName;
-
+	std::string fixed_sensor_name;
 
 	double pnpReprojectionError = 5;
 	double pnpConfidence = 0.99;
