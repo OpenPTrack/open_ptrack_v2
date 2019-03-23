@@ -8,7 +8,7 @@
 	<group if="$(arg bag)">
 		<node pkg="optar"
 					type="ardevices_registration_single_camera_raw"
-					name="ardevices_registration_single_camera_raw"
+					name="ardevices_registration_single_camera_raw_$(arg sensor_name)"
 					output="screen"
 					args="">
 					<remap from="arcore_camera" 					to="optar/arcore_camera_bag" />
@@ -28,7 +28,7 @@
 	<group unless="$(arg bag)">	
 		<node pkg="optar"
 					type="ardevices_registration_single_camera_raw"
-					name="ardevices_registration_single_camera_raw"
+					name="ardevices_registration_single_camera_raw_$(arg sensor_name)"
 					output="screen"
 					args="">
 					<remap from="arcore_camera" 					to="optar/arcore_camera" />
@@ -44,7 +44,7 @@
 	</group>
 
 	<node pkg="optar" type="ntp_server"                   name="ntp_server"                   output="screen"/>
-	
+
 	<node pkg="optar" type="skeleton_centroid_publisher" name="skeleton_centroid_publisher" output="screen"/>
 
 	<node pkg="optar" type="ardevices_registration_aggregator" name="ardevices_registration_aggregator" output="screen">

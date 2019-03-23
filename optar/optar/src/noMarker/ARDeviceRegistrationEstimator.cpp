@@ -31,7 +31,7 @@
 using namespace std;
 using namespace cv;
 
-ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, ros::NodeHandle& nh, geometry_msgs::TransformStamped transformKinectToWorld, std::string debugImagesTopic)
+ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, ros::NodeHandle& nh, geometry_msgs::TransformStamped transformKinectToWorld, std::string debugImagesTopic, std::string fixed_sensor_name)
 {
 	this->transformKinectToWorld = transformKinectToWorld;
 	this->ARDeviceId = ARDeviceId;
@@ -39,8 +39,8 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, 
 	pose_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
 
 	image_transport::ImageTransport it(nh);
-	matches_images_pub = it.advertise("optar/"+ARDeviceId+"/img_matches", 1);
-	reproj_images_pub = it.advertise("optar/"+ARDeviceId+"/img_reprojection", 1);
+	matches_images_pub = it.advertise("optar/"+ARDeviceId+"/img_matches"+fixed_sensor_name, 1);
+	reproj_images_pub = it.advertise("optar/"+ARDeviceId+"/img_reprojection"+fixed_sensor_name, 1);
 
 }
 
@@ -134,7 +134,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 	if(r<0)
 	{
 		ROS_ERROR("Invalid input messages. Dropping frame");
-		return -11;
+		return -1;
 	}
 
 
@@ -157,10 +157,10 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 	if(r<0)
 	{
 		ROS_ERROR("error computing camera features");
-		return -13;
+		return -2;
 	}
 
-	r = update(	arcoreKeypoints,
+	r = 10*update(	arcoreKeypoints,
 				arcoreDescriptors,
 				kinectKeypoints,
 				kinectDescriptors,
@@ -180,10 +180,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
 	ROS_INFO("total duration is %lu ms",totalDuration);
 
-	if(r<0)
-	{
-		ROS_ERROR("Error updating estimate");
-	}
+	
 	return r;
 }
 
@@ -227,7 +224,7 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 	if(r<0)
 	{
 		ROS_ERROR("Invalid input messages. Dropping frame");
-		return -11;
+		return -1;
 	}
 
 
@@ -250,7 +247,7 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 	if(r<0)
 	{
 		ROS_ERROR("error computing arcore features");
-		return -12;
+		return -2;
 	}
 	std::vector<cv::KeyPoint>  kinectKeypoints;
 	cv::Mat kinectDescriptors;
@@ -258,10 +255,10 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 	if(r<0)
 	{
 		ROS_ERROR("error computing camera features");
-		return -13;
+		return -3;
 	}
 
-	r = update (	arcoreKeypoints,
+	r = 10*update (	arcoreKeypoints,
 				arcoreDescriptors,
 				kinectKeypoints,
 				kinectDescriptors,
@@ -281,15 +278,35 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
 	ROS_INFO("total duration is %lu ms",totalDuration);
 
-	if(r<0)
-	{
-		ROS_ERROR("Error updating estimate");
-	}
+	
 	return r;
 }
 
 
-
+/**
+ * @brief      Estimates the transformation using the descriptors and keypoints from the fixed camera and the AR device
+ * 				if ARDeviceRegistrationEstimator#showImages is set it will also publish an image showing the matches between the images
+ *
+ * @param[in]  arcoreKeypoints                The keypoints in the AR device image
+ * @param[in]  arcoreDescriptors              The descriptors corrwsponding to the AR device keypoints
+ * @param[in]  fixedKeypoints                 The keypoints in the fixed camera image
+ * @param[in]  fixedDescriptors               The descriptors corresponding to the fixed camera keypoints
+ * @param[in]  arcoreImageSize                The pixel size of the AR device image
+ * @param[in]  kinectImageSize                The pixel size of the fixed camera image
+ * @param[in]  arcoreCameraMatrix             The camera matrix for the AR device camera
+ * @param[in]  fixedCameraMatrix              The camera matrix for the fixed camera
+ * @param      kinectDepthImage               The fixed camera depth image
+ * @param[in]  kinectMonoImage                The fixed camera monochrome image
+ * @param[in]  arcoreImageDbg                 The image from the AR device camera, only here for debug purpouses.You can 
+ * 												pass a null Mat if you want. The idea is to pass here a super-low resolution
+ * 												image to display in the matches_img
+ * @param[in]  phonePoseArcoreFrameConverted  The AR device pose in the AR coordinate frame
+ * @param[in]  timestamp                      The timestamp of the images. The images should be all roughly from the same instant
+ * @param[in]  fixedCameraFrameId             The fixed camera tf frame_id
+ *
+ * @return     returns zero in case of success, a negative value in case of an internal error, a positive value greater than zero if
+ * 				it couldn't determine the transformation because the device is looking at something too different to what the fixed camera is seeing.
+ */
 int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
 				const cv::Mat& arcoreDescriptors,
 				const std::vector<cv::KeyPoint>& fixedKeypoints,
@@ -322,7 +339,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	if(r<0)
 	{
 		ROS_ERROR("error finding matches");
-		return -14;
+		return -1;
 	}
 	ROS_DEBUG_STREAM("got "<<matches.size()<<" matches");
 
@@ -332,7 +349,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	if(r<0)
 	{
 		ROS_ERROR("error filtering matches");
-		return -15;
+		return -2;
 	}
 	ROS_DEBUG("Got %lu good matches, but some could be invalid",goodMatchesWithNull.size());
 
@@ -344,7 +361,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	if(r<0)
 	{
 		ROS_ERROR("error fixing matches depth");
-		return -16;
+		return -3;
 	}
 	ROS_INFO_STREAM("got "<<goodMatches.size()<<" actually good matches");
 
@@ -381,7 +398,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	if(r<0)
 	{
   		ROS_ERROR("error getting matching points");
-  		return -17;
+  		return -4;
 	}
 
 
@@ -415,7 +432,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 			matches_images_pub.publish(msg);
 		}
 		ROS_WARN("not enough matches to determine position");
-		return -18;
+		return 1;
 	}
 
 
@@ -517,7 +534,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	if(reprojError>reprojectionErrorDiscardThreshold)
 	{
 		ROS_WARN("Reprojection error beyond threshold, discarding frame");
-		return -19;
+		return 2;
 	}
 
 	//convert to ros format
@@ -592,7 +609,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	if(!isPoseValid(arcoreWorld))
 	{
 		ROS_WARN_STREAM("Dropping transform estimation as it is invalid");
-		return -20;
+		return -8;
 	}
 
 	//compute orientation difference with respect to the fixed camera
@@ -606,7 +623,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	if(phoneToCameraRotationAngle>phoneOrientationDifferenceThreshold_deg)
 	{
 		ROS_INFO_STREAM("Orientation difference between phone and camera is too high, discarding estimation ("<<phoneToCameraRotationAngle<<")");
-		return -21;
+		return 3;
 	}
 
 	publishTransformAsTfFrame(phonePoseTf,ARDeviceId+"_estimate","/world",timestamp);

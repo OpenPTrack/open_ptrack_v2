@@ -193,7 +193,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 
-	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, debugImagesTopic);
+	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, debugImagesTopic, fixed_sensor_name);
 	estimator->setupParameters(pnpReprojectionError,
 								pnpConfidence,
 								pnpIterations,
