@@ -45,11 +45,10 @@ private:
 	int orbMaxPoints = 500;
 	double orbScaleFactor = 1.2;
 	int orbLevelsNumber = 8;
-	unsigned int startupFramesNum = 10;
 	double phoneOrientationDifferenceThreshold_deg = 45;
+	unsigned int minimumMatchesNumber = 4;
 
 	bool showImages = true;
-	bool useCuda = true;
 
 
 
@@ -67,11 +66,9 @@ public:
 						int orbMaxPoints,
 						double orbScaleFactor,
 						int orbLevelsNumber,
-						unsigned int startupFramesNum,
 						double phoneOrientationDifferenceThreshold_deg,
-						double estimateDistanceThreshold_meters,
 						bool showImages,
-						bool useCuda);
+						unsigned int minimumMatchesNumber);
 
 
 	int imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,

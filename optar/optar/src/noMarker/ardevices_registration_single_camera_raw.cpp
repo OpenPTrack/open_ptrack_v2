@@ -67,11 +67,9 @@ static double reprojectionErrorDiscardThreshold = 5;
 static int orbMaxPoints = 500;
 static double orbScaleFactor = 1.2;
 static int orbLevelsNumber = 8;
-static unsigned int startupFramesNum = 10;
 static double phoneOrientationDifferenceThreshold_deg = 45;
-static double estimateDistanceThreshold_meters = 5;
 static bool showImages = false;
-static bool useCuda = false;
+static unsigned int minimumMatchesNumber = 4;
 
 const unsigned int threadsNumber = 8;
 
@@ -89,8 +87,8 @@ void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint
 			"orb max points = "<<config.orb_max_points<<endl<<
 			"orb scale factor = "<<config.orb_scale_factor<<endl<<
 			"orb levels number = "<<config.orb_levels_number<<endl<<
-			"startup frames number = "<<config.startup_frames_num<<endl<<
 			"phone orientation difference threshold = "<<config.phone_orientation_diff_thresh<<endl<<
+			"minimum matches number = "<<config.minimum_matches_number<<endl<<
 			"show images = "<<config.show_images);
 
 
@@ -106,8 +104,10 @@ void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint
 	orbScaleFactor		= config.orb_scale_factor;
 	orbLevelsNumber		= config.orb_levels_number;
 
-	startupFramesNum						= config.startup_frames_num;
 	phoneOrientationDifferenceThreshold_deg	= config.phone_orientation_diff_thresh;
+
+	minimumMatchesNumber = config.minimum_matches_number;
+
 	showImages								= config.show_images;
 
 	for(auto const& keyValuePair: handlers)
@@ -120,11 +120,9 @@ void dynamicParametersCallback(optar::OptarDynamicParametersConfig &config, uint
 						orbMaxPoints,
 						orbScaleFactor,
 						orbLevelsNumber,
-						startupFramesNum,
 						phoneOrientationDifferenceThreshold_deg,
-						estimateDistanceThreshold_meters,
 						showImages,
-						useCuda);
+						minimumMatchesNumber);
 
 	}
 }
@@ -159,11 +157,9 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 									orbMaxPoints,
 									orbScaleFactor,
 									orbLevelsNumber,
-									startupFramesNum,
 									phoneOrientationDifferenceThreshold_deg,
-									estimateDistanceThreshold_meters,
 									showImages,
-									useCuda);
+									minimumMatchesNumber);
 		if(r<0)
 		{
 			ROS_ERROR_STREAM("Couldn't setup device handler parameters, error "<<r<<". Will not handle device "<<deviceName);

@@ -24,6 +24,9 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg)
 {
+	ROS_INFO_STREAM("");
+	ROS_INFO_STREAM("");
+	ROS_INFO_STREAM("");
 	ROS_INFO_STREAM("imagesCallback for device "<<ARDeviceId);
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
@@ -71,6 +74,9 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg)
 {
+	ROS_INFO_STREAM("");
+	ROS_INFO_STREAM("");
+	ROS_INFO_STREAM("");
 	ROS_INFO_STREAM("featuresCallback for device "<<ARDeviceId);
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
@@ -216,11 +222,9 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 								orbMaxPoints,
 								orbScaleFactor,
 								orbLevelsNumber,
-								startupFramesNum,
 								phoneOrientationDifferenceThreshold_deg,
-								estimateDistanceThreshold_meters,
 								showImages,
-								useCuda);
+								minimumMatchesNumber);
 
 
 
@@ -313,11 +317,9 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 					int orbMaxPoints,
 					double orbScaleFactor,
 					int orbLevelsNumber,
-					unsigned int startupFramesNum,
 					double phoneOrientationDifferenceThreshold_deg,
-					double estimateDistanceThreshold_meters,
 					bool showImages,
-					bool useCuda)
+					unsigned int minimumMatchesNumber)
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
@@ -333,11 +335,9 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 	this->orbMaxPoints=orbMaxPoints;
 	this->orbScaleFactor=orbScaleFactor;
 	this->orbLevelsNumber=orbLevelsNumber;
-	this->startupFramesNum=startupFramesNum;
 	this->phoneOrientationDifferenceThreshold_deg=phoneOrientationDifferenceThreshold_deg;
-	this->estimateDistanceThreshold_meters=estimateDistanceThreshold_meters;
 	this->showImages = showImages;
-	this->useCuda = useCuda;
+	this->minimumMatchesNumber = minimumMatchesNumber;
 
 	if(estimator)
 	{
@@ -349,11 +349,9 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 					orbMaxPoints,
 					orbScaleFactor,
 					orbLevelsNumber,
-					startupFramesNum,
 					phoneOrientationDifferenceThreshold_deg,
-					estimateDistanceThreshold_meters,
 					showImages,
-					useCuda);
+					minimumMatchesNumber);
 	}
 	return 0;
 }

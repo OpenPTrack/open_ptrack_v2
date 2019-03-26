@@ -21,9 +21,6 @@
 #include <tf/transform_broadcaster.h>
 #include <image_transport/image_transport.h>
 
-#ifdef USE_CUDA_OPENCV
-	#include <opencv2/cudafeatures2d.hpp>
-#endif
 
 
 #include "../utils.hpp"
@@ -36,7 +33,7 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, 
 	this->transformKinectToWorld = transformKinectToWorld;
 	this->ARDeviceId = ARDeviceId;
 	this->fixed_sensor_name = fixed_sensor_name;
-	
+
 	pose_raw_pub = nh.advertise<geometry_msgs::PoseStamped>("optar/"+ARDeviceId+"/"+outputPoseRaw_topicName, 10);
 	pose_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
 
@@ -56,11 +53,9 @@ void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 					int orbMaxPoints,
 					double orbScaleFactor,
 					int orbLevelsNumber,
-					unsigned int startupFramesNum,
 					double phoneOrientationDifferenceThreshold_deg,
-					double estimateDistanceThreshold_meters,
 					bool showImages,
-					bool useCuda)
+					unsigned int minimumMatchesNumber)
 {
 	this->pnpReprojectionError=pnpReprojectionError;
 	this->pnpConfidence=pnpConfidence;
@@ -72,7 +67,7 @@ void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 	this->orbLevelsNumber=orbLevelsNumber;
 	this->phoneOrientationDifferenceThreshold_deg=phoneOrientationDifferenceThreshold_deg;
 	this->showImages = showImages;
-	this->useCuda = useCuda;
+	this->minimumMatchesNumber = minimumMatchesNumber;
 
 }
 
@@ -84,9 +79,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 {
 	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
 	long arcoreTime = arcoreInputMsg->header.stamp.sec*1000000000L + arcoreInputMsg->header.stamp.nsec;
-	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;
-	ROS_INFO_STREAM("\n\n\n\nUpdating "<<ARDeviceId);
-	
+	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;	
 	ROS_INFO_STREAM("Parameters: "<<endl<<
             "pnp iterations = "<<pnpIterations<<endl<<
             "pnp confidence = "<<pnpConfidence<<endl<<
@@ -96,9 +89,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 			"orb max points = "<<orbMaxPoints<<endl<<
 			"orb scale factor = "<<orbScaleFactor<<endl<<
 			"orb levels number = "<<orbLevelsNumber<<endl<<
-			"startup frames number = "<<startupFramesNum<<endl<<
 			"phone orientation difference threshold = "<<phoneOrientationDifferenceThreshold_deg<<endl<<
-			//"estimate distance threshold = "<<estimateDistanceThreshold_meters<<endl<<
 			"show images = "<<showImages);
 
 	ROS_DEBUG("Received images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
@@ -194,7 +185,6 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
 	long arcoreTime = arcoreInputMsg->header.stamp.sec*1000000000L + arcoreInputMsg->header.stamp.nsec;
 	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;
-	ROS_INFO_STREAM("\n\n\n\nUpdating "<<ARDeviceId);
 	ROS_DEBUG("Received images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
 
 
@@ -424,8 +414,9 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		cv::drawMatches(arcoreImage, arcoreKeypoints, kinectMonoImage, fixedKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		cv::putText(matchesImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,matchesImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
 	}
-	//If we have less than 4 matches we cannot procede
-	if(goodMatches.size()<4)
+
+	//If we have less than 4 matches we cannot procede, pnp wouldn't be able to estimate the phone position
+	if(goodMatches.size()<4 || goodMatches.size()<minimumMatchesNumber)
 	{
 		//cv::drawKeypoints(arcoreImg,arcoreKeypoints)
 		if(matchesImg.data)
@@ -628,8 +619,8 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	tf::Vector3 zUnitVector(0,0,1);
 	tf::Vector3 phoneOpticalAxis_kinectFrame = tf::Transform(phonePoseTf_kinectFrame.getRotation()) * zUnitVector;
 	double phoneToCameraRotationAngle = std::abs(phoneOpticalAxis_kinectFrame.angle(zUnitVector))*180/3.14159;
-	ROS_INFO_STREAM("phoneOpticalAxis_kinectFrame = "<<phoneOpticalAxis_kinectFrame.x()<<" "<<phoneOpticalAxis_kinectFrame.y()<<" "<<phoneOpticalAxis_kinectFrame.z());
-	ROS_INFO_STREAM("Angle = "<<phoneToCameraRotationAngle);
+	//ROS_INFO_STREAM("phoneOpticalAxis_kinectFrame = "<<phoneOpticalAxis_kinectFrame.x()<<" "<<phoneOpticalAxis_kinectFrame.y()<<" "<<phoneOpticalAxis_kinectFrame.z());
+	ROS_DEBUG_STREAM("Angle = "<<phoneToCameraRotationAngle);
 	if(phoneToCameraRotationAngle>phoneOrientationDifferenceThreshold_deg)
 	{
 		ROS_INFO_STREAM("Orientation difference between phone and camera is too high, discarding estimation ("<<phoneToCameraRotationAngle<<")");
@@ -676,16 +667,7 @@ int ARDeviceRegistrationEstimator::computeOrbFeatures(const cv::Mat& image,
 	keypoints.clear();
 	cv::Ptr<cv::ORB> orb;
 
-    #ifdef USE_CUDA_OPENCV
-    	if(useCuda)
-	    	orb = cv::cuda::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber);
-		else
-	    	orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber);
-    #else
-    	if(useCuda)
-    		ROS_WARN("Cuda is enabled, but this build does not include cuda. Proceeding without cuda.\n To build with cuda support set the according flag in the package's CMakeLists");
-	    orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber);
-    #endif
+    orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber);
 
 
     orb->detect(image, keypoints);
@@ -737,8 +719,7 @@ int ARDeviceRegistrationEstimator::filterMatches(const std::vector<cv::DMatch>& 
 		if( dist > max_dist )
 			max_dist = dist;
 	}
-	ROS_DEBUG("Max match dist : %f", max_dist );
-	ROS_DEBUG("Min match dist : %f", min_dist );
+	ROS_INFO_STREAM("Best/Worst matches = "<<min_dist<<"/"<<max_dist);
 
 
 	//Filter the matches to keep just the best ones

@@ -14,21 +14,26 @@
 #include <mutex>
 #include <memory> //shared_ptr
 #include <opt_msgs/ARDeviceRegistration.h>
+#include <std_msgs/String.h>
 
 #include "TransformFilterKalman.hpp"
 #include "../utils.hpp"
+
+#include <dynamic_reconfigure/server.h>
+#include <optar/OptarAggregatorParametersConfig.h>
 
 
 using namespace std;
 
 static const string NODE_NAME 	= "ardevices_registration_aggregator";
 static const string inputRawEstimationTopic		= "input_raw_transform_topic";
+static const string inputHearbeatTopic = "input_heartbeats_topic";
 
 static const int threadsNumber = 2;
 
 static unsigned long  handler_no_msg_timeout_millis = 5000;
 static int startupFramesNum = 3;
-static double estimateDistanceThreshold_meters = 5;
+static double estimate_distance_thresh_meters = 5;
 
 class FilterTimestampCouple
 {
@@ -51,6 +56,26 @@ public:
 
 static std::map<string, shared_ptr<FilterTimestampCouple>> filters;
 static std::timed_mutex filtersMutex;
+
+
+
+void dynamicParametersCallback(optar::OptarAggregatorParametersConfig &config, uint32_t level)
+{
+	ROS_INFO_STREAM("Reconfigure Request: "<<endl<<
+			"estimate distance threshold = "<<config.estimate_distance_thresh_meters<<endl<<
+			"handler_no_msg_timeout_secs = "<<config.handler_no_msg_timeout_secs<<endl<<
+			"startup frames number = "<<config.startup_frames_num);
+
+
+	startupFramesNum				= config.startup_frames_num;
+	estimate_distance_thresh_meters	= config.estimate_distance_thresh_meters;
+	handler_no_msg_timeout_millis	= config.handler_no_msg_timeout_secs*1000;
+
+	for(auto const& keyValuePair: filters)
+	{
+		keyValuePair.second->filter->setupParameters(startupFramesNum,	estimate_distance_thresh_meters);
+	}	
+}
 
 
 void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputRegistration)
@@ -80,7 +105,7 @@ void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputR
 	{
 		ROS_INFO_STREAM("New device detected, id="<<deviceId);
 		shared_ptr<TransformFilterKalman> newFilter = std::make_shared<TransformFilterKalman>(1e-5,1,1, 5, 5);
-		newFilter->setupParameters(startupFramesNum,estimateDistanceThreshold_meters);
+		newFilter->setupParameters(startupFramesNum,estimate_distance_thresh_meters);
 		shared_ptr<FilterTimestampCouple> couple = make_shared<FilterTimestampCouple>(newFilter);
 		
 		filters.insert(std::map<string, shared_ptr<FilterTimestampCouple>>::value_type(deviceId,couple));
@@ -126,6 +151,23 @@ void removeOldFilters()
 	}
 }
 
+void onHeartbeatReceived(const std_msgs::StringConstPtr& msg)
+{
+	string deviceId = msg->data;
+	std::unique_lock<std::timed_mutex> lock(filtersMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM("onHeartbeatReceived(): failed to get mutex. Skipping.");
+		return;
+	}
+
+	auto it = filters.find(deviceId);
+	if(it!=filters.end())
+	{
+		it->second->lastTimeUsed = std::chrono::steady_clock::now();
+	}
+}
+
 
 int main(int argc, char** argv)
 {
@@ -134,8 +176,15 @@ int main(int argc, char** argv)
 	
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
 	
+	dynamic_reconfigure::Server<optar::OptarAggregatorParametersConfig> server;
+	dynamic_reconfigure::Server<optar::OptarAggregatorParametersConfig>::CallbackType bindedDynamicParametersCallback;
+	bindedDynamicParametersCallback = boost::bind(&dynamicParametersCallback, _1, _2);
+	server.setCallback(bindedDynamicParametersCallback);
+
+
 	//This will not launch concurrent callbacks even if we have multiple spinners. That would need to be enabled explicitly somewhere
-	ros::Subscriber sub = nh.subscribe(inputRawEstimationTopic, 1, onRegistrationReceived);
+	ros::Subscriber registrationSubscriber = nh.subscribe(inputRawEstimationTopic, 1, onRegistrationReceived);
+	ros::Subscriber heartbeatSubscriber = nh.subscribe(inputHearbeatTopic, 1, onHeartbeatReceived);
 
 	if(threadsNumber>1)
 	{

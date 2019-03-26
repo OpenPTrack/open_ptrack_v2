@@ -92,6 +92,7 @@ generate_messages(
 #add dynamic reconfigure api
 generate_dynamic_reconfigure_options(
   cfg/OptarDynamicParameters.cfg
+  cfg/OptarAggregatorParameters.cfg
 )
 
 ###################################

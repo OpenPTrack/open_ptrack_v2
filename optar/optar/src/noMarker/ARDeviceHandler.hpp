@@ -69,12 +69,11 @@ private:
 	int orbMaxPoints = 500;
 	double orbScaleFactor = 1.2;
 	int orbLevelsNumber = 8;
-	unsigned int startupFramesNum = 10;
 	double phoneOrientationDifferenceThreshold_deg = 45;
-	double estimateDistanceThreshold_meters = 5;
 
 	bool showImages = true;
-	bool useCuda = true;
+	unsigned int minimumMatchesNumber = 4;
+
 
 	std::timed_mutex objectMutex;
 
@@ -103,11 +102,9 @@ public:
 						int orbMaxPoints,
 						double orbScaleFactor,
 						int orbLevelsNumber,
-						unsigned int startupFramesNum,
 						double phoneOrientationDifferenceThreshold_deg,
-						double estimateDistanceThreshold_meters,
 						bool showImages,
-						bool useCuda);
+						unsigned int minimumMatchesNumber);
 
 	std::string getARDeviceId();
 
