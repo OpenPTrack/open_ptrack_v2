@@ -136,7 +136,9 @@ void removeOldFilters()
 	for (auto it = filters.cbegin(); it != filters.cend();)
 	{
 		unsigned int millisSinceMsg = it->second->getTimeSinceUsedMillis() ;
-		ROS_INFO_STREAM(""<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
+
+		if(millisSinceMsg>1500)
+			ROS_INFO_STREAM(""<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
 
 		if (millisSinceMsg > handler_no_msg_timeout_millis)
 		{
@@ -160,6 +162,7 @@ void onHeartbeatReceived(const std_msgs::StringConstPtr& msg)
 		ROS_ERROR_STREAM("onHeartbeatReceived(): failed to get mutex. Skipping.");
 		return;
 	}
+	ROS_INFO_STREAM("Received heartbeat from "<<msg->data);
 
 	auto it = filters.find(deviceId);
 	if(it!=filters.end())
@@ -183,16 +186,13 @@ int main(int argc, char** argv)
 
 
 	//This will not launch concurrent callbacks even if we have multiple spinners. That would need to be enabled explicitly somewhere
-	ros::Subscriber registrationSubscriber = nh.subscribe(inputRawEstimationTopic, 1, onRegistrationReceived);
-	ros::Subscriber heartbeatSubscriber = nh.subscribe(inputHearbeatTopic, 1, onHeartbeatReceived);
+	ros::Subscriber registrationSubscriber = nh.subscribe(inputRawEstimationTopic, 10, onRegistrationReceived);
+	ros::Subscriber heartbeatSubscriber = nh.subscribe(inputHearbeatTopic, 100, onHeartbeatReceived);
 
-	if(threadsNumber>1)
-	{
-		ros::AsyncSpinner spinner(threadsNumber-1);
-		spinner.start();
-	}
+	ros::AsyncSpinner spinner(threadsNumber);
+	spinner.start();
 
-	ros::Rate loop_rate(1);
+	ros::Rate loop_rate(0.5);
 
 	while (ros::ok())
 	{

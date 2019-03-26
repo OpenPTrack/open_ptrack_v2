@@ -138,6 +138,7 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 		return;
 	}
 
+	ROS_INFO_STREAM("Received heartbeat from "<<msg->data);
 	auto it = handlers.find(deviceName);
 	if(it==handlers.end())//if it dowsn't exist, create it
 	{
@@ -188,7 +189,9 @@ void removeOldHandlers()
 	for (auto it = handlers.cbegin(); it != handlers.cend();)
 	{
 		int millisSinceMsg = it->second->millisecondsSinceLastMessage() ;
-		ROS_INFO_STREAM(""<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
+		
+		if(millisSinceMsg>1500)
+			ROS_INFO_STREAM(""<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
 
 		if (millisSinceMsg > handler_no_msg_timeout)
 		{
@@ -233,13 +236,13 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	ros::Subscriber sub = nodeHandle->subscribe(devices_heartbeats_topicName, 10, deviceHeartbeatsCallback);
+	ros::Subscriber sub = nodeHandle->subscribe(devices_heartbeats_topicName, 100, deviceHeartbeatsCallback);
 	ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(devices_heartbeats_topicName));
 
-	ros::AsyncSpinner spinner(threadsNumber); // Use 4 threads
+	ros::AsyncSpinner spinner(threadsNumber);
 	spinner.start();
 
-	ros::Rate loop_rate(1);
+	ros::Rate loop_rate(0.5);
 
 	while (ros::ok())
 	{
