@@ -91,7 +91,7 @@ generate_messages(
 
 #add dynamic reconfigure api
 generate_dynamic_reconfigure_options(
-  cfg/OptarDynamicParameters.cfg
+  cfg/OptarSingleCameraParameters.cfg
   cfg/OptarAggregatorParameters.cfg
 )
 
@@ -164,7 +164,7 @@ add_executable(arcore_camera_image_republisher src/arcore_camera_image_republish
 target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
-add_executable(ardevices_registration_single_camera_raw src/noMarker/ardevices_registration_single_camera_raw.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/ARDeviceRegistrationEstimator.cpp src/noMarker/ARDeviceHandler.cpp)
+add_executable(ardevices_registration_single_camera_raw src/noMarker/ardevices_registration_single_camera_raw.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/ARDeviceRegistrationEstimator.cpp src/noMarker/ARDeviceHandler.cpp src/noMarker/FeaturesMemory.cpp)
 target_link_libraries(ardevices_registration_single_camera_raw optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(ardevices_registration_single_camera_raw optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 

@@ -115,7 +115,14 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 	}
 }
 
-ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTopicName, std::string cameraDepthTopicName, std::string cameraInfoTopicName, std::string debugImagesTopic, std::string fixed_sensor_name, std::string outputRawEstimationTopic)
+ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId, 
+									std::string cameraRgbTopicName, 
+									std::string cameraDepthTopicName, 
+									std::string cameraInfoTopicName, 
+									std::string debugImagesTopic, 
+									std::string fixed_sensor_name, 
+									std::string outputRawEstimationTopic,
+									std::shared_ptr<FeaturesMemory> featuresMemory)
 {
 
 	this->ARDeviceId = ARDeviceId;
@@ -125,6 +132,7 @@ ARDeviceHandler::ARDeviceHandler(std::string ARDeviceId, std::string cameraRgbTo
 	this->cameraInfoTopicName = cameraInfoTopicName;
 	this->debugImagesTopic = debugImagesTopic;
 	this->outputRawEstimationTopic = outputRawEstimationTopic;
+	this->featuresMemory = featuresMemory;
 
 	arDeviceCameraMsgTopicName = "optar/"+ARDeviceId+"/camera";
 	arDeviceFeaturesMsgTopicName = "optar/"+ARDeviceId+"/features";
@@ -213,7 +221,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 
-	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, debugImagesTopic, fixed_sensor_name);
+	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, debugImagesTopic, fixed_sensor_name, featuresMemory);
 	estimator->setupParameters(pnpReprojectionError,
 								pnpConfidence,
 								pnpIterations,
@@ -224,7 +232,8 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 								orbLevelsNumber,
 								phoneOrientationDifferenceThreshold_deg,
 								showImages,
-								minimumMatchesNumber);
+								minimumMatchesNumber,
+								enableFeaturesMemory);
 
 
 
@@ -319,7 +328,8 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 					int orbLevelsNumber,
 					double phoneOrientationDifferenceThreshold_deg,
 					bool showImages,
-					unsigned int minimumMatchesNumber)
+					unsigned int minimumMatchesNumber,
+					bool enableFeaturesMemory)
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
@@ -338,6 +348,7 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 	this->phoneOrientationDifferenceThreshold_deg=phoneOrientationDifferenceThreshold_deg;
 	this->showImages = showImages;
 	this->minimumMatchesNumber = minimumMatchesNumber;
+	this->enableFeaturesMemory = enableFeaturesMemory;
 
 	if(estimator)
 	{
@@ -351,7 +362,8 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 					orbLevelsNumber,
 					phoneOrientationDifferenceThreshold_deg,
 					showImages,
-					minimumMatchesNumber);
+					minimumMatchesNumber,
+					enableFeaturesMemory);
 	}
 	return 0;
 }

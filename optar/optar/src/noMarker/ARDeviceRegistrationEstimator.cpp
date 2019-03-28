@@ -28,11 +28,17 @@
 using namespace std;
 using namespace cv;
 
-ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(string ARDeviceId, ros::NodeHandle& nh, geometry_msgs::TransformStamped transformKinectToWorld, std::string debugImagesTopic, std::string fixed_sensor_name)
+ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId, 
+																ros::NodeHandle& nh, 
+																geometry_msgs::TransformStamped transformKinectToWorld, 
+																std::string debugImagesTopic, 
+																std::string fixed_sensor_name,
+																std::shared_ptr<FeaturesMemory> featuresMemory)
 {
 	this->transformKinectToWorld = transformKinectToWorld;
 	this->ARDeviceId = ARDeviceId;
 	this->fixed_sensor_name = fixed_sensor_name;
+	this->featuresMemory = featuresMemory;
 
 	pose_raw_pub = nh.advertise<geometry_msgs::PoseStamped>("optar/"+ARDeviceId+"/"+outputPoseRaw_topicName, 10);
 	pose_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
@@ -55,7 +61,8 @@ void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 					int orbLevelsNumber,
 					double phoneOrientationDifferenceThreshold_deg,
 					bool showImages,
-					unsigned int minimumMatchesNumber)
+					unsigned int minimumMatchesNumber,
+					bool enableFeaturesMemory)
 {
 	this->pnpReprojectionError=pnpReprojectionError;
 	this->pnpConfidence=pnpConfidence;
@@ -68,6 +75,7 @@ void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 	this->phoneOrientationDifferenceThreshold_deg=phoneOrientationDifferenceThreshold_deg;
 	this->showImages = showImages;
 	this->minimumMatchesNumber = minimumMatchesNumber;
+	this->enableFeaturesMemory = enableFeaturesMemory;
 
 }
 
@@ -90,6 +98,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 			"orb scale factor = "<<orbScaleFactor<<endl<<
 			"orb levels number = "<<orbLevelsNumber<<endl<<
 			"phone orientation difference threshold = "<<phoneOrientationDifferenceThreshold_deg<<endl<<
+			"enableFeaturesMemory = "<<enableFeaturesMemory<<endl<<
 			"show images = "<<showImages);
 
 	ROS_DEBUG("Received images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
@@ -144,18 +153,29 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 
 
 	//find matches
-	std::vector<cv::KeyPoint>  kinectKeypoints;
+	std::vector<cv::KeyPoint>  fixedKeypoints;
 	cv::Mat kinectDescriptors;
-	r =computeOrbFeatures(kinectCameraImg, kinectKeypoints, kinectDescriptors);
+	r =computeOrbFeatures(kinectCameraImg, fixedKeypoints, kinectDescriptors);
 	if(r<0)
 	{
 		ROS_ERROR("error computing camera features");
 		return -2;
 	}
 
+	if(enableFeaturesMemory)
+	{	
+		const vector<FeaturesMemory::Feature> featuresFromMemory = featuresMemory->getFeatures();
+		ROS_INFO_STREAM("got "<<featuresFromMemory.size()<<" features from memory");
+		for(const FeaturesMemory::Feature& feature : featuresFromMemory)
+		{
+			fixedKeypoints.push_back(feature.keypoint);
+			kinectDescriptors.push_back(feature.descriptor);
+		}
+	}
+
 	r = 10*update(	arcoreKeypoints,
 				arcoreDescriptors,
-				kinectKeypoints,
+				fixedKeypoints,
 				kinectDescriptors,
 				arcoreImageSize,
 				kinectCameraImg.size(),
@@ -241,18 +261,30 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 		ROS_ERROR("error computing arcore features");
 		return -2;
 	}
-	std::vector<cv::KeyPoint>  kinectKeypoints;
+	std::vector<cv::KeyPoint>  fixedKeypoints;
 	cv::Mat kinectDescriptors;
-	r =computeOrbFeatures(kinectCameraImg, kinectKeypoints, kinectDescriptors);
+	r =computeOrbFeatures(kinectCameraImg, fixedKeypoints, kinectDescriptors);
 	if(r<0)
 	{
 		ROS_ERROR("error computing camera features");
 		return -3;
 	}
 
+
+	if(enableFeaturesMemory)
+	{	
+		const vector<FeaturesMemory::Feature> featuresFromMemory = featuresMemory->getFeatures();
+		ROS_INFO_STREAM("got "<<featuresFromMemory.size()<<" features from memory");
+		for(const FeaturesMemory::Feature& feature : featuresFromMemory)
+		{
+			fixedKeypoints.push_back(feature.keypoint);
+			kinectDescriptors.push_back(feature.descriptor);
+		}
+	}
+
 	r = 10*update (	arcoreKeypoints,
 				arcoreDescriptors,
-				kinectKeypoints,
+				fixedKeypoints,
 				kinectDescriptors,
 				arcoreImg.size(),
 				kinectCameraImg.size(),
@@ -614,10 +646,10 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	}
 
 	//compute orientation difference with respect to the fixed camera
-	tf::Pose phonePoseTf_kinectFrame;
-	tf::poseMsgToTF(phonePoseKinect.pose,phonePoseTf_kinectFrame);
+	tf::Pose phonePoseTf_fixedCameraFrame;
+	tf::poseMsgToTF(phonePoseKinect.pose,phonePoseTf_fixedCameraFrame);
 	tf::Vector3 zUnitVector(0,0,1);
-	tf::Vector3 phoneOpticalAxis_kinectFrame = tf::Transform(phonePoseTf_kinectFrame.getRotation()) * zUnitVector;
+	tf::Vector3 phoneOpticalAxis_kinectFrame = tf::Transform(phonePoseTf_fixedCameraFrame.getRotation()) * zUnitVector;
 	double phoneToCameraRotationAngle = std::abs(phoneOpticalAxis_kinectFrame.angle(zUnitVector))*180/3.14159;
 	//ROS_INFO_STREAM("phoneOpticalAxis_kinectFrame = "<<phoneOpticalAxis_kinectFrame.x()<<" "<<phoneOpticalAxis_kinectFrame.y()<<" "<<phoneOpticalAxis_kinectFrame.z());
 	ROS_DEBUG_STREAM("Angle = "<<phoneToCameraRotationAngle);
@@ -645,6 +677,29 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	ROS_DEBUG_STREAM("pnpComputationDuration="<<pnpComputationDuration);
 	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<reprojectionComputationDuration);
 	ROS_DEBUG_STREAM("drawMatchesDuration="<<drawMatchesDuration);
+
+
+
+
+	for(unsigned int i=0;i<inliers.size();i++)
+	{
+		Point3f feature3dPosCv = goodMatches3dPos.at(inliers.at(i));
+		tf::Vector3 feature3dPosTf(feature3dPosCv.x,feature3dPosCv.y,feature3dPosCv.z);//this position is in the fixed camera frame
+		tf::Vector3 phonePosition = phonePoseTf_fixedCameraFrame.getOrigin();
+		Point3f phonePositionCv(phonePosition.x(),phonePosition.y(),phonePosition.z());
+		DMatch& match = goodMatches.at(inliers.at(i));
+
+
+		const KeyPoint& keypoint = fixedKeypoints.at(match.trainIdx);
+		const Mat& descriptor = fixedDescriptors.row(match.trainIdx);
+		double observerDistance_meters = feature3dPosTf.distance(phonePosition);
+		Point3f observerDirection(feature3dPosCv.x-phonePositionCv.x,feature3dPosCv.y-phonePositionCv.y,feature3dPosCv.z-phonePositionCv.z);//this will be in the fixed camera frame
+
+		FeaturesMemory::Feature feature(keypoint, descriptor, observerDistance_meters, observerDirection);
+		featuresMemory->saveFeature(feature);
+	}
+
+
 	return 0;
 }
 
@@ -690,7 +745,7 @@ int ARDeviceRegistrationEstimator::computeOrbFeatures(const cv::Mat& image,
 
 int ARDeviceRegistrationEstimator::findOrbMatches(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
 													const cv::Mat& arcoreDescriptors,
-													const std::vector<cv::KeyPoint>& kinectKeypoints,
+													const std::vector<cv::KeyPoint>& fixedKeypoints,
 													const cv::Mat& kinectDescriptors,
 													std::vector<cv::DMatch>& matches)
 {
@@ -1064,13 +1119,13 @@ int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs:
  * this funciton will try to fix the image by getting the closest depth value. If the closest valid pixel is too far
  * the match will be dropped.
  */
-int ARDeviceRegistrationEstimator::fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& kinectKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches)
+int ARDeviceRegistrationEstimator::fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& fixedKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches)
 {
 	outputMatches.clear();
 	for( unsigned int i = 0; i < inputMatches.size(); i++ )
 	{
 		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
-		cv::Point2f imgPos = kinectKeypoints.at(inputMatches.at(i).trainIdx).pt;
+		cv::Point2f imgPos = fixedKeypoints.at(inputMatches.at(i).trainIdx).pt;
 		//try to find the depth using the closest pixel
 		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
 		{
@@ -1096,7 +1151,7 @@ int ARDeviceRegistrationEstimator::fixMatchesDepthOrDrop(const std::vector<cv::D
 
 
 int ARDeviceRegistrationEstimator::get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
-	const std::vector<cv::KeyPoint>& kinectKeypoints,
+	const std::vector<cv::KeyPoint>& fixedKeypoints,
 	const std::vector<cv::KeyPoint>& arcoreKeypoints,
 	const cv::Mat& kinectDepthImg,
 	const cv::Mat& kinectCameraMatrix,
@@ -1108,7 +1163,7 @@ int ARDeviceRegistrationEstimator::get3dPositionsAndImagePositions(const std::ve
 	for( unsigned int i = 0; i < inputMatches.size(); i++ )
 	{
 		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
-		cv::Point2f kinectPixelPos	= kinectKeypoints.at(inputMatches.at(i).trainIdx).pt;
+		cv::Point2f kinectPixelPos	= fixedKeypoints.at(inputMatches.at(i).trainIdx).pt;
 		cv::Point2f arcorePixelPos	= arcoreKeypoints.at(inputMatches.at(i).queryIdx).pt;
 		cv::Point3f pos3d 			= get3dPoint(	kinectPixelPos.x,kinectPixelPos.y,
 													kinectDepthImg.at<uint16_t>(kinectPixelPos),

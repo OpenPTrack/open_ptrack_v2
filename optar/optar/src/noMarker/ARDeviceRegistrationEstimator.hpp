@@ -10,7 +10,8 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <image_transport/image_transport.h>
 
-#include  "TransformFilterKalman.hpp"
+#include "TransformFilterKalman.hpp"
+#include "FeaturesMemory.hpp"
 
 class ARDeviceRegistrationEstimator
 {
@@ -25,6 +26,7 @@ private:
 
 	std::string ARDeviceId;
 
+	std::shared_ptr<FeaturesMemory> featuresMemory;
 
 	ros::Publisher pose_raw_pub;
 	ros::Publisher pose_marker_pub;
@@ -49,12 +51,17 @@ private:
 	unsigned int minimumMatchesNumber = 4;
 
 	bool showImages = true;
-
+	bool enableFeaturesMemory = true;
 
 
 public:
 
-	ARDeviceRegistrationEstimator(std::string ARDeviceId, ros::NodeHandle& nh, geometry_msgs::TransformStamped transformKinectToWorld, std::string debugImagesTopic, std::string fixed_sensor_name);
+	ARDeviceRegistrationEstimator(	std::string ARDeviceId,
+									ros::NodeHandle& nh,
+									geometry_msgs::TransformStamped transformKinectToWorld,
+									std::string debugImagesTopic,
+									std::string fixed_sensor_name,
+									std::shared_ptr<FeaturesMemory> featuresMemory);
 
 
 
@@ -68,7 +75,8 @@ public:
 						int orbLevelsNumber,
 						double phoneOrientationDifferenceThreshold_deg,
 						bool showImages,
-						unsigned int minimumMatchesNumber);
+						unsigned int minimumMatchesNumber,
+						bool enableFeaturesMemory);
 
 
 	int imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,

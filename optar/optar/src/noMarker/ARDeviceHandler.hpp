@@ -21,7 +21,7 @@
 #include "ARDeviceHandler.hpp"
 
 #include "ARDeviceRegistrationEstimator.hpp"
-
+#include "FeaturesMemory.hpp"
 
 
 class ARDeviceHandler
@@ -61,6 +61,17 @@ private:
 
 	ros::Publisher rawEstimationPublisher;
 
+
+
+
+
+	std::timed_mutex objectMutex;
+   	std::chrono::steady_clock::time_point lastTimeReceivedMessage;
+   	bool stopped = false;
+
+	std::shared_ptr<FeaturesMemory> featuresMemory;
+
+
 	double pnpReprojectionError = 5;
 	double pnpConfidence = 0.99;
 	double pnpIterations = 1000;
@@ -70,16 +81,9 @@ private:
 	double orbScaleFactor = 1.2;
 	int orbLevelsNumber = 8;
 	double phoneOrientationDifferenceThreshold_deg = 45;
-
 	bool showImages = true;
 	unsigned int minimumMatchesNumber = 4;
-
-
-	std::timed_mutex objectMutex;
-
-   	std::chrono::steady_clock::time_point lastTimeReceivedMessage;
-
-   	bool stopped = false;
+	bool enableFeaturesMemory = true;
 
 public:
 	ARDeviceHandler(std::string ARDeviceId,
@@ -88,7 +92,8 @@ public:
 					 std::string cameraInfoTopicName,
 					 std::string debugImagesTopic,
 					 std::string fixed_sensor_name,
-					 std::string outputRawEstimationTopic);
+					 std::string outputRawEstimationTopic,
+					 std::shared_ptr<FeaturesMemory> featuresMemory);
 
 	~ARDeviceHandler();
 	int start(std::shared_ptr<ros::NodeHandle> NodeHandle);
@@ -104,7 +109,8 @@ public:
 						int orbLevelsNumber,
 						double phoneOrientationDifferenceThreshold_deg,
 						bool showImages,
-						unsigned int minimumMatchesNumber);
+						unsigned int minimumMatchesNumber,
+						bool enableFeaturesMemory);
 
 	std::string getARDeviceId();
 
