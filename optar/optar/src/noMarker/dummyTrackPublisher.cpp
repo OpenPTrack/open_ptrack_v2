@@ -4,14 +4,15 @@
  * @author Carlo Rizzardo
  *
  * This file implements a ros node which publishes a dummy opt_msgs::TrackArray topic,
- * for debug purposes
+ * for debug purposes. The node will publish 7 static tracks that indicate the origin
+ * and orientation of the coordinate frame
  */
 
 #include <ros/ros.h>
 #include <opt_msgs/TrackArray.h>
 #include <cv_bridge/cv_bridge.h>
 
-#define ARCORE_CAMERA_IMAGE_REPUBLISHER_NODE_NAME "dummy_track_publisher"
+#define NODE_NAME "dummy_track_publisher"
 
 ros::Publisher pub;
 
@@ -44,10 +45,10 @@ void buildTrack(double x, double y, double z, int id, opt_msgs::Track& track)
 
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, ARCORE_CAMERA_IMAGE_REPUBLISHER_NODE_NAME);
+	ros::init(argc, argv, NODE_NAME);
 	ros::NodeHandle nh;
-	
-	ROS_INFO_STREAM("starting "<<ARCORE_CAMERA_IMAGE_REPUBLISHER_NODE_NAME);
+
+	ROS_INFO_STREAM("starting "<<NODE_NAME);
 	pub = nh.advertise<opt_msgs::TrackArray>("/optar/dummy_track", 10);
 
 	ros::Rate r(10); // 10 hz
@@ -80,5 +81,3 @@ int main(int argc, char** argv)
 		r.sleep();
 	}
 }
-
-

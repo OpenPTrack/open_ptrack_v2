@@ -33,16 +33,15 @@ using namespace cv;
 
 
 /**
- * Get 3d coordinates from the image pixel coordinates and the depth image
- * @param x pixel x position
- * @param y pixel y position
- * @param depthImage x the depth image
- * @param focalLengthX focal length on the x axis
- * @param focalLengthY focal length on the y axis
- * @param principalPointX principal point x coordinate
- * @param principalPointY principal point y coordinate
- *
- * @return the 3d point
+ * Calculates the 3d coordinates of a point using the image pixel coordinates and the depth
+ * @param[in]  x               x pixel position
+ * @param[in]  y               y pixel position
+ * @param[in]  depth_mm        depth of the pixel in millimiters
+ * @param[in]  focalLengthX    x component of the focal length of the camera
+ * @param[in]  focalLengthY    y component of the focal length of the camera
+ * @param[in]  principalPointX x component of the principal  point of the camera
+ * @param[in]  principalPointY y component of the principal  point of the camera
+ * @return                 The 3d position
  */
 cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double focalLengthY, double principalPointX, double principalPointY)
 {
@@ -55,13 +54,15 @@ cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double f
 }
 
 
+
 /**
- * Converts a pose expressed as an opencv position vector and an opencv orientation vector
- * to a pose expressed as an Eigen vector and an Eigen quateronion
- * @param tvec opencv position vector
- * @param rvecV opencv rotation vector
- * @param Translate Eigen position vector
- * @param quats Eigen quaternion
+ * Converts a pose expressed wih the OpenCV translation-rotationvector convention
+ * to a pose expressed as an Eigen vector and an Eigen quaternion
+ * 
+ * @param[in] rvec        OpenCV orientation vector
+ * @param[in] tvec        OpenCV translation vector
+ * @param     translation output Eigen translation vector
+ * @param     quaternion  output Eigen quaternion
  */
 void opencvPoseToEigenPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, Eigen::Vector3d &translation, Eigen::Quaterniond &quaternion)
 {
@@ -79,11 +80,11 @@ void opencvPoseToEigenPose(const cv::Vec3d& rvec, const cv::Vec3d& tvec, Eigen::
 }
 
 /**
- * @brief      convert a tf pose to the opencv rvec-tvec representation
+ * Convert a tf pose to the opencv translation-rotationvector representation
  *
  * @param[in]  pose  The tf pose
- * @param      rvec  The rvec
- * @param      tvec  The tvec
+ * @param      rvec  The rotation vector
+ * @param      tvec  The translation vector
  */
 void tfPoseToOpenCvPose(const tf::Pose& pose, cv::Vec3d& rvec, cv::Vec3d& tvec)
 {
@@ -100,17 +101,21 @@ void tfPoseToOpenCvPose(const tf::Pose& pose, cv::Vec3d& rvec, cv::Vec3d& tvec)
 }
 
 /**
- * Publishes a marker for rviz and a tf frame for this pose
- * @param header the header from the pose
- * @param tx position x
- * @param ty position y
- * @param tz position z
- * @param qx orientation quaternion x component
- * @param qy orientation quaternion y component
- * @param qz orientation quaternion z component
- * @param qw orientation quaternion w component
- * @param pose_marker_pub publisher for the marker, of visualization_msgs::Marker type
- *
+ * Publishes a pose as a sphere on a MarkerArray topic
+ * @param  tx              x position of the pose
+ * @param  ty              y position of the pose
+ * @param  tz              z position of the pose
+ * @param  qx              x component of the orientation quaternion
+ * @param  qy              y component of the orientation quaternion
+ * @param  qz              z component of the orientation quaternion
+ * @param  qw              w component of the orientation quaternion
+ * @param  pose_marker_pub publisher to use toto publish the marker
+ * @param  name            name for the marker
+ * @param  r               red component of the color of the marker
+ * @param  g               green component of the color of the marker
+ * @param  b               blue component of the color of the marker
+ * @param  a               alpha component of the color of the marker
+ * @param  size            diameter of the spehere
  * @return zero if successful
  */
 int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, float qz, float qw, ros::Publisher pose_marker_pub, std::string name, float r, float g, float b, float a, float size)
@@ -149,7 +154,7 @@ int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, f
 	tran_input.setX(tx);
 	tran_input.setY(ty);
 	tran_input.setZ(tz);
-	
+
 	static tf::TransformBroadcaster br;
 
 	tf::Transform transformToSend;
@@ -165,16 +170,20 @@ int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, f
 
 
 /**
- * Builds a spheric marker for the specified position to view the pose in rviz
- * @param x the x position to put the marker at
- * @param y the y position to put the marker at
- * @param z the z position to put the marker at
- * @param name the name for the marker
- * @param r the red component of the color of the marker
- * @param g the green component of the color of the marker
- * @param b the blue component of the color of the marker
- * @param a the alpha component of the color of the marker
- * @param size the sie of the sphere
+ * Builds an speric marker for the specified pose. By publishing the produced marker you can view the pose in rviz
+ * 
+ * @param x 		the x position to put the marker at
+ * @param y 		the y position to put the marker at
+ * @param z 		the z position to put the marker at
+ * @param name 		the name for the marker
+ * @param r 		the red component of the color of the marker
+ * @param g 		the green component of the color of the marker
+ * @param b 		the blue component of the color of the marker
+ * @param a 		the alpha component of the color of the marker
+ * @param size 		the sie of the sphere
+ * @param frame_id	the tf frame to set in the marker header
+ * 
+ * @return The marker
  */
 visualization_msgs::Marker buildMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
 {
@@ -210,20 +219,24 @@ visualization_msgs::Marker buildMarker(float x, float y, float z, std::string na
 
 
 /**
- * Builds an arrow marker for the specified pose to view in rviz
- * @param x the x position to put the marker at
- * @param y the y position to put the marker at
- * @param z the z position to put the marker at
- * @param name the name for the marker
- * @param r the red component of the color of the marker
- * @param g the green component of the color of the marker
- * @param b the blue component of the color of the marker
- * @param a the alpha component of the color of the marker
- * @param size the sie of the sphere
- * @param x quaternion orientation x
- * @param y quaternion orientation y
- * @param z quaternion orientation z
- * @param w quaternion orientation w
+ * Builds an arrow marker for the specified pose. By publishing the produced marker you can view the pose in rviz
+ * 
+ * @param x 		the x position to put the marker at
+ * @param y 		the y position to put the marker at
+ * @param z 		the z position to put the marker at
+ * @param name 		the name for the marker
+ * @param r 		the red component of the color of the marker
+ * @param g 		the green component of the color of the marker
+ * @param b 		the blue component of the color of the marker
+ * @param a 		the alpha component of the color of the marker
+ * @param size 		the sie of the sphere
+ * @param frame_id	the tf frame to set in the marker header
+ * @param orient_x 	quaternion orientation x
+ * @param orient_y 	quaternion orientation y
+ * @param orient_z 	quaternion orientation z
+ * @param orient_w 	quaternion orientation w
+ * 
+ * @return The built marker
  */
 visualization_msgs::Marker buildArrowMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id,float orient_x,float orient_y,float orient_z,float orient_w)
 {
@@ -256,8 +269,11 @@ visualization_msgs::Marker buildArrowMarker(float x, float y, float z, std::stri
 }
 
 /**
- * Builds a marker that deletes an already published marker
- * @param name the name for the marker to delete
+ * Builds a marker that deletes an already published marker from rviz
+ * 
+ * @param name the name for the marker to be deleted
+ * 
+ * @return The built marker
  */
 visualization_msgs::Marker buildDeletingMarker(std::string name)
 {
@@ -271,15 +287,18 @@ visualization_msgs::Marker buildDeletingMarker(std::string name)
 
 
 /**
- * Builds a spheric marker for the specified pose to view the pose in rviz
- * @param marker_pose the marker is returned here
- * @param pose the pose to build the marker for
- * @param name the name for the marker
- * @param r the red component of the color of the marker
- * @param g the green component of the color of the marker
- * @param b the blue component of the color of the marker
- * @param a the alpha component of the color of the marker
- * @param size the sie of the sphere
+ * Builds an speric marker for the specified pose. By publishing the produced marker you can view the pose in rviz
+ * 
+ * @param pose 		the pose to build the marker for
+ * @param name 		the name for the marker
+ * @param r 		the red component of the color of the marker
+ * @param g 		the green component of the color of the marker
+ * @param b 		the blue component of the color of the marker
+ * @param a 		the alpha component of the color of the marker
+ * @param size 		the sie of the sphere
+ * @param frame_id	the tf frame to set in the marker header
+ * 
+ * @return The built marker
  */
 visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
 {
@@ -313,7 +332,8 @@ visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::str
 
 
 /**
- * Builds a spheric marker for the specified pose to view the pose in rviz
+ * Builds an speric marker for the specified pose. By publishing the produced marker you can view the pose in rviz
+ * 
  * @param position the position to put the marker at
  * @param name the name for the marker
  * @param r the red component of the color of the marker
@@ -321,6 +341,9 @@ visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::str
  * @param b the blue component of the color of the marker
  * @param a the alpha component of the color of the marker
  * @param size the sie of the sphere
+ * @param frame_id	the tf frame to set in the marker header
+ * 
+ * @return The built marker
  */
 visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
 {
@@ -330,25 +353,45 @@ visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string 
 
 /**
  * Computes the euclidean distance between the two provided poses
+ *
+ * @param[in]  pose1  The pose 1
+ * @param[in]  pose2  The pose 2
+ *
+ * @return The euclidean distance
  */
 double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2)
 {
-	return std::sqrt((pose1.position.x*pose1.position.x - pose2.position.x*pose2.position.x) + 
+	return std::sqrt((pose1.position.x*pose1.position.x - pose2.position.x*pose2.position.x) +
 					 (pose1.position.y*pose1.position.y - pose2.position.y*pose2.position.y) +
 					 (pose1.position.z*pose1.position.z - pose2.position.z*pose2.position.z));
 }
 
 /**
  * Computes the euclidean distance between the two provided poses
+ *
+ * @param[in]  pose1  The pose 1
+ * @param[in]  pose2  The pose 2
+ *
+ * @return The euclidean distance
  */
 double poseDistance(tf::Pose pose1, tf::Pose pose2)
 {
-	return std::sqrt((pose1.getOrigin().x()*pose1.getOrigin().x() - pose2.getOrigin().x()*pose2.getOrigin().x()) + 
+	return std::sqrt((pose1.getOrigin().x()*pose1.getOrigin().x() - pose2.getOrigin().x()*pose2.getOrigin().x()) +
 					 (pose1.getOrigin().y()*pose1.getOrigin().y() - pose2.getOrigin().y()*pose2.getOrigin().y()) +
 					 (pose1.getOrigin().z()*pose1.getOrigin().z() - pose2.getOrigin().z()*pose2.getOrigin().z()));
 }
 
 
+/**
+ * Gets the specified pixel from the image, and if the specified coordinetes are outside the bounds of the
+ * image, it returns the provided value.
+ *
+ * @param[in]  image             The image
+ * @param[in]  p                 The requested pixel's position
+ * @param[in]  outOfBoundsValue  The value returned if p is out of the image bounds
+ *
+ * @return     The pixel value or the value in outOfBoundsValue
+ */
 uint16_t getPixelSafe(const Mat& image, const Point2i p, uint16_t outOfBoundsValue)
 {
 	if(p.x<0 || p.y<0 || p.x>=image.cols || p.y>=image.rows)
@@ -357,6 +400,18 @@ uint16_t getPixelSafe(const Mat& image, const Point2i p, uint16_t outOfBoundsVal
 		return image.at<uint16_t>(p);
 }
 
+
+/**
+ * @brief      Finds the closest non-zero pixel for the specified position in the specified image
+ *
+ * @param[in]  image    The image
+ * @param[in]  x        The x position
+ * @param[in]  y        The y position
+ * @param[in]  maxDist  The maximum allowed distance
+ *
+ * @return The closest non-zero pixel position. If no non-zero pixel has been found within the specified area
+ *         it will return a pixel that is not in the specified area
+ */
 Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, const double maxDist)
 {
 	//ROS_INFO("searching closest non-zero pixel for %d;%d",x,y);
@@ -418,13 +473,13 @@ Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, const double max
 
 /**
  * Finds the non-zero pixel with the lowest value in a ring centered around a specific pixel
- * @param image the image in which to search
- * @param x the x coordinate of the center of the ring
- * @param y the y coordinate of the center of the ring
- * @param maxRadius the outer radius of the ring
- * @param minRadius the inner radius of the ring
+ * @param[in] image the image in which to search
+ * @param     x the x coordinate of the center of the ring
+ * @param     y the y coordinate of the center of the ring
+ * @param     maxRadius the outer radius of the ring
+ * @param     minRadius the inner radius of the ring
  *
- * @return the pixel
+ * @return the pixel, if no non-zero pixel is found it returns [x,y], i.e. the central pixel
  */
 Point2i findLowestNonZeroInRing(const Mat& image, int x, int y, double maxRadius, double minRadius)
 {
@@ -492,7 +547,13 @@ Point2i findLowestNonZeroInRing(const Mat& image, int x, int y, double maxRadius
 
 
 
-
+/**
+ * @brief      Transforms the provided position using the provided tf transform
+ *
+ * @param[in]  in         The input point
+ * @param      out        The output point
+ * @param[in]  transform  The transform to use
+ */
 void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTransform transform)
 {
 	geometry_msgs::PoseStamped pose;
@@ -517,12 +578,14 @@ void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTran
 
 }
 
-/** Prepares an opencv image to be shown in a new window. To actually display it you will have to call cv::waitKey(int)
+/** Prepares an opencv image to be shown in a new window. To actually display it you will have
+ *  to call cv::waitKey(int)
  *
- * @param winName The name to give to the window
- * @param image The image to be shown
- * @param winHeight The height the displayed image will have in the screen, in pixels
- * @param winHeight The width the displayed image will have in the screen, in pixels. If it is -1 it will be deduced from winHeight using the aspect of the image
+ * @param winName    The name to give to the window
+ * @param image      The image to be shown
+ * @param winHeight  The height the displayed image will have in the screen, in pixels
+ * @param winWidth   The width the displayed image will have in the screen, in pixels. If it is -1 
+ *                   it will be deduced from winHeight using the aspect of the image
  *
  */
 void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHeight, int winWidth=-1)
@@ -537,10 +600,13 @@ void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHei
 
 
 /**
- *	Publishes the provided transform as a tf frame
- *	
- *	@param pose The pose to be published
- *	@param tfFrameName The name the of the tf frame the pose will be published as
+ *
+ * Publishes the provided transform as a tf frame
+ *
+ * @param transform   The transform to be published
+ * @param tfFrameName The name to use for the tf frame
+ * @param parentFrame The name of the parent frame
+ * @param time        The time to set on the published frame transform
  */
 void publishTransformAsTfFrame(const tf::Transform& transform, std::string tfFrameName, std::string parentFrame, const ros::Time& time)
 {
@@ -552,10 +618,11 @@ void publishTransformAsTfFrame(const tf::Transform& transform, std::string tfFra
 }
 
 /**
- *	Publishes the provided pose as a tf frame
- *	
+ *	Publishes the provided pose as a tf frame. It uses the timestamp in the pose header
+ *	as the timestamp for the tf frame transform
+ *
  *	@param pose The pose to be published
- *	@param tfFrameName The name the of the tf frame the pose will be published as
+ *	@param tfFrameName The name of the tf frame the pose will be published as
  */
 void publishPoseAsTfFrame(const geometry_msgs::PoseStamped& pose, std::string tfFrameName)
 {
@@ -566,7 +633,15 @@ void publishPoseAsTfFrame(const geometry_msgs::PoseStamped& pose, std::string tf
 	publishTransformAsTfFrame(transform,tfFrameName,pose.header.frame_id,pose.header.stamp);
 }
 
-
+/**
+ * @brief      Builds a geometry_msgs::Point object from doubles
+ *
+ * @param[in]  positionX  The x coordinate
+ * @param[in]  positionY  The y coordinate
+ * @param[in]  positionZ  The z coordinate
+ *
+ * @return     The geometry_msgs::Point object
+ */
 geometry_msgs::Point buildRosPoint(double positionX, double positionY, double positionZ)
 {
 	geometry_msgs::Point point;
@@ -576,6 +651,17 @@ geometry_msgs::Point buildRosPoint(double positionX, double positionY, double po
 	return point;
 }
 
+
+/**
+ * @brief      Builds a geometry_msgs::Quaternion object from doubles
+ *
+ * @param[in]  quaternionX  The quaternion x component
+ * @param[in]  quaternionY  The quaternion y component
+ * @param[in]  quaternionZ  The quaternion z component
+ * @param[in]  quaternionW  The quaternion w component
+ *
+ * @return     The geometry_msgs::Quaternion object
+ */
 geometry_msgs::Quaternion buildRosQuaternion(double quaternionX, double quaternionY, double quaternionZ, double quaternionW)
 {
 	geometry_msgs::Quaternion quaternion;
@@ -586,7 +672,19 @@ geometry_msgs::Quaternion buildRosQuaternion(double quaternionX, double quaterni
 	return quaternion;
 }
 
-
+/**
+ * @brief      Builds a geometry_msgs::Pose object from doubles
+ *
+ * @param[in]  positionX    The position x coordinate
+ * @param[in]  positionY    The position y coordinate
+ * @param[in]  positionZ    The position z coordinate
+ * @param[in]  quaternionX  The quaternion x component
+ * @param[in]  quaternionY  The quaternion y component
+ * @param[in]  quaternionZ  The quaternion z component
+ * @param[in]  quaternionW  The quaternion w component
+ *
+ * @return     The geometry_msgs::Pose object
+ */
 geometry_msgs::Pose buildRosPose(double positionX, double positionY, double positionZ, double quaternionX, double quaternionY, double quaternionZ, double quaternionW)
 {
 	geometry_msgs::Pose pose;//the compiler should optimize this and don't do a copy on return (guaranteed in c++17)
@@ -601,6 +699,14 @@ geometry_msgs::Pose buildRosPose(double positionX, double positionY, double posi
 	return pose;
 }
 
+/**
+ * @brief      Builds a geometry_msgs::Pose object from position and orientation 
+ *
+ * @param[in]  position     The position
+ * @param[in]  orientation  The orientation
+ *
+ * @return     The geometry_msgs::Pose object
+ */
 geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation)
 {
 	return buildRosPose(position.x(),position.y(),position.z(),orientation.x(),orientation.y(),orientation.z(),orientation.w());
@@ -608,6 +714,8 @@ geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Q
 
 /**
  * Provides a human-readable string representation of a pose
+ * 
+ * @return The string
  */
 std::string poseToString(tf::Pose pose)
 {
@@ -618,7 +726,10 @@ std::string poseToString(tf::Pose pose)
 
 /**
  * Converts a transform in a left-handed coordinate space to a transform in a right-handed coordinate space
- * Note that tf::Pose and tf::Transform are the same thing
+ *
+ * @param[in]  leftHandedPose  The left handed pose (i.e. transform)
+ *
+ * @return      The right handed pose
  */
 tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose)
 {
@@ -634,10 +745,12 @@ tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose)
 
 /**
  * Computes the average position of the provided poses (does not look at the orientations)
+ * 
  * @param poses The poses to average
- * @return the average position
+ * 
+ * @return The average position
  */
-tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses)
+tf::Vector3 averagePosePositions(const std::vector<tf::Pose> poses)
 {
 	double x;
 	double y;
@@ -647,7 +760,7 @@ tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses)
 		tf::Vector3 position = pose.getOrigin();
 		x += position.getX();
 		y += position.getY();
-		z += position.getZ(); 
+		z += position.getZ();
 	}
 	x/=poses.size();
 	y/=poses.size();
@@ -658,8 +771,10 @@ tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses)
 
 /**
  * Checks if the pose is valid, i.e. if it contains nan values or infinite values and if the quaternion is normalized
- * @param pose the pose to check
- * @return true if valid, false if invalid
+ * 
+ * @param[in] pose The pose to be checked
+ * 
+ * @return True if valid, false if invalid
  */
 bool isPoseValid(const tf::Pose& pose)
 {

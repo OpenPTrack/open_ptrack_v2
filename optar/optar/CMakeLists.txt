@@ -24,18 +24,18 @@ find_package(catkin REQUIRED COMPONENTS
 
 
 unset(OpenCV_DIR)
-#unset(CMAKE_PREFIX_PATH)    
+#unset(CMAKE_PREFIX_PATH)
 unset(OpenCV_VERSION)
-unset(OpenCV_INSTALL_PATH) 
+unset(OpenCV_INSTALL_PATH)
 unset(OpenCV_CONFIG_PATH)
 unset(OpenCV_INCLUDE_DIRS)
 unset(OpenCV_LIBS)
 
 message(STATUS "OpenCV_FOUND =${OpenCV_FOUND}")
 message(STATUS "OpenCV_DIR =${OpenCV_DIR}")
-message(STATUS "prefix ${CMAKE_PREFIX_PATH}")    
+message(STATUS "prefix ${CMAKE_PREFIX_PATH}")
 message(STATUS "version ${OpenCV_VERSION}")
-message(STATUS "install path ${OpenCV_INSTALL_PATH}") 
+message(STATUS "install path ${OpenCV_INSTALL_PATH}")
 message(STATUS "config path ${OpenCV_CONFIG_PATH}") # look at the output of this message
 message(STATUS "include dirs ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "libs ${OpenCV_LIBS}")
@@ -48,10 +48,10 @@ if(USE_CUDA)
     PATHS /usr/local
     HINTS /usr/local
     EXACT 3.1.0
-    NO_DEFAULT_PATH) 
+    NO_DEFAULT_PATH)
   include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
   link_directories(${OpenCV_LIB_DIR})
-  add_definitions(-DUSE_CUDA_OPENCV) 
+  add_definitions(-DUSE_CUDA_OPENCV)
 else()
   message(STATUS "not using cuda for optar")
   find_package(OpenCV REQUIRED)
@@ -61,9 +61,9 @@ endif()
 
 message(STATUS "OpenCV_FOUND =${OpenCV_FOUND}")
 message(STATUS "OpenCV_DIR =${OpenCV_DIR}")
-message(STATUS "prefix ${CMAKE_PREFIX_PATH}")    
+message(STATUS "prefix ${CMAKE_PREFIX_PATH}")
 message(STATUS "version ${OpenCV_VERSION}")
-message(STATUS "install path ${OpenCV_INSTALL_PATH}") 
+message(STATUS "install path ${OpenCV_INSTALL_PATH}")
 message(STATUS "config path ${OpenCV_CONFIG_PATH}") # look at the output of this message
 message(STATUS "include dirs ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "libs ${OpenCV_LIBS}")
@@ -159,10 +159,6 @@ target_link_libraries(motion_control ${catkin_LIBRARIES})
 add_dependencies(motion_control motion_control_cpp ${PROJECT_NAME}_generate_messages_cpp)
 
 
-
-add_executable(arcore_camera_image_republisher src/arcore_camera_image_republisher.cpp)
-target_link_libraries(arcore_camera_image_republisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(arcore_camera_image_republisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(ardevices_registration_single_camera_raw src/noMarker/ardevices_registration_single_camera_raw.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/ARDeviceRegistrationEstimator.cpp src/noMarker/ARDeviceHandler.cpp src/noMarker/FeaturesMemory.cpp)
 target_link_libraries(ardevices_registration_single_camera_raw optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
