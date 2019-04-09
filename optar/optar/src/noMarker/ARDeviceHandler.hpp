@@ -23,7 +23,25 @@
 #include "ARDeviceRegistrationEstimator.hpp"
 #include "FeaturesMemory.hpp"
 
-
+/**
+ * Handler for one AR device that estimates the coordinate frame registration
+ * between the device and the ROS tf system using one fixed RGB-D camera.
+ *
+ * After construting an object you need to call the ARDeviceHandler::start() method,
+ * this will start listening for messages from the device and so estimating
+ * the transform between the two coordinate systems.
+ *
+ * The computed transform is published as a opt_msgs::ARDeviceRegistration message
+ * on the topic specified in the constructor.
+ *
+ * This class supports estimating the transform both using images from the AR device
+ * (opt_msgs::ArcoreCameraImage messages) or from precomputed features sent from
+ * the AR device (opt_msgs::ArcoreCameraFeatures messages)
+ *
+ * To perform the actual estimation it uses an ARDeviceRegistrationEstimator object
+ *
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
+ */
 class ARDeviceHandler
 {
 private:
@@ -33,7 +51,6 @@ private:
 	std::string cameraRgbTopicName;
 	std::string cameraDepthTopicName;
 	std::string cameraInfoTopicName;
-	std::string debugImagesTopic;
 	std::string arDeviceCameraMsgTopicName;
 	std::string arDeviceFeaturesMsgTopicName;
 	std::string outputRawEstimationTopic;
@@ -43,54 +60,79 @@ private:
 	geometry_msgs::TransformStamped transformKinectToWorld;
 	sensor_msgs::CameraInfo cameraInfo;
 
-	// Synchronization policy for having a callback that receives two topics at once.
-	// It chooses the two messages by minimizing the time difference between them
+
+	/** Synchronization policy for receiving the image message from the ar device
+	    and also images from the fixed camera. It chooses the two messages by minimizing
+			the time difference between them */
 	typedef message_filters::sync_policies::ApproximateTime<opt_msgs::ArcoreCameraImage, sensor_msgs::Image, sensor_msgs::Image> MyApproximateSynchronizationPolicy;
 	std::shared_ptr<message_filters::Synchronizer<MyApproximateSynchronizationPolicy>> synchronizer;
+	/** subscriber for receiving images, camera info and pose from the AR device */
 	std::shared_ptr<message_filters::Subscriber<opt_msgs::ArcoreCameraImage>> arcoreCamera_sub;
+	/** subscriber for receiving regular images from the fixed camera */
 	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> kinect_img_sub;
+	/** subscriber for receiving depth images form the fixed camera */
 	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> kinect_depth_sub;
 
 
-	//subscribers and synchronizer for phone-side feature computation
+	/** Synchronization policy for receiving the feature message from the ar device
+	    and also images from the fixed camera. It chooses the two messages by minimizing
+			the time difference between them */
 	typedef message_filters::sync_policies::ApproximateTime<opt_msgs::ArcoreCameraFeatures, sensor_msgs::Image, sensor_msgs::Image> FeaturesApproximateSynchronizationPolicy;
 	std::shared_ptr<message_filters::Synchronizer<FeaturesApproximateSynchronizationPolicy>> featuresTpc_synchronizer;
+	/** subscriber for receiving features, camera info and pose from the AR device */
 	std::shared_ptr<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>> featuresTpc_arcore_sub;
+	/** subscriber for receiving regular images from the fixed camera */
 	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> featuresTpc_kinect_img_sub;
+	/** subscriber for receiving depth images form the fixed camera */
 	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> featuresTpc_kinect_depth_sub;
 
+	/** Publisher to publish the computed registration */
 	ros::Publisher rawEstimationPublisher;
 
 
 
 
-
+	/** Mutex to synchronize the methods of the ARDeviceHandler */
 	std::timed_mutex objectMutex;
-   	std::chrono::steady_clock::time_point lastTimeReceivedMessage;
-   	bool stopped = false;
+	/** To keep track of the time we last received a message */
+ 	std::chrono::steady_clock::time_point lastTimeReceivedMessage;
+	/** stopped? */
+ 	bool stopped = false;
 
+	/** To keep track of useful features and share them with the other handlers */
 	std::shared_ptr<FeaturesMemory> featuresMemory;
 
 
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	double pnpReprojectionError = 5;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	double pnpConfidence = 0.99;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	double pnpIterations = 1000;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	double matchingThreshold = 25;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	double reprojectionErrorDiscardThreshold = 5;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	int orbMaxPoints = 500;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	double orbScaleFactor = 1.2;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	int orbLevelsNumber = 8;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	double phoneOrientationDifferenceThreshold_deg = 45;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	bool showImages = true;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
 	unsigned int minimumMatchesNumber = 4;
-	bool enableFeaturesMemory = true;
+	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	bool enableFeaturesMemory = false;
 
 public:
 	ARDeviceHandler(std::string ARDeviceId,
 					 std::string cameraRgbTopicName,
 					 std::string cameraDepthTopicName,
 					 std::string cameraInfoTopicName,
-					 std::string debugImagesTopic,
 					 std::string fixed_sensor_name,
 					 std::string outputRawEstimationTopic,
 					 std::shared_ptr<FeaturesMemory> featuresMemory);

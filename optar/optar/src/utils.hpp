@@ -1,9 +1,11 @@
 /**
  * @file
  *
- * @author Carlo Rizzardo
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  * Collection of utility methods used by the optar module
+ *
+ * functions documentation in utils.cpp
  */
 #ifndef OPTAR_UTILS_HPP_06032019
 #define OPTAR_UTILS_HPP_06032019
@@ -17,9 +19,6 @@
 #include <opencv2/core/core.hpp>
 #include <tf/transform_listener.h>
 
-
-
-//functions documentation in utils.cpp
 
 cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double focalLengthY, double principalPointX, double principalPointY);
 cv::Mat DoubleMatFromVec3b(cv::Vec3b in);

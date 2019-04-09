@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Carlo Rizzardo
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  * A simple ntp-like server for synchronizing nodes. Built for synchronizing applications
  * using rossharp, in particular rossharp on Unity on Android
@@ -34,11 +34,9 @@ int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "ntp_server");
 	ros::NodeHandle nh;
-	
+
 	ROS_INFO_STREAM("starting ntp_server");
 	ros::Subscriber sub = nh.subscribe("/optar/ntp_chat", 1, callback);
 	pub = nh.advertise<opt_msgs::OptarNtpMessage>("/optar/ntp_chat", 10);
 	ros::spin();
 }
-
-

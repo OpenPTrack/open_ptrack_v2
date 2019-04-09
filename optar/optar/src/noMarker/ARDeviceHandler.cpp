@@ -1,3 +1,14 @@
+/**
+ * @file
+ *
+ *
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
+ *
+ *
+ * ARDeviceHandler methods implementation file
+ */
+
+
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
@@ -20,6 +31,15 @@
 
 using namespace std;
 
+
+/**
+ * Computes a new estimation (if possible) using an image reeived from the AR
+ * device. The estimation is computed using ARDeviceRegistrationEstimator::imagesCallback()
+ *
+ * @param arcoreInputMsg       The message from the AR device
+ * @param kinectInputCameraMsg Regular mono image message from the fixed camera
+ * @param kinectInputDepthMsg  Depth image from the fixed camera
+ */
 void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg)
@@ -52,8 +72,8 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 	{
 		//publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
 
-		
-		
+
+
 
 		opt_msgs::ARDeviceRegistration outputRegistrationMsg;
 		outputRegistrationMsg.deviceId = getARDeviceId();
@@ -99,7 +119,7 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 	else
 	{
 		//publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
-		
+
 		opt_msgs::ARDeviceRegistration outputRegistrationMsg;
 		outputRegistrationMsg.deviceId = getARDeviceId();
 		outputRegistrationMsg.fixed_sensor_name = fixed_sensor_name;
@@ -115,12 +135,11 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 	}
 }
 
-ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId, 
-									std::string cameraRgbTopicName, 
-									std::string cameraDepthTopicName, 
-									std::string cameraInfoTopicName, 
-									std::string debugImagesTopic, 
-									std::string fixed_sensor_name, 
+ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
+									std::string cameraRgbTopicName,
+									std::string cameraDepthTopicName,
+									std::string cameraInfoTopicName,
+									std::string fixed_sensor_name,
 									std::string outputRawEstimationTopic,
 									std::shared_ptr<FeaturesMemory> featuresMemory)
 {
@@ -130,7 +149,6 @@ ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
 	this->cameraRgbTopicName = cameraRgbTopicName;
 	this->cameraDepthTopicName = cameraDepthTopicName;
 	this->cameraInfoTopicName = cameraInfoTopicName;
-	this->debugImagesTopic = debugImagesTopic;
 	this->outputRawEstimationTopic = outputRawEstimationTopic;
 	this->featuresMemory = featuresMemory;
 
@@ -221,7 +239,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 
-	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, debugImagesTopic, fixed_sensor_name, featuresMemory);
+	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, fixed_sensor_name, featuresMemory);
 	estimator->setupParameters(pnpReprojectionError,
 								pnpConfidence,
 								pnpIterations,
@@ -241,7 +259,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 	arcoreCamera_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraImage>>(*nodeHandle, arDeviceCameraMsgTopicName, 5);
 	kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraRgbTopicName, 30*10);
 	kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraDepthTopicName, 30*10);
-	
+
 
 	//instantiate and set up the policy
 	MyApproximateSynchronizationPolicy policy = MyApproximateSynchronizationPolicy(60);//instatiate setting up the queue size
@@ -283,7 +301,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 	//Instantiate a Synchronizer with our policy.
 	featuresTpc_synchronizer = std::make_shared<message_filters::Synchronizer<FeaturesApproximateSynchronizationPolicy>>(FeaturesApproximateSynchronizationPolicy(featuresPolicy), *featuresTpc_arcore_sub, *featuresTpc_kinect_img_sub, *featuresTpc_kinect_depth_sub);
-	
+
 
 
 	//registers the callback

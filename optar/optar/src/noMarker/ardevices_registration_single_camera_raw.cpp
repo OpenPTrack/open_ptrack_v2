@@ -1,10 +1,21 @@
 /**
  * @file
  *
- * @author Carlo Rizzardo
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
- * This file implements a ros node which estimates the transformation between an ARCore 
- * coordinae frame and the ros tf /world frame
+ * Ros node that estimates the coordinate frame transformationn (registration) between
+ * mobile cameras and the ros coordinate frame using one specific fixed camera.
+ *
+ * The estimation is based on common visual features between the two cameras
+ *
+ * New mobile cameras are detected listening at the heartbeats topic. Each mobile device
+ * periodically sends an "heartbeat" message containing its deviceId. When this node
+ * detects a new device it instantiates an ARDeviceHandler to listen for messages and
+ * estimate its coordinate frame pose.
+ * If no message is received from a device in a specific timeout period (handler_no_msg_timeout)
+ * then the node removes the ARDeviceHandler for the device, and so stops listeneing for messages
+ * from that specific device and deletes its registration estimation.
+ *
  */
 
 
@@ -44,41 +55,68 @@ using namespace std;
 
 
 static const string NODE_NAME 						= "ardevices_registration_single_camera_raw";
-static const string input_arcore_topic				= "arcore_camera";
-static const string input_kinect_camera_topic		= "kinect_camera" ;
-static const string input_kinect_depth_topic		= "kinect_depth";
+/** topic for the fixed camera regular images */
+static const string input_kinect_camera_topic		    = "kinect_camera" ;
+/** topic for the fixed camera depth images */
+static const string input_kinect_depth_topic		    = "kinect_depth";
+/** topic fo the fixed camera CameraInfo */
 static const string input_kinect_camera_info_topic	= "kinect_camera_info" ;
-static const string devices_heartbeats_topicName	= "heartbeats_topic" ;
-static const string debug_images_topic				= "debug_images_topic" ;
-static const string output_raw_transform_topic		= "output_raw_transform_topic";
-static string fixed_sensor_name						= "fixed_sensor_name";
+/** topic for the heartbeats from all the mobile cameras */
+static const string devices_heartbeats_topicName	  = "heartbeats_topic" ;
+/** topic to publish the raw registration estimation (unflitered and single-camera) */
+static const string output_raw_transform_topic		  = "output_raw_transform_topic";
+/** sensor name of the fixed camera */
+static string fixed_sensor_name						          = "fixed_sensor_name";
 
-map<string, shared_ptr<ARDeviceHandler>> handlers;
-timed_mutex handlersMutex;
-
-shared_ptr<ros::NodeHandle> nodeHandle;
-
-shared_ptr<FeaturesMemory> featuresMemory;
-
-
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg*/
 static double pnpReprojectionError = 5;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static double pnpConfidence = 0.99;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static double pnpIterations = 1000;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static double matchingThreshold = 25;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static double reprojectionErrorDiscardThreshold = 5;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static int orbMaxPoints = 500;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static double orbScaleFactor = 1.2;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static int orbLevelsNumber = 8;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static double phoneOrientationDifferenceThreshold_deg = 45;
-static bool enableFeaturesMemory = true;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
+static bool enableFeaturesMemory = false;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static bool showImages = false;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static unsigned int minimumMatchesNumber = 4;
-
-const unsigned int threadsNumber = 8;
-
+/** TODO: add parameter to dynamic_reconfigure. Timeout after which a device a device with no eartbeat is removed */
 static int handler_no_msg_timeout = 5000;
 
+/** Number of threads that are used. Must be at least 2 to allow for message waiting in
+    the callbacks. Estimations for different phones can be performed simultaneously */
+const unsigned int threadsNumber = 8;
 
+
+
+
+
+/** Handlers for the actove devices */
+map<string, shared_ptr<ARDeviceHandler>> handlers;
+/** Mutex for \link handlers \endlink */
+timed_mutex handlersMutex;
+/** Ros handle for this node */
+shared_ptr<ros::NodeHandle> nodeHandle;
+/** this keeps track of useful features to use later */
+shared_ptr<FeaturesMemory> featuresMemory;
+
+/**
+ * Callback for dynamic_reconfigure parameters
+ * @param config New values for the parameters
+ * @param level  Not used
+ */
 void dynamicParametersCallback(optar::OptarSingleCameraParametersConfig &config, uint32_t level)
 {
 	ROS_INFO_STREAM("Reconfigure Request: "<<endl<<
@@ -114,6 +152,7 @@ void dynamicParametersCallback(optar::OptarSingleCameraParametersConfig &config,
 	showImages								= config.show_images;
 	enableFeaturesMemory								= config.enable_features_memory;
 
+	//set the parameters for all the device handlers
 	for(auto const& keyValuePair: handlers)
 	{
 		keyValuePair.second->setupParameters(pnpReprojectionError,
@@ -132,6 +171,11 @@ void dynamicParametersCallback(optar::OptarSingleCameraParametersConfig &config,
 	}
 }
 
+/**
+ * Callback fro the heatbeats from the mobile devices.
+ * If it detects a new device it creates a new handler for it
+ * @param msg Heartbeat message sent form a mobile device, it contains the deviceId
+ */
 void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 {
 	string deviceName = msg->data;
@@ -152,7 +196,6 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 																			 input_kinect_camera_topic,
 																			 input_kinect_depth_topic,
 																			 input_kinect_camera_info_topic,
-																			 debug_images_topic,
 																			 fixed_sensor_name,
 																			 output_raw_transform_topic,
 																			 featuresMemory);
@@ -184,6 +227,10 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 	}
 }
 
+/**
+ * Remove handlers for devices for which we didn't received a message for a time
+ * longer than handler_no_msg_timeout. It is called periodically
+ */
 void removeOldHandlers()
 {
 	unique_lock<timed_mutex> lock(handlersMutex, chrono::milliseconds(5000));
@@ -196,7 +243,7 @@ void removeOldHandlers()
 	for (auto it = handlers.cbegin(); it != handlers.cend();)
 	{
 		int millisSinceMsg = it->second->millisecondsSinceLastMessage() ;
-		
+
 		if(millisSinceMsg>1500)
 			ROS_INFO_STREAM(""<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
 
@@ -209,11 +256,18 @@ void removeOldHandlers()
 		else
 		{
 			//ROS_INFO_STREAM("keeping handler for "<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
-			++it;	
+			++it;
 		}
 	}
 }
 
+
+/**
+ * Main method for the node
+ * @param  argc
+ * @param  argv
+ * @return
+ */
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, NODE_NAME);
@@ -263,4 +317,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-

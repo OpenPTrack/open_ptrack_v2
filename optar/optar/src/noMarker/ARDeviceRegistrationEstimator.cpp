@@ -28,10 +28,9 @@
 using namespace std;
 using namespace cv;
 
-ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId, 
-																ros::NodeHandle& nh, 
-																geometry_msgs::TransformStamped transformKinectToWorld, 
-																std::string debugImagesTopic, 
+ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId,
+																ros::NodeHandle& nh,
+																geometry_msgs::TransformStamped transformKinectToWorld,
 																std::string fixed_sensor_name,
 																std::shared_ptr<FeaturesMemory> featuresMemory)
 {
@@ -87,7 +86,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 {
 	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
 	long arcoreTime = arcoreInputMsg->header.stamp.sec*1000000000L + arcoreInputMsg->header.stamp.nsec;
-	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;	
+	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;
 	ROS_INFO_STREAM("Parameters: "<<endl<<
             "pnp iterations = "<<pnpIterations<<endl<<
             "pnp confidence = "<<pnpConfidence<<endl<<
@@ -163,7 +162,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 	}
 
 	if(enableFeaturesMemory)
-	{	
+	{
 		const vector<FeaturesMemory::Feature> featuresFromMemory = featuresMemory->getFeatures();
 		ROS_INFO_STREAM("got "<<featuresFromMemory.size()<<" features from memory");
 		for(const FeaturesMemory::Feature& feature : featuresFromMemory)
@@ -193,7 +192,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
 	ROS_INFO("total duration is %lu ms",totalDuration);
 
-	
+
 	return r;
 }
 
@@ -272,7 +271,7 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 
 
 	if(enableFeaturesMemory)
-	{	
+	{
 		const vector<FeaturesMemory::Feature> featuresFromMemory = featuresMemory->getFeatures();
 		ROS_INFO_STREAM("got "<<featuresFromMemory.size()<<" features from memory");
 		for(const FeaturesMemory::Feature& feature : featuresFromMemory)
@@ -302,7 +301,7 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
 	ROS_INFO("total duration is %lu ms",totalDuration);
 
-	
+
 	return r;
 }
 
@@ -321,7 +320,7 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
  * @param[in]  fixedCameraMatrix              The camera matrix for the fixed camera
  * @param      kinectDepthImage               The fixed camera depth image
  * @param[in]  kinectMonoImage                The fixed camera monochrome image
- * @param[in]  arcoreImageDbg                 The image from the AR device camera, only here for debug purpouses.You can 
+ * @param[in]  arcoreImageDbg                 The image from the AR device camera, only here for debug purpouses.You can
  * 												pass a null Mat if you want. The idea is to pass here a super-low resolution
  * 												image to display in the matches_img
  * @param[in]  phonePoseArcoreFrameConverted  The AR device pose in the AR coordinate frame
@@ -986,7 +985,7 @@ int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs:
 	kinectCameraMatrix.at<double>(2,1) = kinectCameraInfo.P[4*2+1];
 	kinectCameraMatrix.at<double>(2,2) = kinectCameraInfo.P[4*2+2];
 
-	
+
 
 	arcoreImageSize.width = arcoreInputMsg->image_width_px;
 	arcoreImageSize.height = arcoreInputMsg->image_height_px;
@@ -1007,7 +1006,7 @@ int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs:
 
 
 
-	
+
 	//decode arcore image if present
 	if(arcoreInputMsg->image.data.size()>0)
 	{

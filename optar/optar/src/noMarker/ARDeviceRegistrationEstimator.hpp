@@ -59,7 +59,6 @@ public:
 	ARDeviceRegistrationEstimator(	std::string ARDeviceId,
 									ros::NodeHandle& nh,
 									geometry_msgs::TransformStamped transformKinectToWorld,
-									std::string debugImagesTopic,
 									std::string fixed_sensor_name,
 									std::shared_ptr<FeaturesMemory> featuresMemory);
 
@@ -118,65 +117,65 @@ private:
 
 
 
-int computeOrbFeatures(const cv::Mat& image,
-					std::vector<cv::KeyPoint>& keypoints,
-					cv::Mat& descriptors);
+	int computeOrbFeatures(const cv::Mat& image,
+						std::vector<cv::KeyPoint>& keypoints,
+						cv::Mat& descriptors);
 
-int findOrbMatches(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
-					const cv::Mat& arcoreDescriptors,
-					const std::vector<cv::KeyPoint>& kinectKeypoints,
-					const cv::Mat& kinectDescriptors,
-					std::vector<cv::DMatch>& matches);
+	int findOrbMatches(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
+						const cv::Mat& arcoreDescriptors,
+						const std::vector<cv::KeyPoint>& kinectKeypoints,
+						const cv::Mat& kinectDescriptors,
+						std::vector<cv::DMatch>& matches);
 
-int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches);
+	int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches);
 
-int readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
-					const sensor_msgs::CameraInfo& kinectCameraInfo,
-					cv::Mat& arcoreCameraMatrix,
-					cv::Mat& arcoreImg,
-					cv::Mat& kinectCameraMatrix,
-					cv::Mat& kinectCameraImg,
-					cv::Mat& kinectDepthImg,
-					tf::Pose& phonePoseArcoreFrameConverted);
-int readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
-					const sensor_msgs::CameraInfo& kinectCameraInfo,
-					cv::Mat& arcoreCameraMatrix,
-					cv::Mat& arcoreDescriptors,
-					std::vector<cv::KeyPoint>& arcoreKeypoints,
-					cv::Size& arcoreImageSize,
-					cv::Mat& kinectCameraMatrix,
-					cv::Mat& kinectCameraImg,
-					cv::Mat& kinectDepthImg,
-					tf::Pose& phonePoseArcoreFrameConverted,
-					cv::Mat& debugArcoreImage);
-
-
-/**
- * Checks the provided matches to ensure they have valid depth info. If the depth is not available in the depth image
- * this funciton will try to fix the image by getting the closest depth value. If the closest valid pixel is too far
- * the match will be dropped.
- */
-int fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& kinectKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches);
+	int readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
+						const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
+						const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
+						const sensor_msgs::CameraInfo& kinectCameraInfo,
+						cv::Mat& arcoreCameraMatrix,
+						cv::Mat& arcoreImg,
+						cv::Mat& kinectCameraMatrix,
+						cv::Mat& kinectCameraImg,
+						cv::Mat& kinectDepthImg,
+						tf::Pose& phonePoseArcoreFrameConverted);
+	int readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+						const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
+						const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
+						const sensor_msgs::CameraInfo& kinectCameraInfo,
+						cv::Mat& arcoreCameraMatrix,
+						cv::Mat& arcoreDescriptors,
+						std::vector<cv::KeyPoint>& arcoreKeypoints,
+						cv::Size& arcoreImageSize,
+						cv::Mat& kinectCameraMatrix,
+						cv::Mat& kinectCameraImg,
+						cv::Mat& kinectDepthImg,
+						tf::Pose& phonePoseArcoreFrameConverted,
+						cv::Mat& debugArcoreImage);
 
 
-int get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
-	const std::vector<cv::KeyPoint>& kinectKeypoints,
-	const std::vector<cv::KeyPoint>& arcoreKeypoints,
-	const cv::Mat& kinectDepthImg,
-	const cv::Mat& kinectCameraMatrix,
-    std::vector<cv::Point3f>& matches3dPos,
-    std::vector<cv::Point2f>& matchesImgPos);
+	/**
+	 * Checks the provided matches to ensure they have valid depth info. If the depth is not available in the depth image
+	 * this funciton will try to fix the image by getting the closest depth value. If the closest valid pixel is too far
+	 * the match will be dropped.
+	 */
+	int fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& kinectKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches);
 
 
-void closeWindows();
+	int get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
+		const std::vector<cv::KeyPoint>& kinectKeypoints,
+		const std::vector<cv::KeyPoint>& arcoreKeypoints,
+		const cv::Mat& kinectDepthImg,
+		const cv::Mat& kinectCameraMatrix,
+	    std::vector<cv::Point3f>& matches3dPos,
+	    std::vector<cv::Point2f>& matchesImgPos);
 
-bool detectAndFollowTransformJump();
 
-static double getDistanceVariance(std::deque<tf::Transform>& transforms, int firstIndex, int endIndex);
+	void closeWindows();
+
+	bool detectAndFollowTransformJump();
+
+	static double getDistanceVariance(std::deque<tf::Transform>& transforms, int firstIndex, int endIndex);
 
 };
 

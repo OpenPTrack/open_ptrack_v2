@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Carlo Rizzardo
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  * Collection of utility methods used by the optar module
  */
@@ -58,7 +58,7 @@ cv::Point3f get3dPoint(int x, int y, int depth_mm, double focalLengthX, double f
 /**
  * Converts a pose expressed wih the OpenCV translation-rotationvector convention
  * to a pose expressed as an Eigen vector and an Eigen quaternion
- * 
+ *
  * @param[in] rvec        OpenCV orientation vector
  * @param[in] tvec        OpenCV translation vector
  * @param     translation output Eigen translation vector
@@ -171,7 +171,7 @@ int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, f
 
 /**
  * Builds an speric marker for the specified pose. By publishing the produced marker you can view the pose in rviz
- * 
+ *
  * @param x 		the x position to put the marker at
  * @param y 		the y position to put the marker at
  * @param z 		the z position to put the marker at
@@ -182,7 +182,7 @@ int publish_pose_for_viewing(float tx, float ty, float tz, float qx, float qy, f
  * @param a 		the alpha component of the color of the marker
  * @param size 		the sie of the sphere
  * @param frame_id	the tf frame to set in the marker header
- * 
+ *
  * @return The marker
  */
 visualization_msgs::Marker buildMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
@@ -220,7 +220,7 @@ visualization_msgs::Marker buildMarker(float x, float y, float z, std::string na
 
 /**
  * Builds an arrow marker for the specified pose. By publishing the produced marker you can view the pose in rviz
- * 
+ *
  * @param x 		the x position to put the marker at
  * @param y 		the y position to put the marker at
  * @param z 		the z position to put the marker at
@@ -235,7 +235,7 @@ visualization_msgs::Marker buildMarker(float x, float y, float z, std::string na
  * @param orient_y 	quaternion orientation y
  * @param orient_z 	quaternion orientation z
  * @param orient_w 	quaternion orientation w
- * 
+ *
  * @return The built marker
  */
 visualization_msgs::Marker buildArrowMarker(float x, float y, float z, std::string name, float r, float g, float b, float a, float size, std::string frame_id,float orient_x,float orient_y,float orient_z,float orient_w)
@@ -270,9 +270,9 @@ visualization_msgs::Marker buildArrowMarker(float x, float y, float z, std::stri
 
 /**
  * Builds a marker that deletes an already published marker from rviz
- * 
+ *
  * @param name the name for the marker to be deleted
- * 
+ *
  * @return The built marker
  */
 visualization_msgs::Marker buildDeletingMarker(std::string name)
@@ -288,7 +288,7 @@ visualization_msgs::Marker buildDeletingMarker(std::string name)
 
 /**
  * Builds an speric marker for the specified pose. By publishing the produced marker you can view the pose in rviz
- * 
+ *
  * @param pose 		the pose to build the marker for
  * @param name 		the name for the marker
  * @param r 		the red component of the color of the marker
@@ -297,7 +297,7 @@ visualization_msgs::Marker buildDeletingMarker(std::string name)
  * @param a 		the alpha component of the color of the marker
  * @param size 		the sie of the sphere
  * @param frame_id	the tf frame to set in the marker header
- * 
+ *
  * @return The built marker
  */
 visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
@@ -333,7 +333,7 @@ visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::str
 
 /**
  * Builds an speric marker for the specified pose. By publishing the produced marker you can view the pose in rviz
- * 
+ *
  * @param position the position to put the marker at
  * @param name the name for the marker
  * @param r the red component of the color of the marker
@@ -342,7 +342,7 @@ visualization_msgs::Marker buildMarker(const geometry_msgs::Pose& pose, std::str
  * @param a the alpha component of the color of the marker
  * @param size the sie of the sphere
  * @param frame_id	the tf frame to set in the marker header
- * 
+ *
  * @return The built marker
  */
 visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string name, float r, float g, float b, float a, float size, std::string frame_id)
@@ -584,7 +584,7 @@ void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTran
  * @param winName    The name to give to the window
  * @param image      The image to be shown
  * @param winHeight  The height the displayed image will have in the screen, in pixels
- * @param winWidth   The width the displayed image will have in the screen, in pixels. If it is -1 
+ * @param winWidth   The width the displayed image will have in the screen, in pixels. If it is -1
  *                   it will be deduced from winHeight using the aspect of the image
  *
  */
@@ -700,7 +700,7 @@ geometry_msgs::Pose buildRosPose(double positionX, double positionY, double posi
 }
 
 /**
- * @brief      Builds a geometry_msgs::Pose object from position and orientation 
+ * @brief      Builds a geometry_msgs::Pose object from position and orientation
  *
  * @param[in]  position     The position
  * @param[in]  orientation  The orientation
@@ -714,7 +714,7 @@ geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Q
 
 /**
  * Provides a human-readable string representation of a pose
- * 
+ *
  * @return The string
  */
 std::string poseToString(tf::Pose pose)
@@ -745,9 +745,9 @@ tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose)
 
 /**
  * Computes the average position of the provided poses (does not look at the orientations)
- * 
+ *
  * @param poses The poses to average
- * 
+ *
  * @return The average position
  */
 tf::Vector3 averagePosePositions(const std::vector<tf::Pose> poses)
@@ -771,9 +771,9 @@ tf::Vector3 averagePosePositions(const std::vector<tf::Pose> poses)
 
 /**
  * Checks if the pose is valid, i.e. if it contains nan values or infinite values and if the quaternion is normalized
- * 
+ *
  * @param[in] pose The pose to be checked
- * 
+ *
  * @return True if valid, false if invalid
  */
 bool isPoseValid(const tf::Pose& pose)

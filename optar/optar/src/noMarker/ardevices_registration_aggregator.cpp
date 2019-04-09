@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Carlo Rizzardo
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  * Implementation of the ardevices_registration_aggregator ROS node
  * This node is responsible for aggregating the raw estimation produced by the ardevices_registration_single_camera_raw
@@ -74,7 +74,7 @@ void dynamicParametersCallback(optar::OptarAggregatorParametersConfig &config, u
 	for(auto const& keyValuePair: filters)
 	{
 		keyValuePair.second->filter->setupParameters(startupFramesNum,	estimate_distance_thresh_meters);
-	}	
+	}
 }
 
 
@@ -107,7 +107,7 @@ void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputR
 		shared_ptr<TransformFilterKalman> newFilter = std::make_shared<TransformFilterKalman>(1e-5,1,1, 5, 5);
 		newFilter->setupParameters(startupFramesNum,estimate_distance_thresh_meters);
 		shared_ptr<FilterTimestampCouple> couple = make_shared<FilterTimestampCouple>(newFilter);
-		
+
 		filters.insert(std::map<string, shared_ptr<FilterTimestampCouple>>::value_type(deviceId,couple));
 		ROS_INFO_STREAM("Built new filter for device  "<<deviceId);
 	}
@@ -148,7 +148,7 @@ void removeOldFilters()
 		else
 		{
 			//ROS_INFO_STREAM("keeping handler for "<<it->first<< " no msg since "<<millisSinceMsg<< " ms");
-			++it;	
+			++it;
 		}
 	}
 }
@@ -176,9 +176,9 @@ int main(int argc, char** argv)
 {
 	ros::init(argc, argv, NODE_NAME);
 	ros::NodeHandle nh;
-	
+
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
-	
+
 	dynamic_reconfigure::Server<optar::OptarAggregatorParametersConfig> server;
 	dynamic_reconfigure::Server<optar::OptarAggregatorParametersConfig>::CallbackType bindedDynamicParametersCallback;
 	bindedDynamicParametersCallback = boost::bind(&dynamicParametersCallback, _1, _2);
@@ -204,5 +204,3 @@ int main(int argc, char** argv)
 	}
 
 }
-
-

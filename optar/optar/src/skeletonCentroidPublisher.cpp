@@ -1,13 +1,13 @@
 /**
  * @file
  *
- * @author Carlo Rizzardo
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  * Main file for the skeleton_centroid_publisher node. The node publishes the chest positions
  * from the skeleton tracking as if they were centroids from the centorid tracking.
  * Useful for debug purposes.
  *
- * It will publish them both on a TrackArray topic and on a MarkerArray topic.
+ * It will publish both a TrackArray topic and a MarkerArray topic.
  * See the main function for the topic names
  */
 
