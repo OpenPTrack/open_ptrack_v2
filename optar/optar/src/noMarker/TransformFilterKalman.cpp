@@ -3,8 +3,7 @@
  *
  * @author Carlo Rizzardo
  *
- * Implementation of the TransformFilterKalman class, which implements a kalman filter for
- * 3D static poses
+ * Methods implementations for the TransformFilterKalman class
  */
 
 #include "TransformFilterKalman.hpp"
@@ -13,11 +12,13 @@
 
 /**
  * Construct the kalman filter object, specifying the covariance values to use
- * @param processNoiseCovariance Process noise covariance, models the variability of the actual real process value
- * @param measurementNoiseCovariance Measurement noise covariance, models the amount of noise in the measurements
- * @param posterioriErrorCovariance Initial value for the posteriori error covariance, which will be then actually estimated by the filter
+ * @param processNoiseCovariance           Process noise covariance, models the variability of the actual real process value
+ * @param measurementNoiseCovariance       Measurement noise covariance, models the amount of noise in the measurements
+ * @param posterioriErrorCovariance        Initial value for the posteriori error covariance, which will be then actually estimated by the filter
+ * @param startupFramesNum                 Number of input poses used to initialze the Kalman filter
+ * @param estimateDistanceThreshold_meters Maximum distance between a new input pose and the current estimate for the new pose to be taken into consideration
  */
-TransformFilterKalman::TransformFilterKalman(double processNoiseCovariance, double measurementNoiseCovariance, double posterioriErrorCovariance, int startupFramesNum, double estimateDistanceThreshold_meters) : 
+TransformFilterKalman::TransformFilterKalman(double processNoiseCovariance, double measurementNoiseCovariance, double posterioriErrorCovariance, int startupFramesNum, double estimateDistanceThreshold_meters) :
 	mProcessNoiseCovariance(processNoiseCovariance),
 	mMeasurementNoiseCovariance(measurementNoiseCovariance),
 	mPosterioriErrorCovariance(posterioriErrorCovariance)
@@ -47,7 +48,7 @@ TransformFilterKalman::TransformFilterKalman(double processNoiseCovariance, doub
 	//  [0 0 0 1 0 0]
 	//  [0 0 0 0 1 0]
 	//  [0 0 0 0 0 1]
-	cv::setIdentity(kalmanFilter.measurementMatrix, cv::Scalar(1)); 
+	cv::setIdentity(kalmanFilter.measurementMatrix, cv::Scalar(1));
 
 	setupParameters(startupFramesNum, estimateDistanceThreshold_meters);
 }
@@ -55,7 +56,8 @@ TransformFilterKalman::TransformFilterKalman(double processNoiseCovariance, doub
 
 /**
  * Sets up the filter parameters
- * @param startupFramesNum number of frames used to initialize the filter before starting to use Kalman
+ * @param startupFramesNum                  number of frames used to initialize the filter before starting to use Kalman
+ * @param estimateDistanceThreshold_meters  Maximum distance between a new input pose and the current estimate for the new pose to be taken into consideration
  */
 void TransformFilterKalman::setupParameters(int startupFramesNum, double estimateDistanceThreshold_meters)
 {
@@ -65,19 +67,19 @@ void TransformFilterKalman::setupParameters(int startupFramesNum, double estimat
 
 
 /**
- * Updates the estimation with a new pose measurement
+ * Updates the kalman filter with a new pose measurement
  * @param pose The new pose
  *
- * @return the new estimate
+ * @return the new kalman estimate
  */
 tf::Pose TransformFilterKalman::updateKalman(const tf::Pose& pose)
-{	
+{
 
 	cv::Mat measurement = poseToMat(pose);
 
-	if(!didEverUpdate)
+	if(!didKalmanEverUpdate)
 	{
-		didEverUpdate = true;
+		didKalmanEverUpdate = true;
 		kalmanFilter.statePost = measurement;
 		return pose;
 	}
@@ -90,6 +92,18 @@ tf::Pose TransformFilterKalman::updateKalman(const tf::Pose& pose)
 	return matToPose(kalmanFilter.statePost);
 }
 
+
+/**
+ * Updates the filter with a new esimate. This update method doesn't just use the
+ * kalman filter:
+ *  - it uses the first few poses to compute an average with which it initailizes
+ *    the Kalman filter
+ *  - it drops poses that are too far from the current estimate
+ *  - it detects jumps of the pose value, if a jump is detected the Kalman filter
+ *    is forced to the new value
+ * @param  pose The new raw pose
+ * @return      The new estimate (i.e. filtered pose)
+ */
 tf::Pose TransformFilterKalman::update(const tf::Pose& pose)
 {
 
@@ -149,16 +163,28 @@ tf::Pose TransformFilterKalman::update(const tf::Pose& pose)
 }
 
 /**
- * Forces the filter to this state
- * @pram pose The new state
- *
+ * Forces the filter estimate to the provided pose
+ * @param pose The new pose
  */
 void TransformFilterKalman::forceState(const tf::Pose& pose)
 {
-	kalmanFilter.statePost = poseToMat(pose);	
+	kalmanFilter.statePost = poseToMat(pose);
 }
 
-
+/**
+ * Computes the variance between the distances of the provided poses.
+ * The @p firstIndex and @p endIndex parameters allow to use a subset of the provided
+ *  list instead of the while list
+ * @param  transforms   The list of poses from which to get the distances
+ * @param  firstIndex   Use this if you want the method to only use a subset of
+ *                      the provided list. This indicates the beginning (included)
+ *                      of the subset.
+ * @param  endIndex     Use this if you want the method to only use a subset of
+ *                      the provided list. This indicates the end (excluded) of
+ *                      the subset.
+ * @param  positionMean The mean distance between the poses in the provided set
+ * @return              The variance of the distances
+ */
 double TransformFilterKalman::getDistanceVariance(std::deque<tf::Transform>& transforms, int firstIndex, int endIndex, const tf::Vector3& positionMean)
 {
 	double variance = 0;
@@ -175,6 +201,17 @@ double TransformFilterKalman::getDistanceVariance(std::deque<tf::Transform>& tra
 	return variance;
 }
 
+/**
+ * Computes the mean position of the provided poses
+ * @param  transforms The poses
+ * @param  firstIndex Use this if you want the method to only use a subset of
+ *                    the provided list. This indicates the beginning (included)
+ *                    of the subset.
+ * @param  endIndex   Use this if you want the method to only use a subset of
+ *                    the provided list. This indicates the end (excluded) of the
+ *                    subset.
+ * @return            [description]
+ */
 tf::Vector3 TransformFilterKalman::computePositionMean(std::deque<tf::Transform>& transforms, int firstIndex, int endIndex)
 {
 	tf::Vector3 positionMean(0,0,0);
@@ -191,6 +228,12 @@ tf::Vector3 TransformFilterKalman::computePositionMean(std::deque<tf::Transform>
 	return positionMean;
 }
 
+
+/**
+ * Detects a jump in the position of the estimated pose. If a jump is detected it
+ * forces the estimate to a new estimated new value
+ * @return true if it detected a jump, false if not
+ */
 bool TransformFilterKalman::detectAndFollowTransformJump()
 {
 	int historySize = transformJumpDetectorHistory.size();
@@ -233,6 +276,11 @@ bool TransformFilterKalman::detectAndFollowTransformJump()
 
 }
 
+/**
+ * Converts a pose expressed as an OpenCV Mat to a tf Pose
+ * @param  state The cv Mat
+ * @return       The tf pose
+ */
 tf::Pose TransformFilterKalman::matToPose(const cv::Mat& state)
 {
 
@@ -246,6 +294,12 @@ tf::Pose TransformFilterKalman::matToPose(const cv::Mat& state)
 	return tf::Pose(newRotation,tf::Vector3(state.at<double>(0),state.at<double>(1),state.at<double>(2)));
 }
 
+
+/**
+ * Converts a tf Pose to a pose expressed as an OpenCV Mat
+ * @param  state The tf pose
+ * @return       The OpenCV Mat
+ */
 cv::Mat TransformFilterKalman::poseToMat(const tf::Pose& pose)
 {
 	cv::Mat poseMat(6, 1, CV_64F);

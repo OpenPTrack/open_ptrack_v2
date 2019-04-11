@@ -4,9 +4,12 @@
  * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  * Implementation of the ardevices_registration_aggregator ROS node
- * This node is responsible for aggregating the raw estimation produced by the ardevices_registration_single_camera_raw
- * nodes. So it receives all the raw estimations, aggregates them and filters them to generate a unique registration
- * for each AR device
+ * This node is responsible for aggregating the raw estimates produced by the
+ * ardevices_registration_single_camera_raw nodes. So it receives all the raw
+ * estimates, aggregates them and filters them to generate a unique registration
+ * for each AR device.
+ *
+ * All the raw estimates are received on the same topic
  */
 
 #include <ros/ros.h>
@@ -25,27 +28,51 @@
 
 using namespace std;
 
+/** ROS node name */
 static const string NODE_NAME 	= "ardevices_registration_aggregator";
+/** Input topic on which we receive all the raw estimates, it should be remapped */
 static const string inputRawEstimationTopic		= "input_raw_transform_topic";
+/** Input topic on which we receive all the AR devices heartbeats, it should be remapped */
 static const string inputHearbeatTopic = "input_heartbeats_topic";
 
+/** Number of additional threads to use. We will have these and also the main thread,
+    which keeps looping */
 static const int threadsNumber = 2;
 
-static unsigned long  handler_no_msg_timeout_millis = 5000;
+/** If a device doesn't publish a heatbeat for this length of time it is removed
+    and forgotten */
+static unsigned long handler_no_msg_timeout_millis = 5000;
+/** Number of frames used to start up the filtering, to really useful, should
+    stay low */
 static int startupFramesNum = 3;
+/** Filters out new estimates that are too far from the current estimate.
+    Should stay quite big to avoid getting stuck in a bad estimate */
 static double estimate_distance_thresh_meters = 5;
 
+/**
+ * Couples an estimate filter with a timestamp to keep track of the last time we
+ *  heard from related the AR device.
+ */
 class FilterTimestampCouple
 {
 public:
+	/** The last time we heard from the AR device */
 	std::chrono::steady_clock::time_point lastTimeUsed;
+	/** The filter for the AR device */
 	shared_ptr<TransformFilterKalman> filter;
 
+	/**
+	 * @param filter The filter to use
+	 */
 	FilterTimestampCouple(shared_ptr<TransformFilterKalman> filter)
 	{
 		this->filter = filter;
 	}
 
+	/**
+	 * Returns the length of time since FilterTimestampCouple#lastTimeUsed
+	 * @return The time in milliseconds
+	 */
 	unsigned long getTimeSinceUsedMillis()
 	{
 		std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
@@ -54,11 +81,17 @@ public:
 
 };
 
+/** Filters for all the active devices registration estimates */
 static std::map<string, shared_ptr<FilterTimestampCouple>> filters;
+/** Mutex for the ::filters variable */
 static std::timed_mutex filtersMutex;
 
 
-
+/**
+ * Callback for updating the parameters via dynamic_reconfigure
+ * @param config The new parameters
+ * @param level  Not used
+ */
 void dynamicParametersCallback(optar::OptarAggregatorParametersConfig &config, uint32_t level)
 {
 	ROS_INFO_STREAM("Reconfigure Request: "<<endl<<
@@ -77,7 +110,11 @@ void dynamicParametersCallback(optar::OptarAggregatorParametersConfig &config, u
 	}
 }
 
-
+/**
+ * Callback for receiving the raw estimations from the ardevices_registration_single_camera_raw
+ * nodes
+ * @param inputRegistration Raw estimation from a single camera node
+ */
 void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputRegistration)
 {
 	string deviceId = inputRegistration->deviceId;
@@ -123,7 +160,10 @@ void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputR
 	ROS_INFO_STREAM("Published filterd transform for device "<<inputRegistration->deviceId);
 }
 
-
+/**
+ * Removes the filters for inactive devices. I.e. devices that didn't publish an heartbeat
+ * in ::handler_no_msg_timeout_millis milliseconds
+ */
 void removeOldFilters()
 {
 	std::unique_lock<std::timed_mutex> lock(filtersMutex, std::chrono::milliseconds(5000));
@@ -153,6 +193,12 @@ void removeOldFilters()
 	}
 }
 
+/**
+ * Callback for the heartbeats from all the AR devices. Discovers the active devices
+ * and sets up the filtering for them. Also, it keeps track of the active devices (those
+ * that are still publishing)
+ * @param msg Heartbeat from the AR device
+ */
 void onHeartbeatReceived(const std_msgs::StringConstPtr& msg)
 {
 	string deviceId = msg->data;
@@ -171,7 +217,15 @@ void onHeartbeatReceived(const std_msgs::StringConstPtr& msg)
 	}
 }
 
-
+/**
+ * Main method for the ROS node.
+ * Sets up listeners and avertises the output topics.
+ * Loops to remove inactive devices.
+ *
+ * @param  argc
+ * @param  argv
+ * @return
+ */
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, NODE_NAME);
@@ -186,7 +240,7 @@ int main(int argc, char** argv)
 
 
 	//This will not launch concurrent callbacks even if we have multiple spinners. That would need to be enabled explicitly somewhere
-	ros::Subscriber registrationSubscriber = nh.subscribe(inputRawEstimationTopic, 10, onRegistrationReceived);
+	ros::Subscriber registrationSubscriber = nh.subscribe(inputRawEstimationTopic, 100, onRegistrationReceived);
 	ros::Subscriber heartbeatSubscriber = nh.subscribe(inputHearbeatTopic, 100, onHeartbeatReceived);
 
 	ros::AsyncSpinner spinner(threadsNumber);

@@ -53,7 +53,7 @@
 using namespace cv;
 using namespace std;
 
-
+/** The ROS node name */
 static const string NODE_NAME 						= "ardevices_registration_single_camera_raw";
 /** topic for the fixed camera regular images */
 static const string input_kinect_camera_topic		    = "kinect_camera" ;

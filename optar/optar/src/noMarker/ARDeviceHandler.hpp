@@ -43,6 +43,8 @@
  *
  * The computed transform is published as a opt_msgs::ARDeviceRegistration message
  * on the topic specified in the constructor.
+ * Actually, all the handlers for all the AR devices and all the fixed cameras publish
+ * on the same topic, which is read from the ardevices_registration_aggregator.
  *
  * This class supports estimating the transform both using images from the AR device
  * (opt_msgs::ArcoreCameraImage messages) or from precomputed features sent from

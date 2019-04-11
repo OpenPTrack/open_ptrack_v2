@@ -11,9 +11,13 @@
 #include <opt_msgs/OptarNtpMessage.h>
 #include <cv_bridge/cv_bridge.h>
 
-
+/** Publisher for publishing the responses to the clients' queries */
 ros::Publisher pub;
 
+/**
+ * Callback for incoming queries
+ * @param inMsg Message from a client
+ */
 void callback(const opt_msgs::OptarNtpMessagePtr& inMsg)
 {
 	if(inMsg->type==opt_msgs::OptarNtpMessage::QUERY)
@@ -29,7 +33,12 @@ void callback(const opt_msgs::OptarNtpMessagePtr& inMsg)
 	}
 }
 
-
+/**
+ * Main functin of the ROS node
+ * @param  argc
+ * @param  argv
+ * @return
+ */
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "ntp_server");

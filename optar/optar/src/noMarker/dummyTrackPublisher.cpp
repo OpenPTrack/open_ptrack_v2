@@ -12,11 +12,18 @@
 #include <opt_msgs/TrackArray.h>
 #include <cv_bridge/cv_bridge.h>
 
+/** The node name */
 #define NODE_NAME "dummy_track_publisher"
 
-ros::Publisher pub;
 
-
+/**
+ * Builds a track message
+ * @param      x          x position
+ * @param      y          y position
+ * @param      z          z position
+ * @param      id         track id
+ * @param[out] track The built track is returned here
+ */
 void buildTrack(double x, double y, double z, int id, opt_msgs::Track& track)
 {
 		track.id = id;
@@ -42,14 +49,19 @@ void buildTrack(double x, double y, double z, int id, opt_msgs::Track& track)
 }
 
 
-
+/**
+ * Main method for the ROS node. Regularly publishes the dummy track
+ * @param  argc
+ * @param  argv
+ * @return
+ */
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, NODE_NAME);
 	ros::NodeHandle nh;
 
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
-	pub = nh.advertise<opt_msgs::TrackArray>("/optar/dummy_track", 10);
+	ros::Publisher pub = nh.advertise<opt_msgs::TrackArray>("/optar/dummy_track", 10);
 
 	ros::Rate r(10); // 10 hz
 	while (ros::ok())

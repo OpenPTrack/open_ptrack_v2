@@ -401,8 +401,10 @@ uint16_t getPixelSafe(const Mat& image, const Point2i p, uint16_t outOfBoundsVal
 }
 
 
+
+
 /**
- * @brief      Finds the closest non-zero pixel for the specified position in the specified image
+ * Finds the closest non-zero pixel for the specified position in the specified image
  *
  * @param[in]  image    The image
  * @param[in]  x        The x position
@@ -412,7 +414,7 @@ uint16_t getPixelSafe(const Mat& image, const Point2i p, uint16_t outOfBoundsVal
  * @return The closest non-zero pixel position. If no non-zero pixel has been found within the specified area
  *         it will return a pixel that is not in the specified area
  */
-Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, const double maxDist)
+cv::Point2i findNearestNonZeroPixel(const cv::Mat& image, int x, int y, double maxDist)
 {
 	//ROS_INFO("searching closest non-zero pixel for %d;%d",x,y);
 	if(image.type()!=CV_16U)
@@ -481,7 +483,7 @@ Point2i findNearestNonZeroPixel(const Mat& image, int x, int y, const double max
  *
  * @return the pixel, if no non-zero pixel is found it returns [x,y], i.e. the central pixel
  */
-Point2i findLowestNonZeroInRing(const Mat& image, int x, int y, double maxRadius, double minRadius)
+cv::Point2i findLowestNonZeroInRing(const cv::Mat& image, int x, int y, double maxRadius, double minRadius)
 {
 	//ROS_INFO("searching closest non-zero pixel for %d;%d",x,y);
 	if(image.type()!=CV_16U)

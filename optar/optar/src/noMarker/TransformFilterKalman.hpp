@@ -3,8 +3,7 @@
  *
  * @author Carlo Rizzardo
  *
- * Definition of the TransformFilterKalman class, which implements a kalman filter for
- * 3D static poses
+ * Definition of the TransformFilterKalman class
  */
 #ifndef TRANSFORM_KALMAN_FILTER_HPP
 #define TRANSFORM_KALMAN_FILTER_HPP
@@ -15,28 +14,45 @@
 #include "TransformFilter.hpp"
 
 
+/**
+ * Filter for 3d Poses that makes use of a Kalman filter and some heuristics
+ */
 class TransformFilterKalman : public TransformFilter
 {
 public:
-	static const int numberOfStates = 6;            // the number of states
-	static const int numberOfMeasurements = 6;       // the number of measured states
-	static const int numberOfInputs = 0;             // the number of action control
+	/** Number of states monitored by the Kalman Filter */
+	static const int numberOfStates = 6;
+	/** Number of measured states used by the Kalman Filter */
+	static const int numberOfMeasurements = 6;
+	/** Number of inputs (action controls) used by the Kalman Filter */
+	static const int numberOfInputs = 0;
 
 private:
+	/** Process noise covariance value used to initialize the Kalman filter */
 	double mProcessNoiseCovariance;
+	/** Measurement noise covariance value used to initialize the Kalman filter */
 	double mMeasurementNoiseCovariance;
+	/** A posteriori error covariance value used to initialize the Kalman filter */
 	double mPosterioriErrorCovariance;
 
-	bool didEverUpdate = false;
+	/** If the Kalman filter ever got updated */
+	bool didKalmanEverUpdate = false;
 
+	/** The OpenCV Kalman Filter */
 	cv::KalmanFilter kalmanFilter;
 
+	/** Pose history used by the transform jump detector */
 	std::deque<tf::Transform> transformJumpDetectorHistory;
+	/** Number of transforms used by the jump detector */
 	size_t transformJumpDetectorLength = 10;
+	/** Number of input poses used to initialize the Kalman Filter */
 	unsigned int startupFramesNum = 10;
+	/** Maximum distance between a new input pose and the current estimate for the new pose to be taken into consideration */
 	double estimateDistanceThreshold_meters = 5;
 
+	/** History of the input raw poses, used to initialize the Kalman filter */
 	std::vector<tf::Pose> rawEstimationsHistory;
+	/** The last computed estimate */
 	tf::Pose lastEstimate;
 
 

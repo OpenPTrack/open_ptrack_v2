@@ -19,11 +19,18 @@
 #include <visualization_msgs/MarkerArray.h>
 #include "utils.hpp"
 
+/** The ROS node name */
 #define NODE_NAME "skeleton_centroid_publisher"
 
+/** Publisher for publishing the centorid tracks */
 ros::Publisher pub;
+/** Publisher for publishing the rviz markers */
 ros::Publisher pubMarker;
 
+/**
+ * Callback for the incoming skeleton tracks
+ * @param inMsg An incoming skeleton track array
+ */
 void callback(const opt_msgs::SkeletonTrackArray& inMsg)
 {
 	ROS_DEBUG("received skeleton track");
@@ -56,7 +63,12 @@ void callback(const opt_msgs::SkeletonTrackArray& inMsg)
 	ROS_DEBUG("published centroid track");
 }
 
-
+/**
+ * Main function of the ROS node
+ * @param  argc
+ * @param  argv 
+ * @return
+ */
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, NODE_NAME);
