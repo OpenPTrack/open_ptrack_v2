@@ -89,7 +89,14 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 	}
 }
 
-
+/**
+ * Computes a new estimation (if possible) using the precomputed features received from the AR
+ * device. The estimation is computed using ARDeviceRegistrationEstimator::featuresCallback()
+ *
+ * @param arcoreInputMsg       The message from the AR device
+ * @param kinectInputCameraMsg Regular mono image message from the fixed camera
+ * @param kinectInputDepthMsg  Depth image from the fixed camera
+ */
 void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg)
@@ -135,9 +142,20 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 	}
 }
 
+/**
+ * Constructs a new ARDeviceHandler, you will neew to start it with ARDeviceHandler::start()
+ *
+ * @param ARDeviceId                    device Id of the handled device
+ * @param fixedCameraMonoTopicName      Topic for receiving the mono images from the fixed camera
+ * @param fixedCameraDepthTopicName     Topic for receiving the depth images from the fixed camera
+ * @param cameraInfoTopicName           Topic for receiving the camera info for the fixed camera
+ * @param fixed_sensor_name             Sensor name of the fixed camera
+ * @param outputRawEstimationTopic      Topic on which to output the registration estimation
+ * @param featuresMemory                FeatureMemory object to remember and share useful features
+ */
 ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
-									std::string cameraRgbTopicName,
-									std::string cameraDepthTopicName,
+									std::string fixedCameraMonoTopicName,
+									std::string fixedCameraDepthTopicName,
 									std::string cameraInfoTopicName,
 									std::string fixed_sensor_name,
 									std::string outputRawEstimationTopic,
@@ -146,8 +164,8 @@ ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
 
 	this->ARDeviceId = ARDeviceId;
 	this->fixed_sensor_name = fixed_sensor_name;
-	this->cameraRgbTopicName = cameraRgbTopicName;
-	this->cameraDepthTopicName = cameraDepthTopicName;
+	this->fixedCameraMonoTopicName = fixedCameraMonoTopicName;
+	this->fixedCameraDepthTopicName = fixedCameraDepthTopicName;
 	this->cameraInfoTopicName = cameraInfoTopicName;
 	this->outputRawEstimationTopic = outputRawEstimationTopic;
 	this->featuresMemory = featuresMemory;
@@ -158,6 +176,9 @@ ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
 
 }
 
+/**
+ * Destructs the object unsubscribing from the topics if needed
+ */
 ARDeviceHandler::~ARDeviceHandler()
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
@@ -175,7 +196,17 @@ ARDeviceHandler::~ARDeviceHandler()
 }
 
 
-
+/**
+ * Starts up the handler:
+ *   - Advertises the output registration topic
+ *   - Gets the fixed camera info
+ *   - Gets the fixed camera position
+ *   - Sets up the registration estimator
+ *   - Sets up the input topics listeners
+ *
+ * @param  nodeHandle The ROS node handle
+ * @return            0 on success, a negative value on fail
+ */
 int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
@@ -238,7 +269,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 
-
+	//setup the registration estimator
 	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, fixed_sensor_name, featuresMemory);
 	estimator->setupParameters(pnpReprojectionError,
 								pnpConfidence,
@@ -254,12 +285,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 								enableFeaturesMemory);
 
 
-
-
-	arcoreCamera_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraImage>>(*nodeHandle, arDeviceCameraMsgTopicName, 5);
-	kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraRgbTopicName, 30*10);
-	kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraDepthTopicName, 30*10);
-
+	//set up the input topics listeners
 
 	//instantiate and set up the policy
 	MyApproximateSynchronizationPolicy policy = MyApproximateSynchronizationPolicy(60);//instatiate setting up the queue size
@@ -269,6 +295,12 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 	policy.setInterMessageLowerBound(2,ros::Duration(0,15000000));// about 30 fps but sometimes more
 	policy.setMaxIntervalDuration(ros::Duration(5,0));// 5 seconds
 
+
+	arcoreCamera_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraImage>>(*nodeHandle, arDeviceCameraMsgTopicName, 5);
+	kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraMonoTopicName, 30*10);
+	kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraDepthTopicName, 30*10);
+
+
 	//Instantiate a Synchronizer with our policy.
 	synchronizer = std::make_shared<message_filters::Synchronizer<MyApproximateSynchronizationPolicy>>(MyApproximateSynchronizationPolicy(policy), *arcoreCamera_sub, *kinect_img_sub, *kinect_depth_sub);
 
@@ -277,8 +309,8 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 	ROS_INFO_STREAM("Setting up images synchronizer with topics:"<<endl<<
 		ros::names::remap(arDeviceCameraMsgTopicName)<<endl<<
-		ros::names::remap(cameraRgbTopicName)<<endl<<
-		ros::names::remap(cameraDepthTopicName)<<endl);
+		ros::names::remap(fixedCameraMonoTopicName)<<endl<<
+		ros::names::remap(fixedCameraDepthTopicName)<<endl);
 	synchronizer->registerCallback(f);
 
 
@@ -296,8 +328,8 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 	featuresTpc_arcore_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>>(*nodeHandle, arDeviceFeaturesMsgTopicName, 1);
-	featuresTpc_kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraRgbTopicName, 1);
-	featuresTpc_kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, cameraDepthTopicName, 1);
+	featuresTpc_kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraMonoTopicName, 1);
+	featuresTpc_kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraDepthTopicName, 1);
 
 	//Instantiate a Synchronizer with our policy.
 	featuresTpc_synchronizer = std::make_shared<message_filters::Synchronizer<FeaturesApproximateSynchronizationPolicy>>(FeaturesApproximateSynchronizationPolicy(featuresPolicy), *featuresTpc_arcore_sub, *featuresTpc_kinect_img_sub, *featuresTpc_kinect_depth_sub);
@@ -309,8 +341,8 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 	ROS_INFO_STREAM("Setting up images-features synchronizer with topics:"<<endl<<
 		ros::names::remap(arDeviceFeaturesMsgTopicName)<<endl<<
-		ros::names::remap(cameraRgbTopicName)<<endl<<
-		ros::names::remap(cameraDepthTopicName)<<endl);
+		ros::names::remap(fixedCameraMonoTopicName)<<endl<<
+		ros::names::remap(fixedCameraDepthTopicName)<<endl);
 	featuresTpc_synchronizer->registerCallback(featuresCallbackFunction);
 
 	lastTimeReceivedMessage = std::chrono::steady_clock::now();
@@ -319,6 +351,10 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 	return 0;
 }
 
+/**
+ * Unsubscribes from the input topics
+ * @return 0 on success, a negative value on fail
+ */
 int ARDeviceHandler::stop()
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
@@ -336,6 +372,22 @@ int ARDeviceHandler::stop()
 	return 0;
 }
 
+/**
+ * Updates the parameters to be used
+ * @param  pnpReprojectionError                    see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  pnpConfidence                           see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  pnpIterations                           see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  matchingThreshold                       see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  reprojectionErrorDiscardThreshold       see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  orbMaxPoints                            see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  orbScaleFactor                          see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  orbLevelsNumber                         see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  phoneOrientationDifferenceThreshold_deg see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  showImages                              see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  minimumMatchesNumber                    see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  enableFeaturesMemory                    see optar/cfg/OptarSingleCameraParameters.cfg
+ * @return                                         0 on success, a negative value on fail
+ */
 int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 					double pnpConfidence,
 					double pnpIterations,
@@ -386,13 +438,19 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 	return 0;
 }
 
-
+/**
+ * Gets the device ID for the AR device handled by this object
+ * @return The device ID
+ */
 string ARDeviceHandler::getARDeviceId()
 {
 	return ARDeviceId;
 }
 
-
+/**
+ * Return the time since this handler last reeived a message from the AR device, in milliseconds
+ * @return Th time in milliseconds
+ */
 int ARDeviceHandler::millisecondsSinceLastMessage()
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));

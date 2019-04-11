@@ -1,4 +1,12 @@
-
+/**
+ * @file
+ *
+ *
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
+ *
+ *
+ * ARDeviceRegistrationEstimator methods implementation file
+ */
 
 #include "ARDeviceRegistrationEstimator.hpp"
 #include <opencv2/highgui/highgui.hpp>
@@ -28,19 +36,27 @@
 using namespace std;
 using namespace cv;
 
+/**
+ * Constructs the estimator
+ * @param ARDeviceId                  Id of the AR device for which we are estimating the registration
+ * @param nh                          ROS node handle
+ * @param transformFixedCameraToWorld Tf transform between the fixed camera and the /world frame
+ * @param fixed_sensor_name           Sensor name of the fixed camera
+ * @param featuresMemory              Features memory to use
+ */
 ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId,
 																ros::NodeHandle& nh,
-																geometry_msgs::TransformStamped transformKinectToWorld,
+																geometry_msgs::TransformStamped transformFixedCameraToWorld,
 																std::string fixed_sensor_name,
 																std::shared_ptr<FeaturesMemory> featuresMemory)
 {
-	this->transformKinectToWorld = transformKinectToWorld;
+	this->transformFixedCameraToWorld = transformFixedCameraToWorld;
 	this->ARDeviceId = ARDeviceId;
 	this->fixed_sensor_name = fixed_sensor_name;
 	this->featuresMemory = featuresMemory;
 
 	pose_raw_pub = nh.advertise<geometry_msgs::PoseStamped>("optar/"+ARDeviceId+"/"+outputPoseRaw_topicName, 10);
-	pose_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
+	debug_markers_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
 
 	image_transport::ImageTransport it(nh);
 	matches_images_pub = it.advertise("optar/"+ARDeviceId+"/img_matches_"+fixed_sensor_name, 1);
@@ -49,7 +65,21 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId,
 }
 
 
-
+/**
+ * Updates the parameters used to perform the estimation
+ * @param pnpReprojectionError                    See the homonymous member variable description
+ * @param pnpConfidence                           See the homonymous member variable description
+ * @param pnpIterations                           See the homonymous member variable description
+ * @param matchingThreshold                       See the homonymous member variable description
+ * @param reprojectionErrorDiscardThreshold       See the homonymous member variable description
+ * @param orbMaxPoints                            See the homonymous member variable description
+ * @param orbScaleFactor                          See the homonymous member variable description
+ * @param orbLevelsNumber                         See the homonymous member variable description
+ * @param phoneOrientationDifferenceThreshold_deg See the homonymous member variable description
+ * @param showImages                              See the homonymous member variable description
+ * @param minimumMatchesNumber                    See the homonymous member variable description
+ * @param enableFeaturesMemory                    See the homonymous member variable description
+ */
 void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 					double pnpConfidence,
 					double pnpIterations,
@@ -78,7 +108,17 @@ void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 
 }
 
-
+/**
+ * Updates the estimate using precomputed fetures from the mobile camera and live images from
+ * the fixed camera. And, if enabled, the features memory
+ *
+ * @param  arcoreInputMsg       Message from the mobile camera, containing precomputed features,
+ *                              camera info, and camera position in the mobile frame
+ * @param  kinectInputCameraMsg Regular mono image from the fixed camera
+ * @param  kinectInputDepthMsg  Depth image from the fixed camera
+ * @param  kinectCameraInfo     Camera info for the fixed camera
+ * @return                      0 on success, a negative value on fail
+ */
 int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
@@ -196,6 +236,21 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
 	return r;
 }
 
+
+/**
+ * Updates the estimate using a live image from the mobile camera and live images from
+ * the fixed camera. And, if enabled, the features memory
+ *
+ * @param  arcoreInputMsg       Message from the mobile camera, containing a camera image,
+ *                              camera info, and camera position in the mobile frame
+ * @param  kinectInputCameraMsg Regular mono image from the fixed camera
+ * @param  kinectInputDepthMsg  Depth image from the fixed camera
+ * @param  kinectCameraInfo     Camera info for the fixed camera
+ * @return                      returns zero in case of success, a negative value in case of an
+ *                              internal error, a positive value greater than zero if it couldn't
+ *                              determine the transformation because the device is looking at
+ *                              something too different to what the fixed camera is seeing.
+ */
 int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
@@ -307,8 +362,9 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 
 
 /**
- * @brief      Estimates the transformation using the descriptors and keypoints from the fixed camera and the AR device
- * 				if ARDeviceRegistrationEstimator#showImages is set it will also publish an image showing the matches between the images
+ * Estimates the transformation using the descriptors and keypoints from the fixed camera
+ * and the AR device. If ARDeviceRegistrationEstimator#showImages is set it will also publish
+ * an image showing the matches between the images.
  *
  * @param[in]  arcoreKeypoints                The keypoints in the AR device image
  * @param[in]  arcoreDescriptors              The descriptors corrwsponding to the AR device keypoints
@@ -320,15 +376,18 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
  * @param[in]  fixedCameraMatrix              The camera matrix for the fixed camera
  * @param      kinectDepthImage               The fixed camera depth image
  * @param[in]  kinectMonoImage                The fixed camera monochrome image
- * @param[in]  arcoreImageDbg                 The image from the AR device camera, only here for debug purpouses.You can
- * 												pass a null Mat if you want. The idea is to pass here a super-low resolution
- * 												image to display in the matches_img
+ * @param[in]  arcoreImageDbg                 The image from the AR device camera, only here for debug
+ *                                            purpouses.You can pass a null Mat if you want. The idea
+ *                                            is to pass here a super-low resolution image to display
+ *                                            in the matches_img
  * @param[in]  phonePoseArcoreFrameConverted  The AR device pose in the AR coordinate frame
- * @param[in]  timestamp                      The timestamp of the images. The images should be all roughly from the same instant
+ * @param[in]  timestamp                      The timestamp of the images. The images should be all
+ *                                            roughly from the same instant
  * @param[in]  fixedCameraFrameId             The fixed camera tf frame_id
  *
- * @return     returns zero in case of success, a negative value in case of an internal error, a positive value greater than zero if
- * 				it couldn't determine the transformation because the device is looking at something too different to what the fixed camera is seeing.
+ * @return     returns zero in case of success, a negative value in case of an internal error, a
+ *             positive value greater than zero if it couldn't determine the transformation because
+ *             the device is looking at something too different to what the fixed camera is seeing.
  */
 int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
 				const cv::Mat& arcoreDescriptors,
@@ -358,7 +417,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 
 	std::vector<cv::DMatch> matches;
-	int r = findOrbMatches(arcoreKeypoints, arcoreDescriptors, fixedKeypoints, fixedDescriptors, matches);
+	int r = findOrbMatches(arcoreDescriptors, fixedDescriptors, matches);
 	if(r<0)
 	{
 		ROS_ERROR("error finding matches");
@@ -438,7 +497,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		cv::Point3f pos3d = goodMatches3dPos.at(i);
 		markerArray.markers.push_back( buildMarker(	pos3d,"match"+std::to_string(i),0,0,1,1, 0.2, fixedCameraFrameId));//matches are blue
 	}
-	pose_marker_pub.publish(markerArray);
+	debug_markers_pub.publish(markerArray);
 	cv::Mat matchesImg;
 	if(showImages)
 	{
@@ -585,7 +644,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	phonePoseKinect.header.stamp = timestamp;
 	//transform to world frame
 	geometry_msgs::PoseStamped phonePose;
-	tf2::doTransform(phonePoseKinect,phonePose,transformKinectToWorld);
+	tf2::doTransform(phonePoseKinect,phonePose,transformFixedCameraToWorld);
 	phonePose.header.frame_id = "/world";
 
 	//ROS_INFO_STREAM("estimated pose before transform: "<<phonePoseKinect.pose.position.x<<" "<<phonePoseKinect.pose.position.y<<" "<<phonePoseKinect.pose.position.z<<" ; "<<phonePoseKinect.pose.orientation.x<<" "<<phonePoseKinect.pose.orientation.y<<" "<<phonePoseKinect.pose.orientation.z<<" "<<phonePoseKinect.pose.orientation.w);
@@ -713,7 +772,15 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 
 
-
+/**
+ * Esxtracts ORB features from the provided image. Using the parameters set in the related member
+ * variables
+ *
+ * @param       image       The image to use
+ * @param[out]  keypoints   The keypoint will be returned here
+ * @param[out]  descriptors The descriptors will be returned here
+ * @return             0 on success, a negatove value on fail
+ */
 int ARDeviceRegistrationEstimator::computeOrbFeatures(const cv::Mat& image,
 					std::vector<cv::KeyPoint>& keypoints,
 					cv::Mat& descriptors)
@@ -721,10 +788,10 @@ int ARDeviceRegistrationEstimator::computeOrbFeatures(const cv::Mat& image,
 	keypoints.clear();
 	cv::Ptr<cv::ORB> orb;
 
-    orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber);
+	orb = cv::ORB::create(orbMaxPoints,orbScaleFactor,orbLevelsNumber);
 
 
-    orb->detect(image, keypoints);
+	orb->detect(image, keypoints);
 	if ( keypoints.empty() )
 	{
 		ROS_ERROR("No keypoints found");
@@ -741,23 +808,34 @@ int ARDeviceRegistrationEstimator::computeOrbFeatures(const cv::Mat& image,
 }
 
 
-
-int ARDeviceRegistrationEstimator::findOrbMatches(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
+/**
+ * Finds matches between ORB descriptors. Using the parameters set in the related member
+ * @param  arcoreDescriptors Descriptors for the mobile camera
+ * @param  kinectDescriptors Descriptors for the fixed camera
+ * @param  matches           The matches are returned here
+ * @return                   0 on success
+ */
+int ARDeviceRegistrationEstimator::findOrbMatches(
 													const cv::Mat& arcoreDescriptors,
-													const std::vector<cv::KeyPoint>& fixedKeypoints,
 													const cv::Mat& kinectDescriptors,
 													std::vector<cv::DMatch>& matches)
 {
 
   	//find matches between the descriptors
-   	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
-    cv::BFMatcher::create(cv::NORM_HAMMING)->match(arcoreDescriptors,kinectDescriptors,matches);//arcore is query, kinect is trains
-   	std::chrono::steady_clock::time_point afterMatching = std::chrono::steady_clock::now();
+ 	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
+  cv::BFMatcher::create(cv::NORM_HAMMING)->match(arcoreDescriptors,kinectDescriptors,matches);//arcore is query, kinect is trains
+ 	std::chrono::steady_clock::time_point afterMatching = std::chrono::steady_clock::now();
 	unsigned long matchingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterMatching - beforeMatching).count();
 	ROS_DEBUG("Descriptors matching took %lu ms",matchingDuration);
 	return 0;
 }
 
+/**
+ * Filters the provided matches according to related member variables
+ * @param  matches     Mathces to be filtered
+ * @param  goodMatches The filtere mathces are returned here
+ * @return             0 on success
+ */
 int ARDeviceRegistrationEstimator::filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches)
 {
 	double max_dist = -10000000;
@@ -810,6 +888,21 @@ int ARDeviceRegistrationEstimator::filterMatches(const std::vector<cv::DMatch>& 
 	return 0;
 }
 
+
+/**
+ * Reads the input messages from an imagesCallback and extracts the data from them
+ * @param  arcoreInputMsg                     The input message from the mobile camera
+ * @param  kinectInputCameraMsg               Regular mono image message from the fixed camera
+ * @param  kinectInputDepthMsg                Depth image message from the fixed camera
+ * @param  kinectCameraInfo                   Camera info message for the fixed camera
+ * @param  arcoreCameraMatrix[out]            The camera matrix for the mobile camera is returned here
+ * @param  arcoreImg[out]                     The image from the mobile camera is returned here
+ * @param  kinectCameraMatrix[out]            The camera matrix for the fixed camera is returned here
+ * @param  kinectCameraImg[out]               The regular mono image from the fixed camera is returned here
+ * @param  kinectDepthImg[out]                The depth image from the fixed camera is returned here
+ * @param  phonePoseArcoreFrameConverted[out] The mobile camera pose in the mobile camera frame is returned here
+ * @return                                    0 on success, negative in case of error
+ */
 int ARDeviceRegistrationEstimator::readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
@@ -944,7 +1037,23 @@ int ARDeviceRegistrationEstimator::readReceivedImageMessages(const opt_msgs::Arc
 }
 
 
-
+/**
+ * Reads the input messages for a featuresCallback and extracts the data from them
+ * @param  arcoreInputMsg                     The input message from the mobile camera
+ * @param  kinectInputCameraMsg               Regular mono image message from the fixed camera
+ * @param  kinectInputDepthMsg                Depth image message from the fixed camera
+ * @param  kinectCameraInfo                   Camera info message for the fixed cmaera
+ * @param  arcoreCameraMatrix[out]            The camera matrix for the mobile camera is returned here
+ * @param  arcoreDescriptors[out]             The precomputed descriptors from the mobiel camera are returned here
+ * @param  arcoreKeypoints[out]               The precomputed keypoints from the mobiel camera are returned here
+ * @param  arcoreImageSize[out]               The mobile camera image size is returned here
+ * @param  kinectCameraMatrix[out]            The camera matrix for the fixed camera is returned here
+ * @param  kinectCameraImg[out]               The regular mono image from the fixed camera is returned here
+ * @param  kinectDepthImg[out]                The depth image from the fixed camera is returned here
+ * @param  phonePoseArcoreFrameConverted[out] The mobile camera pose in the mobile camera frame is returned here
+ * @param  debugArcoreImage[out]              The debug image from the mobile amera is retuend here
+ * @return                                    0 on success, a negative value on fail
+ */
 int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
@@ -1115,8 +1224,14 @@ int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs:
 
 /**
  * Checks the provided matches to ensure they have valid depth info. If the depth is not available in the depth image
- * this funciton will try to fix the image by getting the closest depth value. If the closest valid pixel is too far
+ * this function will try to fix the image by getting the closest depth value. If the closest valid pixel is too far
  * the match will be dropped.
+ *
+ * @param  inputMatches   Matches to check
+ * @param  fixedKeypoints Keypoints on the fixed camera
+ * @param  kinectDepthImg Fixed camera depth image
+ * @param  outputMatches  The fixed matches are returned here
+ * @return                0 on success
  */
 int ARDeviceRegistrationEstimator::fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& fixedKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches)
 {
@@ -1148,14 +1263,25 @@ int ARDeviceRegistrationEstimator::fixMatchesDepthOrDrop(const std::vector<cv::D
 	return 0;
 }
 
-
+/**
+ * Gets the 3d position of the matches and also their 2d position on the mobile camera image
+ * @param  inputMatches            The matches
+ * @param  fixedKeypoints          The keypoints on the fixed camera side
+ * @param  arcoreKeypoints         The keypoints on the mobile camera side
+ * @param  kinectDepthImg          The depth image from the fixed camera
+ * @param  kinectCameraMatrix      The cmaera matrix for the fixed camera
+ * @param  matches3dPos[out]       The 3d positions of the matches are returned here
+ * @param  matchesImgPos[out]      The 2d pixel positions of the matches on the mobile camera
+ *                                 image are returned here
+ * @return                         0 on success
+ */
 int ARDeviceRegistrationEstimator::get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
 	const std::vector<cv::KeyPoint>& fixedKeypoints,
 	const std::vector<cv::KeyPoint>& arcoreKeypoints,
 	const cv::Mat& kinectDepthImg,
 	const cv::Mat& kinectCameraMatrix,
-    std::vector<cv::Point3f>& matches3dPos,
-    std::vector<cv::Point2f>& matchesImgPos)
+	std::vector<cv::Point3f>& matches3dPos,
+	std::vector<cv::Point2f>& matchesImgPos)
 {
 	matches3dPos.clear();
 	matchesImgPos.clear();
@@ -1178,26 +1304,46 @@ int ARDeviceRegistrationEstimator::get3dPositionsAndImagePositions(const std::ve
 }
 
 
+/**
+ * Gets the number of matches used in the last estimation
+ * @return The number of matches
+ */
 int ARDeviceRegistrationEstimator::getLastEstimateMatchesNumber()
 {
 	return lastEstimateMatchesNumber;
 }
 
+/**
+ * Gets the reprojection error of the last estimate
+ * @return The reprojection error
+ */
 double ARDeviceRegistrationEstimator::getLastEstimateReprojectionError()
 {
 	return lastEstimateReprojectionError;
 }
 
+/**
+ * Gets the last registration estimate
+ * @return The estimate
+ */
 geometry_msgs::TransformStamped ARDeviceRegistrationEstimator::getLastEstimate()
 {
 	return lastEstimate;
 }
 
+/**
+ * Gets the device ID of the AR device of which we are estimating the registration
+ * @return [description]
+ */
 string ARDeviceRegistrationEstimator::getARDeviceId()
 {
 	return ARDeviceId;
 }
 
+/**
+ * Tells if this estimator has ever computed an estimate successfully
+ * @return did it?
+ */
 bool ARDeviceRegistrationEstimator::hasEstimate()
 {
 	return didComputeEstimation;

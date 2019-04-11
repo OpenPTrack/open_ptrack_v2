@@ -1,3 +1,13 @@
+/**
+ * @file
+ *
+ *
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
+ *
+ *
+ * ARDeviceRegistrationEstimator class declaration file
+ */
+
 #ifndef AR_DEVICE_REGISTRATION_ESIMATOR_HPP
 #define AR_DEVICE_REGISTRATION_ESIMATOR_HPP
 
@@ -13,52 +23,93 @@
 #include "TransformFilterKalman.hpp"
 #include "FeaturesMemory.hpp"
 
+
+/**
+ * Class for estimating the registration between a mobile camera and the ROS
+ * tf coordinate frame system
+ */
 class ARDeviceRegistrationEstimator
 {
 private:
+  /** Stores the last computed estimate */
 	geometry_msgs::TransformStamped lastEstimate;
+	/** Number of matches used to compute the last estimate */
 	int lastEstimateMatchesNumber = -1;
+	/** Reprojection error in the last estimation */
 	double lastEstimateReprojectionError = -1;
+	/** If we ever computed an estimation */
 	bool didComputeEstimation=false;
-	bool createdMatchesWindow = false;
-	bool createdReprojectionWindow = false;
 
-
+	/** DEvice id for the AR device for which we are estimating the registration */
 	std::string ARDeviceId;
 
+	/** Used to keep memory of useful features, and share them with other estimators */
 	std::shared_ptr<FeaturesMemory> featuresMemory;
 
+	/** for debug purpouses, used to publish the estimated pose of the phone */
 	ros::Publisher pose_raw_pub;
-	ros::Publisher pose_marker_pub;
+	/** for debug purpouses, used to publish rviz markers for 3d points used to copute the estimation */
+	ros::Publisher debug_markers_pub;
+	/** for debug purpouses, used to publish an image showing the matches between mobile and fixed camera images */
 	image_transport::Publisher matches_images_pub;
+	/** for debug purpouses, used to publish an image showing the reprojection of the 3d points on the mobile camera image */
 	image_transport::Publisher reproj_images_pub;
-	geometry_msgs::TransformStamped transformKinectToWorld;
+	/** the transformation between the fixed camera frame and the /world frame */
+	geometry_msgs::TransformStamped transformFixedCameraToWorld;
 
+	/** name of the namespace of the topics, used to build the output topics names */
 	const std::string namespaceName = "optar";
+	/** used to build the name of the  topic on which we output the DEBUG raw phone pose*/
 	const std::string outputPoseRaw_topicName			= "no_marker_pose_raw";
+	/** used to build the name of the  topic on which we output the rviz markers for the used 3d points*/
 	const std::string outputPoseMarker_topicName		= "pose_marker";
+	/** sensor name of the fixed camera */
 	std::string fixed_sensor_name;
 
+
+	/** Reprojection error threshold used for the solvePnPRansac() method (see OpenCV docs)*/
 	double pnpReprojectionError = 5;
+	/** Confidence value used in the solvePnPRansac() method (see OpenCV docs)*/
 	double pnpConfidence = 0.99;
+	/** Iterations amount used in the solvePnPRansac method (see OpenCV docs)*/
 	double pnpIterations = 1000;
+	/** Threshold for considering to ORB features to be matching (it's the maximum distance
+	    between descriptors, so lower implies less accepted matches)*/
 	double matchingThreshold = 25;
+	/** Threshold to discard estimates based on their reprojection error (it's the maximum error,
+	    so lower implies less accepted estimates)*/
 	double reprojectionErrorDiscardThreshold = 5;
+	/** Maximum number of ORB features that are extracted. If using phone-side features extraction
+	    then this influences only the fixed camera features. Also, the features coming from memory
+			are not limited by this)*/
 	int orbMaxPoints = 500;
+	/** Scale factor used in the ORB features computation, must be more than 1. Lower implies
+	    more features are extracted at more scales, which is good, but it slows down the
+			computation. If using phone-side features extraction then this influences only the fixed
+			camera features. */
 	double orbScaleFactor = 1.2;
+	/** Number of scale levels on which the features are extracted. If you make
+	    ARDeviceRegistration#orbScaleFactor lower then you should make this higher. */
 	int orbLevelsNumber = 8;
+	/** If the angle between the estimated mobile camera optical axis and the fixed camera optical
+	    axis is beyond this threshold then the estimation is rejected. It's in degrees. */
 	double phoneOrientationDifferenceThreshold_deg = 45;
+	/** Minimum number of matches between mobile side and fixed side needed to accept an estimate.
+	    To compute the mobile camera position at least 4 mathces are needed, so if you set this below
+			4 it will be as if it was 4.*/
 	unsigned int minimumMatchesNumber = 4;
 
+	/** Controls if the debug images are publishe */
 	bool showImages = true;
-	bool enableFeaturesMemory = true;
+	/** Controls if the feature memory is used */
+	bool enableFeaturesMemory = false;
 
 
 public:
 
 	ARDeviceRegistrationEstimator(	std::string ARDeviceId,
 									ros::NodeHandle& nh,
-									geometry_msgs::TransformStamped transformKinectToWorld,
+									geometry_msgs::TransformStamped transformFixedCameraToWorld,
 									std::string fixed_sensor_name,
 									std::shared_ptr<FeaturesMemory> featuresMemory);
 
@@ -121,9 +172,8 @@ private:
 						std::vector<cv::KeyPoint>& keypoints,
 						cv::Mat& descriptors);
 
-	int findOrbMatches(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
+	int findOrbMatches(
 						const cv::Mat& arcoreDescriptors,
-						const std::vector<cv::KeyPoint>& kinectKeypoints,
 						const cv::Mat& kinectDescriptors,
 						std::vector<cv::DMatch>& matches);
 

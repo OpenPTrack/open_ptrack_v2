@@ -1,3 +1,13 @@
+/**
+ * @file
+ *
+ *
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
+ *
+ *
+ * ARDeviceHandler class declaration file
+ */
+
 #ifndef AR_DEVICE_HANDLER_HPP_201903071552
 #define AR_DEVICE_HANDLER_HPP_201903071552
 
@@ -48,8 +58,8 @@ private:
 	std::shared_ptr<ARDeviceRegistrationEstimator> estimator;
 	std::string ARDeviceId;
 
-	std::string cameraRgbTopicName;
-	std::string cameraDepthTopicName;
+	std::string fixedCameraMonoTopicName;
+	std::string fixedCameraDepthTopicName;
 	std::string cameraInfoTopicName;
 	std::string arDeviceCameraMsgTopicName;
 	std::string arDeviceFeaturesMsgTopicName;
@@ -130,8 +140,8 @@ private:
 
 public:
 	ARDeviceHandler(std::string ARDeviceId,
-					 std::string cameraRgbTopicName,
-					 std::string cameraDepthTopicName,
+					 std::string fixedCameraMonoTopicName,
+					 std::string fixedCameraDepthTopicName,
 					 std::string cameraInfoTopicName,
 					 std::string fixed_sensor_name,
 					 std::string outputRawEstimationTopic,
