@@ -65,20 +65,32 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId,
 }
 
 
+
 /**
  * Updates the parameters used to perform the estimation
- * @param pnpReprojectionError                    See the homonymous member variable description
- * @param pnpConfidence                           See the homonymous member variable description
- * @param pnpIterations                           See the homonymous member variable description
- * @param matchingThreshold                       See the homonymous member variable description
- * @param reprojectionErrorDiscardThreshold       See the homonymous member variable description
- * @param orbMaxPoints                            See the homonymous member variable description
- * @param orbScaleFactor                          See the homonymous member variable description
- * @param orbLevelsNumber                         See the homonymous member variable description
- * @param phoneOrientationDifferenceThreshold_deg See the homonymous member variable description
- * @param showImages                              See the homonymous member variable description
- * @param minimumMatchesNumber                    See the homonymous member variable description
- * @param enableFeaturesMemory                    See the homonymous member variable description
+ * @param pnpReprojectionError                    Reprojection error threshold used for the solvePnPRansac() method (see OpenCV docs)
+ * @param pnpConfidence                           Confidence value used in the solvePnPRansac() method (see OpenCV docs)
+ * @param pnpIterations                           Iterations amount used in the solvePnPRansac method (see OpenCV docs)
+ * @param matchingThreshold                       Threshold for considering to ORB features to be matching (it's the maximum distance
+ *                                                between descriptors, so lower implies less accepted matches)
+ * @param reprojectionErrorDiscardThreshold       Threshold to discard estimates based on their reprojection error (it's the maximum error,
+ *                                                so lower implies less accepted estimates)
+ * @param orbMaxPoints                            Maximum number of ORB features that are extracted. If using phone-side features extraction
+ *                                                then this influences only the fixed camera features. Also, the features coming from memory
+ *                                                are not limited by this)
+ * @param orbScaleFactor                          Scale factor used in the ORB features computation, must be more than 1. Lower implies
+ *                                                more features are extracted at more scales, which is good, but it slows down the
+ *                                                computation. If using phone-side features extraction then this influences only the fixed
+ *                                                camera features.
+ * @param orbLevelsNumber                         Number of scale levels on which the features are extracted. If you make
+ *                                                ARDeviceRegistration#orbScaleFactor lower then you should make this higher.
+ * @param phoneOrientationDifferenceThreshold_deg If the angle between the estimated mobile camera optical axis and the fixed camera optical
+ *                                                axis is beyond this threshold then the estimation is rejected. It's in degrees.
+ * @param showImages                              Controls if the debug images are published
+ * @param minimumMatchesNumber                    Minimum number of matches between mobile side and fixed side needed to accept an estimate.
+ *                                                To compute the mobile camera position at least 4 mathces are needed, so if you set this below
+ *                                                4 it will be as if it was 4.
+ * @param enableFeaturesMemory                    Controls if the feature memory is used
  */
 void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
 					double pnpConfidence,

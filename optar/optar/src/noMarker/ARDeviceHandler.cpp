@@ -374,18 +374,18 @@ int ARDeviceHandler::stop()
 
 /**
  * Updates the parameters to be used
- * @param  pnpReprojectionError                    see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  pnpConfidence                           see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  pnpIterations                           see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  matchingThreshold                       see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  reprojectionErrorDiscardThreshold       see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  orbMaxPoints                            see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  orbScaleFactor                          see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  orbLevelsNumber                         see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  phoneOrientationDifferenceThreshold_deg see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  showImages                              see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  minimumMatchesNumber                    see optar/cfg/OptarSingleCameraParameters.cfg
- * @param  enableFeaturesMemory                    see optar/cfg/OptarSingleCameraParameters.cfg
+ * @param  pnpReprojectionError                    See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  pnpConfidence                           See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  pnpIterations                           See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  matchingThreshold                       See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  reprojectionErrorDiscardThreshold       See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  orbMaxPoints                            See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  orbScaleFactor                          See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  orbLevelsNumber                         See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  phoneOrientationDifferenceThreshold_deg See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  showImages                              See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  minimumMatchesNumber                    See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  enableFeaturesMemory                    See ARDeviceRegistrationEstimator#setupParameters()
  * @return                                         0 on success, a negative value on fail
  */
 int ARDeviceHandler::setupParameters(double pnpReprojectionError,

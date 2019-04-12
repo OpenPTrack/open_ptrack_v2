@@ -115,29 +115,30 @@ private:
 	std::shared_ptr<FeaturesMemory> featuresMemory;
 
 
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	double pnpReprojectionError = 5;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	double pnpConfidence = 0.99;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	double pnpIterations = 1000;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	double matchingThreshold = 25;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	double reprojectionErrorDiscardThreshold = 5;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	int orbMaxPoints = 500;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	double orbScaleFactor = 1.2;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	int orbLevelsNumber = 8;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	double phoneOrientationDifferenceThreshold_deg = 45;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	bool showImages = true;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	unsigned int minimumMatchesNumber = 4;
-	/** See  optar/cfg/OptarSingleCameraParameters.cfg*/
+	/** See ARDeviceRegistrationEstimator#setupParameters() */
 	bool enableFeaturesMemory = false;
 
 public:

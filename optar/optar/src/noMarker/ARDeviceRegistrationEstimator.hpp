@@ -67,41 +67,30 @@ private:
 	std::string fixed_sensor_name;
 
 
-	/** Reprojection error threshold used for the solvePnPRansac() method (see OpenCV docs)*/
+	/** See #setupParameters() */
 	double pnpReprojectionError = 5;
-	/** Confidence value used in the solvePnPRansac() method (see OpenCV docs)*/
+	/** See #setupParameters() */
 	double pnpConfidence = 0.99;
-	/** Iterations amount used in the solvePnPRansac method (see OpenCV docs)*/
+	/** See #setupParameters() */
 	double pnpIterations = 1000;
-	/** Threshold for considering to ORB features to be matching (it's the maximum distance
-	    between descriptors, so lower implies less accepted matches)*/
+	/** See #setupParameters() */
 	double matchingThreshold = 25;
-	/** Threshold to discard estimates based on their reprojection error (it's the maximum error,
-	    so lower implies less accepted estimates)*/
+	/** See #setupParameters() */
 	double reprojectionErrorDiscardThreshold = 5;
-	/** Maximum number of ORB features that are extracted. If using phone-side features extraction
-	    then this influences only the fixed camera features. Also, the features coming from memory
-			are not limited by this)*/
+	/** See #setupParameters() */
 	int orbMaxPoints = 500;
-	/** Scale factor used in the ORB features computation, must be more than 1. Lower implies
-	    more features are extracted at more scales, which is good, but it slows down the
-			computation. If using phone-side features extraction then this influences only the fixed
-			camera features. */
+	/** See #setupParameters() */
 	double orbScaleFactor = 1.2;
-	/** Number of scale levels on which the features are extracted. If you make
-	    ARDeviceRegistration#orbScaleFactor lower then you should make this higher. */
+	/** See #setupParameters() */
 	int orbLevelsNumber = 8;
-	/** If the angle between the estimated mobile camera optical axis and the fixed camera optical
-	    axis is beyond this threshold then the estimation is rejected. It's in degrees. */
+	/** See #setupParameters() */
 	double phoneOrientationDifferenceThreshold_deg = 45;
-	/** Minimum number of matches between mobile side and fixed side needed to accept an estimate.
-	    To compute the mobile camera position at least 4 mathces are needed, so if you set this below
-			4 it will be as if it was 4.*/
+	/** See #setupParameters() */
 	unsigned int minimumMatchesNumber = 4;
 
-	/** Controls if the debug images are publishe */
+	/** See #setupParameters() */
 	bool showImages = true;
-	/** Controls if the feature memory is used */
+	/** See #setupParameters() */
 	bool enableFeaturesMemory = false;
 
 
