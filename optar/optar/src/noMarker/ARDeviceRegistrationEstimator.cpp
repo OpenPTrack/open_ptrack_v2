@@ -424,8 +424,13 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	else
 		arcoreImage = arcoreImageDbg;
 
+	std::chrono::steady_clock::time_point beforeFeatureMemoryNonBackgroundRemoval = std::chrono::steady_clock::now();
+
+	if(enableFeaturesMemory)
+		featuresMemory->removeNonBackgroundFeatures(kinectDepthImage);
 
 	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
+	unsigned long featureMemoryNonBackgroundRemovalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(beforeMatching - beforeFeatureMemoryNonBackgroundRemoval).count();
 
 
 	std::vector<cv::DMatch> matches;
@@ -742,6 +747,8 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	lastEstimateReprojectionError = reprojError;
 	didComputeEstimation=true;
 
+
+	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<featureMemoryNonBackgroundRemovalDuration);
 	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
 	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<_3dPositionsComputationDuration);
 	ROS_DEBUG_STREAM("pnpComputationDuration="<<pnpComputationDuration);
@@ -764,8 +771,10 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		const Mat& descriptor = fixedDescriptors.row(match.trainIdx);
 		double observerDistance_meters = feature3dPosTf.distance(phonePosition);
 		Point3f observerDirection(feature3dPosCv.x-phonePositionCv.x,feature3dPosCv.y-phonePositionCv.y,feature3dPosCv.z-phonePositionCv.z);//this will be in the fixed camera frame
+		uint16_t depth = kinectDepthImage.at<uint16_t>(keypoint.pt);
 
-		FeaturesMemory::Feature feature(keypoint, descriptor, observerDistance_meters, observerDirection);
+
+		FeaturesMemory::Feature feature(keypoint, descriptor, observerDistance_meters, observerDirection, depth);
 		featuresMemory->saveFeature(feature);
 	}
 

@@ -34,15 +34,15 @@ void FeaturesMemory::saveFeature(const Feature& newFeature)
 	}
 
 	std::vector<Feature*> equivalentFeatures;
-	for(Feature& savedFeature : savedFeatures)
+	for(shared_ptr<Feature>& savedFeature : savedFeatures)
 	{
-		if(	newFeature.pixelDistance(savedFeature) <= featureEquivalencePositionThreshold_pixels &&
-			newFeature.observerAngularDistance(savedFeature) <= featureEquivalenceAngularDistanceThreshold_radiants &&
-			newFeature.observerDistanceDifference(savedFeature) <= featureEquivalenceObserverDistanceThreshold_meters &&
-			newFeature.descriptorDistance(savedFeature) <= equivalentDescriptorsMaximumDistance &&
-			newFeature.keypoint.octave == savedFeature.keypoint.octave)
+		if(	newFeature.pixelDistance(*savedFeature) <= featureEquivalencePositionThreshold_pixels &&
+			newFeature.observerAngularDistance(*savedFeature) <= featureEquivalenceAngularDistanceThreshold_radiants &&
+			newFeature.observerDistanceDifference(*savedFeature) <= featureEquivalenceObserverDistanceThreshold_meters &&
+			newFeature.descriptorDistance(*savedFeature) <= equivalentDescriptorsMaximumDistance &&
+			newFeature.keypoint.octave == savedFeature->keypoint.octave)
 		{
-			equivalentFeatures.push_back(&savedFeature);
+			equivalentFeatures.push_back(&(*savedFeature));// bleah
 		}
 	}
 
@@ -54,7 +54,7 @@ void FeaturesMemory::saveFeature(const Feature& newFeature)
 
 	if(equivalentFeatures.size()==0)// if there is no equivalent feature add it
 	{
-		savedFeatures.push_back(newFeature);
+		savedFeatures.push_back(make_shared<FeaturesMemory::Feature>(newFeature));
 	}
 }
 
@@ -70,6 +70,24 @@ void FeaturesMemory::saveFeatures(const std::vector<Feature>& newFeatures)
 	}
 }
 
+/**
+ * Removes memorized features that are not on the background.
+ * This is done by removing features that are much coser to the camera than the
+ * depth reported on the provided image states.
+ * @param depthImage Depth image from the camera
+ */
+void FeaturesMemory::removeNonBackgroundFeatures(const cv::Mat& depthImage)
+{
+	for(size_t i=0;i<savedFeatures.size();i++)
+	{
+		const Feature& feature = *(savedFeatures.at(i));
+		if(feature.depth_mm - depthImage.at<uint16_t>(feature.keypoint.pt) < -featureDepthMatchThreshold_mm)
+		{
+			savedFeatures.erase(savedFeatures.begin() + i);
+			i--;
+		}
+	}
+}
 
 /**
  * Gets all the features from the memory
@@ -84,9 +102,9 @@ const std::vector<FeaturesMemory::Feature> FeaturesMemory::getFeatures()
 		return savedFeaturesCopy;
 	}
 
-	for(const Feature& savedFeature : savedFeatures)
+	for(const shared_ptr<Feature>& savedFeature : savedFeatures)
 	{
-		savedFeaturesCopy.push_back(Feature(savedFeature));
+		savedFeaturesCopy.push_back(Feature(*savedFeature));
 	}
 	return savedFeaturesCopy;
 }
@@ -137,12 +155,14 @@ unsigned int FeaturesMemory::Feature::descriptorDistance(const FeaturesMemory::F
  * @param descriptor              Descriptor of this feature
  * @param observerDistance_meters Distance of the observer
  * @param observerDirection       Direction of the observer
+ * @param depth_mm                Depth of the feature in the 2d image
  */
-FeaturesMemory::Feature::Feature(const cv::KeyPoint& keypoint, const cv::Mat& descriptor, double observerDistance_meters, const cv::Point3f& observerDirection) :
+FeaturesMemory::Feature::Feature(const cv::KeyPoint& keypoint, const cv::Mat& descriptor, double observerDistance_meters, const cv::Point3f& observerDirection, double depth_mm) :
 	keypoint(keypoint),
 	descriptor(descriptor),
 	observerDistance_meters(observerDistance_meters),
-	observerDirection(observerDirection)
+	observerDirection(observerDirection),
+	depth_mm(depth_mm)
 {
 	timesConfirmed = 1;
 
@@ -150,15 +170,14 @@ FeaturesMemory::Feature::Feature(const cv::KeyPoint& keypoint, const cv::Mat& de
 		throw invalid_argument("descriptor has invalid size, should be "+to_string(descriptorSize)+" but is "+to_string(descriptor.cols));
 }
 
+
+
 /**
  * Copies a feature object
  * @param feature The feature object to be copied
  */
 FeaturesMemory::Feature::Feature(const FeaturesMemory::Feature& feature) :
-	keypoint(feature.keypoint),
-	descriptor(feature.descriptor),
-	observerDistance_meters(feature.observerDistance_meters),
-	observerDirection(feature.observerDirection)
+	Feature(feature.keypoint, feature.descriptor, feature.observerDistance_meters, feature.observerDirection, feature.depth_mm)
 {
 	timesConfirmed = feature.timesConfirmed;
 

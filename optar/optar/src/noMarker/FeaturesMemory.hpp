@@ -12,6 +12,7 @@
 
 #include <opencv2/features2d/features2d.hpp>
 #include <mutex>
+#include <memory>
 
 /**
  * Class for keeping track of features in the scene.
@@ -42,6 +43,8 @@ public:
 		const double observerDistance_meters;
 		/** Direction of the observer */
 		const cv::Point3f observerDirection;
+		/** depth of this feature in the 2d image (in millimeters). Useful to distinguish features on the background from features on moving objects*/
+		const double depth_mm;
 
 		/** Number of times we have seen this feature (or very similiar ones) */
 		unsigned int timesConfirmed;
@@ -51,7 +54,7 @@ public:
 		double observerDistanceDifference(const Feature& feature) const;
 		unsigned int descriptorDistance(const Feature& feature) const;
 
-		Feature(const cv::KeyPoint& keypoint, const cv::Mat& descriptor, double observerDistance_meters, const cv::Point3f& observerDirection);
+		Feature(const cv::KeyPoint& keypoint, const cv::Mat& descriptor, double observerDistance_meters, const cv::Point3f& observerDirection, double depth_mm);
 
 		Feature(const Feature& feature);
 
@@ -60,7 +63,7 @@ public:
 
 private:
 	/** List of the features we are memorizing */
-	std::vector<FeaturesMemory::Feature> savedFeatures;
+	std::vector<std::shared_ptr<FeaturesMemory::Feature>> savedFeatures;//TODO: use something with better add/remove performance. Mainly because of the removeNonBackgroundFeatures method
 	/** Mutex for the savedFeatures variable*/
 	std::timed_mutex savedFeaturesMutex;
 
@@ -78,10 +81,14 @@ private:
 	/** Maximum distance between the descriptors of two features to consider the two
 	    features equivalent */
 	unsigned int equivalentDescriptorsMaximumDistance = 20;
-
+	/** Threshold for determining if the depth of two fetures is the same. In millimiters	 */
+	unsigned int featureDepthMatchThreshold_mm = 50;
 public:
 	void saveFeature(const FeaturesMemory::Feature& newFeature);
 	void saveFeatures(const std::vector<FeaturesMemory::Feature>& newFeatures);
+
+	void removeNonBackgroundFeatures(const cv::Mat& depthImage);
+
 
 	const std::vector<FeaturesMemory::Feature> getFeatures();
 };
