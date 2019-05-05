@@ -433,6 +433,10 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	unsigned long featureMemoryNonBackgroundRemovalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(beforeMatching - beforeFeatureMemoryNonBackgroundRemoval).count();
 
 
+
+
+
+	//find orb matches between arcore and fixed-camera features
 	std::vector<cv::DMatch> matches;
 	int r = findOrbMatches(arcoreDescriptors, fixedDescriptors, matches);
 	if(r<0)
@@ -441,6 +445,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		return -1;
 	}
 	ROS_DEBUG_STREAM("got "<<matches.size()<<" matches");
+
 
   //filter matches
 	std::vector< cv::DMatch > goodMatchesWithNull;
@@ -452,10 +457,10 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	}
 	ROS_DEBUG("Got %lu good matches, but some could be invalid",goodMatchesWithNull.size());
 
-  	//On the kinect side the depth could be zero at the match location
-  	//we try to get the nearest non-zero depth, if it's too far we discard the match
-	std::vector< cv::DMatch > goodMatches;
 
+	//On the kinect side the depth could be zero at the match location
+	//we try to get the nearest non-zero depth, if it's too far we discard the match
+	std::vector< cv::DMatch > goodMatches;
 	r = fixMatchesDepthOrDrop(goodMatchesWithNull, fixedKeypoints, kinectDepthImage ,goodMatches);
 	if(r<0)
 	{
@@ -492,19 +497,15 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	//find the 3d poses corresponding to the goodMatches, these will be relative to the kinect frame
 	std::vector<cv::Point3f> goodMatches3dPos;
 	std::vector<cv::Point2f> goodMatchesImgPos;
-
 	r = get3dPositionsAndImagePositions(goodMatches,fixedKeypoints, arcoreKeypoints, kinectDepthImage,fixedCameraMatrix,goodMatches3dPos, goodMatchesImgPos);
 	if(r<0)
 	{
   		ROS_ERROR("error getting matching points");
   		return -4;
 	}
-
-
 	std::chrono::steady_clock::time_point after3dpositionsComputation = std::chrono::steady_clock::now();
 	unsigned long _3dPositionsComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(after3dpositionsComputation - afterMatchesComputation).count();
 	//ROS_DEBUG("3D positions computation took %lu ms",_3dPositionsComputationDuration);
-
 
 
 	//used to publish visualizations to rviz
@@ -515,22 +516,21 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		markerArray.markers.push_back( buildMarker(	pos3d,"match"+std::to_string(i),0,0,1,1, 0.2, fixedCameraFrameId));//matches are blue
 	}
 	debug_markers_pub.publish(markerArray);
-	cv::Mat matchesImg;
+	sensor_msgs::ImagePtr matchesDebugImg;
 	if(showImages)
 	{
+		cv::Mat matchesImg;
 		cv::drawMatches(arcoreImage, arcoreKeypoints, kinectMonoImage, fixedKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		cv::putText(matchesImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,matchesImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
+		matchesDebugImg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", matchesImg).toImageMsg();
 	}
 
 	//If we have less than 4 matches we cannot procede, pnp wouldn't be able to estimate the phone position
 	if(goodMatches.size()<4 || goodMatches.size()<minimumMatchesNumber)
 	{
 		//cv::drawKeypoints(arcoreImg,arcoreKeypoints)
-		if(matchesImg.data)
-		{
-			sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", matchesImg).toImageMsg();
-			matches_images_pub.publish(msg);
-		}
+		if(showImages)//if we have to send debug images
+			matches_images_pub.publish(matchesDebugImg);
 		ROS_WARN("not enough matches to determine position");
 		return 1;
 	}
@@ -558,7 +558,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
 	cv::Vec3d tvec;
 	cv::Vec3d rvec;
-	if(didComputeEstimation) //initialize with the previous estimate
+	if(didComputeEstimate) //initialize with the previous estimate
 	{
 		tf::Pose lastEstimateTf;
 		tf::transformMsgToTF(lastEstimate.transform,lastEstimateTf);
@@ -569,7 +569,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	cv::solvePnPRansac(	goodMatches3dPos,goodMatchesImgPos,
 						arcoreCameraMatrix,cv::noArray(),
 						rvec,tvec,
-						didComputeEstimation,
+						didComputeEstimate,
 						pnpIterations,
 						pnpReprojectionError,
 						pnpConfidence,
@@ -583,17 +583,15 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 	//reproject points to then check reprojection error (and visualize them)
 	std::vector<Point2f> reprojPoints;
-	cv::projectPoints 	(goodMatches3dPos,
+	cv::projectPoints(goodMatches3dPos,
 						rvec, tvec,
 						arcoreCameraMatrix,
 						cv::noArray(),
 						reprojPoints);
 
 
+	//debug image to show the reprojection errors
 
-	cv::Mat reprojectionImg;
-	if(showImages)
-		cvtColor(arcoreImage, reprojectionImg, CV_GRAY2RGB);
 	double reprojError = 0;
 	//calculate reprojection error mean and draw reprojections
 	for(unsigned int i=0;i<inliers.size();i++)
@@ -601,18 +599,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		Point2f pix = goodMatchesImgPos.at(inliers.at(i));
 		Point2f reprojPix = reprojPoints.at(inliers.at(i));
 		reprojError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojPoints.size();
-
-		if(reprojectionImg.data)
-		{
-			int r = ((double)rand())/RAND_MAX*255;
-			int g = ((double)rand())/RAND_MAX*255;
-			int b = ((double)rand())/RAND_MAX*255;
-			Scalar color = Scalar(r,g,b);
-			cv::circle(reprojectionImg,pix,15,color,5);
-			cv::line(reprojectionImg,pix,reprojPix,color,3);
-		}
 	}
-	cv::putText(reprojectionImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
 
 	ROS_INFO_STREAM("inliers reprojection error = "<<reprojError);
 
@@ -621,21 +608,36 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	unsigned long reprojectionComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(reprojectionComputation- afterPnpComputation).count();
 	ROS_DEBUG("Reprojection error computation took %lu ms",reprojectionComputationDuration);
 
-	if(showImages && matchesImg.data)
+	//if we have to send debug images
+	if(showImages)
 	{
-		sensor_msgs::ImagePtr msgMatches = cv_bridge::CvImage(std_msgs::Header(), "bgr8", matchesImg).toImageMsg();
-		matches_images_pub.publish(msgMatches);
-	}
-	if(showImages && reprojectionImg.data)
-	{
+		cv::Mat reprojectionImg;
+		//draw the reprojection image
+		cvtColor(arcoreImage, reprojectionImg, CV_GRAY2RGB);
+		for(size_t i=0;i<inliers.size();i++)
+		{
+			Point2f pix = goodMatchesImgPos.at(inliers.at(i));
+			Point2f reprojPix = reprojPoints.at(inliers.at(i));
+
+			int r = ((double)rand())/RAND_MAX*255;
+			int g = ((double)rand())/RAND_MAX*255;
+			int b = ((double)rand())/RAND_MAX*255;
+			Scalar color = Scalar(r,g,b);
+			cv::circle(reprojectionImg,pix,15,color,5);
+			cv::line(reprojectionImg,pix,reprojPix,color,3);
+		}
+		cv::putText(reprojectionImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
 		sensor_msgs::ImagePtr msgReproj = cv_bridge::CvImage(std_msgs::Header(), "bgr8", reprojectionImg).toImageMsg();
+
+		//send the images
 		reproj_images_pub.publish(msgReproj);
+		matches_images_pub.publish(matchesDebugImg);
 	}
 
 
 	std::chrono::steady_clock::time_point afterDrawMatches = std::chrono::steady_clock::now();
 	unsigned long drawMatchesDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawMatches - reprojectionComputation).count();
-	ROS_DEBUG("draw matches took %lu ms",drawMatchesDuration);
+	ROS_DEBUG("drawing and sending debug images took %lu ms",drawMatchesDuration);
 
 
 	//discard bad frames
@@ -655,74 +657,30 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	tf::poseMsgToTF(poseNotStamped,poseTf);
 	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
 	//make it stamped
-	geometry_msgs::PoseStamped phonePoseKinect;
-	phonePoseKinect.pose = poseNotStamped;
-	phonePoseKinect.header.frame_id = "kinect01_rgb_optical_frame";
-	phonePoseKinect.header.stamp = timestamp;
+	geometry_msgs::PoseStamped phonePose_kinect;
+	phonePose_kinect.pose = poseNotStamped;
+	phonePose_kinect.header.frame_id = "kinect01_rgb_optical_frame";
+	phonePose_kinect.header.stamp = timestamp;
 	//transform to world frame
-	geometry_msgs::PoseStamped phonePose;
-	tf2::doTransform(phonePoseKinect,phonePose,transformFixedCameraToWorld);
-	phonePose.header.frame_id = "/world";
+	geometry_msgs::PoseStamped phonePose_world;
+	tf2::doTransform(phonePose_kinect,phonePose_world,transformFixedCameraToWorld);
+	phonePose_world.header.frame_id = "/world";
 
-	//ROS_INFO_STREAM("estimated pose before transform: "<<phonePoseKinect.pose.position.x<<" "<<phonePoseKinect.pose.position.y<<" "<<phonePoseKinect.pose.position.z<<" ; "<<phonePoseKinect.pose.orientation.x<<" "<<phonePoseKinect.pose.orientation.y<<" "<<phonePoseKinect.pose.orientation.z<<" "<<phonePoseKinect.pose.orientation.w);
+	//ROS_INFO_STREAM("estimated pose before transform: "<<phonePose_kinect.pose.position.x<<" "<<phonePose_kinect.pose.position.y<<" "<<phonePose_kinect.pose.position.z<<" ; "<<phonePose_kinect.pose.orientation.x<<" "<<phonePose_kinect.pose.orientation.y<<" "<<phonePose_kinect.pose.orientation.z<<" "<<phonePose_kinect.pose.orientation.w);
 
-	pose_raw_pub.publish(phonePose);
-	//publishPoseAsTfFrame(phonePose,ARDeviceId+"/"+"mobile_pose");
-
-
-	ROS_DEBUG_STREAM("estimated pose is                "<<phonePose.pose.position.x<<" "<<phonePose.pose.position.y<<" "<<phonePose.pose.position.z<<" ; "<<phonePose.pose.orientation.x<<" "<<phonePose.pose.orientation.y<<" "<<phonePose.pose.orientation.z<<" "<<phonePose.pose.orientation.w);
+	pose_raw_pub.publish(phonePose_world);
+	//publishPoseAsTfFrame(phonePose_world,ARDeviceId+"/"+"mobile_pose");
 
 
+	ROS_DEBUG_STREAM("estimated pose is                "<<phonePose_world.pose.position.x<<" "<<phonePose_world.pose.position.y<<" "<<phonePose_world.pose.position.z<<" ; "<<phonePose_world.pose.orientation.x<<" "<<phonePose_world.pose.orientation.y<<" "<<phonePose_world.pose.orientation.z<<" "<<phonePose_world.pose.orientation.w);
 
 
-
-
-
-
-
-
-	//:::::::::::::::Get arcore world frame of reference::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-
-
-
-
-
-
-
-
-
-
-	tf::Pose phonePoseTf;
-	tf::poseMsgToTF(phonePose.pose,phonePoseTf);
-	ROS_DEBUG_STREAM("phonePoseTf = "<<poseToString(phonePoseTf));
-	//Dim:
-	// let phonePoseArcoreFrameConverted = Pa
-	// let arcoreWorld = A
-	// let phonePoseTf = Pr
-	//
-	// A*Pa*0 = Pr*0
-	// so:
-	// A*Pa = Pr
-	// so:
-	// A*Pa*Pa^-1 = Pr*Pa^-1
-	// so:
-	// A = Pr*Pa^-1
-	tf::Pose arcoreWorld = phonePoseTf * phonePoseArcoreFrameConverted.inverse();
-	//publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world","/world",arcoreInputMsg->header.stamp);
-	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,ARDeviceId+"/"+"phone_arcore_arcore","/arcore_world",arcoreInputMsg->header.stamp);
-	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted.inverse(),ARDeviceId+"/"+"phone_arcore_conv_inv","/phone_estimate",arcoreInputMsg->header.stamp);
-
-
-	if(!isPoseValid(arcoreWorld))
-	{
-		ROS_WARN_STREAM("Dropping transform estimation as it is invalid");
-		return -8;
-	}
+	//TODO: this check should not be done if we use the features memory, which should
+	// ideally be always
 
 	//compute orientation difference with respect to the fixed camera
 	tf::Pose phonePoseTf_fixedCameraFrame;
-	tf::poseMsgToTF(phonePoseKinect.pose,phonePoseTf_fixedCameraFrame);
+	tf::poseMsgToTF(phonePose_kinect.pose,phonePoseTf_fixedCameraFrame);
 	tf::Vector3 zUnitVector(0,0,1);
 	tf::Vector3 phoneOpticalAxis_kinectFrame = tf::Transform(phonePoseTf_fixedCameraFrame.getRotation()) * zUnitVector;
 	double phoneToCameraRotationAngle = std::abs(phoneOpticalAxis_kinectFrame.angle(zUnitVector))*180/3.14159;
@@ -734,30 +692,8 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		return 3;
 	}
 
-	publishTransformAsTfFrame(phonePoseTf,ARDeviceId+"_estimate_"+fixed_sensor_name,"/world",timestamp);
-	publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world_"+fixed_sensor_name,"/world",timestamp);
 
-
-	tf::StampedTransform stampedTransform(arcoreWorld, timestamp, "/world", getARDeviceId()+"_world");
-	geometry_msgs::TransformStamped stampedTransformMsg;
-	tf::transformStampedTFToMsg(stampedTransform,stampedTransformMsg);
-
-	lastEstimate = stampedTransformMsg;
-	lastEstimateMatchesNumber = goodMatches.size();
-	lastEstimateReprojectionError = reprojError;
-	didComputeEstimation=true;
-
-
-	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<featureMemoryNonBackgroundRemovalDuration);
-	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
-	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<_3dPositionsComputationDuration);
-	ROS_DEBUG_STREAM("pnpComputationDuration="<<pnpComputationDuration);
-	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<reprojectionComputationDuration);
-	ROS_DEBUG_STREAM("drawMatchesDuration="<<drawMatchesDuration);
-
-
-
-
+	//save the features we used to memory, they are useful!
 	for(unsigned int i=0;i<inliers.size();i++)
 	{
 		Point3f feature3dPosCv = goodMatches3dPos.at(inliers.at(i));
@@ -777,6 +713,67 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 		FeaturesMemory::Feature feature(keypoint, descriptor, observerDistance_meters, observerDirection, depth);
 		featuresMemory->saveFeature(feature);
 	}
+
+	//:::::::::::::::Get arcore world frame of reference::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+
+
+
+
+
+
+
+
+
+	tf::Pose phonePoseTf_world;
+	tf::poseMsgToTF(phonePose_world.pose,phonePoseTf_world);
+	ROS_DEBUG_STREAM("phonePoseTf_world = "<<poseToString(phonePoseTf_world));
+	//You don't belive me? Dim:
+	// let phonePoseArcoreFrameConverted = Pa
+	// let arcoreWorld = A
+	// let phonePoseTf_world = Pr
+	//
+	// A*Pa*0 = Pr*0
+	// so:
+	// A*Pa = Pr
+	// so:
+	// A*Pa*Pa^-1 = Pr*Pa^-1
+	// so:
+	// A = Pr*Pa^-1
+	tf::Pose arcoreWorld = phonePoseTf_world * phonePoseArcoreFrameConverted.inverse();
+	//publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world","/world",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,ARDeviceId+"/"+"phone_arcore_arcore","/arcore_world",arcoreInputMsg->header.stamp);
+	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted.inverse(),ARDeviceId+"/"+"phone_arcore_conv_inv","/phone_estimate",arcoreInputMsg->header.stamp);
+
+
+	if(!isPoseValid(arcoreWorld))
+	{
+		ROS_WARN_STREAM("Dropping transform estimate as it is invalid");
+		return -8;
+	}
+
+
+	publishTransformAsTfFrame(phonePoseTf_world,ARDeviceId+"_estimate_"+fixed_sensor_name,"/world",timestamp);
+	publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world_"+fixed_sensor_name,"/world",timestamp);
+
+
+	tf::StampedTransform stampedTransform(arcoreWorld, timestamp, "/world", getARDeviceId()+"_world");
+	geometry_msgs::TransformStamped stampedTransformMsg;
+	tf::transformStampedTFToMsg(stampedTransform,stampedTransformMsg);
+
+	lastEstimate = stampedTransformMsg;
+	lastEstimateMatchesNumber = goodMatches.size();
+	lastEstimateReprojectionError = reprojError;
+	didComputeEstimate=true;
+
+
+	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<featureMemoryNonBackgroundRemovalDuration);
+	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
+	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<_3dPositionsComputationDuration);
+	ROS_DEBUG_STREAM("pnpComputationDuration="<<pnpComputationDuration);
+	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<reprojectionComputationDuration);
+	ROS_DEBUG_STREAM("drawMatchesDuration="<<drawMatchesDuration);
 
 
 	return 0;
@@ -1367,5 +1364,5 @@ string ARDeviceRegistrationEstimator::getARDeviceId()
  */
 bool ARDeviceRegistrationEstimator::hasEstimate()
 {
-	return didComputeEstimation;
+	return didComputeEstimate;
 }

@@ -38,7 +38,7 @@ private:
 	/** Reprojection error in the last estimation */
 	double lastEstimateReprojectionError = -1;
 	/** If we ever computed an estimation */
-	bool didComputeEstimation=false;
+	bool didComputeEstimate=false;
 
 	/** DEvice id for the AR device for which we are estimating the registration */
 	std::string ARDeviceId;
@@ -193,11 +193,6 @@ private:
 						cv::Mat& debugArcoreImage);
 
 
-	/**
-	 * Checks the provided matches to ensure they have valid depth info. If the depth is not available in the depth image
-	 * this funciton will try to fix the image by getting the closest depth value. If the closest valid pixel is too far
-	 * the match will be dropped.
-	 */
 	int fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& kinectKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches);
 
 
