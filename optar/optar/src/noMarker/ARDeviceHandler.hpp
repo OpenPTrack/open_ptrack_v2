@@ -65,7 +65,7 @@ private:
 	std::string cameraInfoTopicName;
 	std::string arDeviceCameraMsgTopicName;
 	std::string arDeviceFeaturesMsgTopicName;
-	std::string outputRawEstimationTopic;
+	std::string poseEstimateTopicName;
 
 	std::string fixed_sensor_name;
 
@@ -98,8 +98,8 @@ private:
 	/** subscriber for receiving depth images form the fixed camera */
 	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> featuresTpc_kinect_depth_sub;
 
-	/** Publisher to publish the computed registration */
-	ros::Publisher rawEstimationPublisher;
+	/** Publisher to publish the computed pose estimate */
+	ros::Publisher poseEstimatePublisher;
 
 
 
@@ -172,12 +172,11 @@ public:
 	int millisecondsSinceLastMessage();
 
 private:
-	void imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
-						const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
-						const sensor_msgs::ImageConstPtr& kinectInputDepthMsg);
+
 	void featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg);
+
 };
 
 #endif

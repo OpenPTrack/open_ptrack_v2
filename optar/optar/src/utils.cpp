@@ -820,3 +820,44 @@ geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, st
 
 	return poseStamped;
 }
+
+
+
+/**
+ * Converts the mobile camera pose from the ARCore convention to the ROS covention
+ * ARCore on Unity uses Unity's coordinate system, which is left-handed, normally in arcore
+ * for Android the arcore camera position is defined with x pointing right, y pointing up and
+ * -z pointing where the camera is facing.
+ * ROS uses a right-handed system, with x pointing right, y pointing down and z pointing where
+ * the camera is facing.
+ * As provided from all ARCore APIs, Poses always describe the transformation from object's
+ * local coordinate space to the world coordinate space. This is the usual pose representation,
+ * same as ROS.
+ * @param  cameraPoseArcore The camera pose in ARCore's convention
+ * @return                  The camera pose in the ROS convention
+ */
+tf::Pose convertCameraPoseArcoreToRos(const geometry_msgs::Pose& cameraPoseArcore)
+{
+
+		// Convert phone arcore pose
+		// ARCore on Unity uses Unity's coordinate systema, which is left-handed, normally in arcore for Android the arcore
+		// camera position is defined with x pointing right, y pointing up and -z pointing where the camera is facing.
+		// As provided from all ARCore APIs, Poses always describe the transformation from object's local coordinate space
+		// to the world coordinate space. This is the usual pose representation, same as ROS
+		tf::Pose phonePoseArcoreFrameUnity;
+		tf::poseMsgToTF(cameraPoseArcore,phonePoseArcoreFrameUnity);
+		tf::Pose phonePoseArcoreFrame = convertPoseUnityToRos(phonePoseArcoreFrameUnity);
+
+		//publishTransformAsTfFrame(phonePoseArcoreFrame,"phone_arcore","/world",arcoreInputMsg->header.stamp);
+		//publishTransformAsTfFrame(phonePoseArcoreFrameUnity,"phone_arcore_left","/world",arcoreInputMsg->header.stamp);
+
+		//from x to the right, y up, z back to x to the right, y down, z forward
+		tf::Transform cameraConventionTransform = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0), 3.1415926535897));//rotate 180 degrees around x axis
+		//assuming z is pointing foward:
+		tf::Transform portraitToLandscape = tf::Transform(tf::Quaternion(tf::Vector3(0,0,1), 3.1415926535897/2));//rotate +90 degrees around z axis
+		tf::Transform justRotation = tf::Transform(phonePoseArcoreFrame.getRotation()) * portraitToLandscape;
+		tf::Transform justTranslation = tf::Transform(tf::Quaternion(1,0,0,0),phonePoseArcoreFrame.getOrigin());
+
+		//tf::Pose phonePoseArcoreInverted = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0),0),phonePoseArcoreFrame.getOrigin()).inverse() * tf::Transform(phonePoseArcoreFrame.getRotation()).inverse();
+		return  justTranslation *cameraConventionTransform*justRotation;
+}

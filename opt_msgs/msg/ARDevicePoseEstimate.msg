@@ -1,16 +1,19 @@
-# This message represents the registration of a specific AR Device
-# coordinate system with respect to the ROS world frame
+# This message represents the pose estimate for an ARDevice obtained from a single
+# PnP-based estimation. Together with some data useful for quantifying the realiability
+# of the estimate
 #
-# This message is used for transfering the raw frame-by-frame unfiltered
-# estimations to th aggregator node, which will aggregate the estimations
-# from the different cameras and filter them
+# This message is used for transfering the raw frame-by-frame PnP estimates of the
+# ARDevice poses from the single-camera nodes to the aggregator node
 #
 # author: Carlo Rizzardo (c-rizz)
 
 Header header
 
-# The transform representing the registration between the two systems
-geometry_msgs/TransformStamped transform
+# The estimated camera pose
+geometry_msgs/PoseStamped cameraPose
+
+# The camera pose in the ARCore frame
+geometry_msgs/Pose cameraPose_mobileFrame
 
 # Unique identifier of the AR device
 string deviceId

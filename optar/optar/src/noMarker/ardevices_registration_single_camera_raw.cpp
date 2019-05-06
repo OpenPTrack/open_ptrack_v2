@@ -64,7 +64,7 @@ static const string input_kinect_camera_info_topic	= "kinect_camera_info" ;
 /** topic for the heartbeats from all the mobile cameras */
 static const string devices_heartbeats_topicName	  = "heartbeats_topic" ;
 /** topic to publish the raw registration estimation (unflitered and single-camera) */
-static const string output_raw_transform_topic		  = "output_raw_transform_topic";
+static const string output_raw_pose_estimate_topic		  = "output_raw_pose_estimate_topic";
 /** sensor name of the fixed camera */
 static string fixed_sensor_name						          = "fixed_sensor_name";
 
@@ -197,7 +197,7 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 																			 input_kinect_depth_topic,
 																			 input_kinect_camera_info_topic,
 																			 fixed_sensor_name,
-																			 output_raw_transform_topic,
+																			 output_raw_pose_estimate_topic,
 																			 featuresMemory);
 		int r = newHandler->setupParameters(pnpReprojectionError,
 									pnpConfidence,

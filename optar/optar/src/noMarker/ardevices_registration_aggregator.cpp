@@ -16,7 +16,7 @@
 #include <chrono>
 #include <mutex>
 #include <memory> //shared_ptr
-#include <opt_msgs/ARDeviceRegistration.h>
+#include <opt_msgs/ARDevicePoseEstimate.h>
 #include <std_msgs/String.h>
 
 #include "TransformFilterKalman.hpp"
@@ -31,7 +31,7 @@ using namespace std;
 /** ROS node name */
 static const string NODE_NAME 	= "ardevices_registration_aggregator";
 /** Input topic on which we receive all the raw estimates, it should be remapped */
-static const string inputRawEstimationTopic		= "input_raw_transform_topic";
+static const string inputRawPoseTopic		= "input_raw_pose_estimate_topic";
 /** Input topic on which we receive all the AR devices heartbeats, it should be remapped */
 static const string inputHearbeatTopic = "input_heartbeats_topic";
 
@@ -115,27 +115,50 @@ void dynamicParametersCallback(optar::OptarAggregatorParametersConfig &config, u
  * nodes
  * @param inputRegistration Raw estimation from a single camera node
  */
-void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputRegistration)
+void onRawPoseReceived(const opt_msgs::ARDevicePoseEstimatePtr& inputPoseMsg)
 {
-	string deviceId = inputRegistration->deviceId;
+	string deviceId = inputPoseMsg->deviceId;
 
 	std::unique_lock<std::timed_mutex> lock(filtersMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("onRegistrationReceived(): failed to get mutex. Skipping msg for "<<deviceId);
+		ROS_ERROR_STREAM("onRawPoseReceived(): failed to get mutex. Skipping msg for "<<deviceId);
 		return;
 	}
 
-	ROS_INFO_STREAM("received input transform from "<<inputRegistration->fixed_sensor_name<<" for device "<<inputRegistration->deviceId);
+	ROS_INFO_STREAM("received input pose from "<<inputPoseMsg->fixed_sensor_name<<" for device "<<inputPoseMsg->deviceId);
 
 
-	tf::StampedTransform inputTransform;
-	tf::transformStampedMsgToTF(inputRegistration->transform, inputTransform);
-	if(!isPoseValid(inputTransform))
+
+
+	tf::Pose phonePoseTf_world;
+	tf::poseMsgToTF(inputPoseMsg->cameraPose.pose,phonePoseTf_world);
+	//You don't belive me? Dim:
+	// let phonePoseArcoreFrameConverted = Pa
+	// let arcoreWorld = A
+	// let phonePoseTf_world = Pr
+	//
+	// A*Pa*0 = Pr*0
+	// so:
+	// A*Pa = Pr
+	// so:
+	// A*Pa*Pa^-1 = Pr*Pa^-1
+	// so:
+	// A = Pr*Pa^-1
+
+	tf::Pose arcoreWorld = phonePoseTf_world * convertCameraPoseArcoreToRos(inputPoseMsg->cameraPose_mobileFrame).inverse();
+
+	if(!isPoseValid(arcoreWorld))
 	{
-		ROS_WARN_STREAM("Dropping transform as it is invalid");
+		ROS_WARN_STREAM("Dropping pose estimate as it is invalid");
 		return;
 	}
+
+	publishTransformAsTfFrame(phonePoseTf_world,inputPoseMsg->deviceId+"_estimate_"+inputPoseMsg->fixed_sensor_name,"/world",inputPoseMsg->header.stamp);
+	publishTransformAsTfFrame(arcoreWorld,inputPoseMsg->deviceId+"_world_"+inputPoseMsg->fixed_sensor_name,"/world",inputPoseMsg->header.stamp);
+	tf::StampedTransform inputTransform(arcoreWorld, inputPoseMsg->header.stamp, "/world", inputPoseMsg->deviceId+"_world");
+
+
 
 	auto it = filters.find(deviceId);
 	if(it==filters.end())//if it dowsn't exist, create it
@@ -154,10 +177,10 @@ void onRegistrationReceived(const opt_msgs::ARDeviceRegistrationConstPtr& inputR
 
 	tf::Pose filteredRegistration = couple->filter->update(inputTransform);
 	publishTransformAsTfFrame(filteredRegistration,
-		inputRegistration->transform.child_frame_id+"_filtered",
-		inputRegistration->transform.header.frame_id,
-		inputRegistration->transform.header.stamp);
-	ROS_INFO_STREAM("Published filterd transform for device "<<inputRegistration->deviceId);
+		inputTransform.child_frame_id_+"_filtered",
+		inputTransform.frame_id_,
+		inputTransform.stamp_);
+	ROS_INFO_STREAM("Published filterd transform for device "<<inputPoseMsg->deviceId);
 }
 
 /**
@@ -240,7 +263,7 @@ int main(int argc, char** argv)
 
 
 	//This will not launch concurrent callbacks even if we have multiple spinners. That would need to be enabled explicitly somewhere
-	ros::Subscriber registrationSubscriber = nh.subscribe(inputRawEstimationTopic, 100, onRegistrationReceived);
+	ros::Subscriber rawPoseSubscriber = nh.subscribe(inputRawPoseTopic, 100, onRawPoseReceived);
 	ros::Subscriber heartbeatSubscriber = nh.subscribe(inputHearbeatTopic, 100, onHeartbeatReceived);
 
 	ros::AsyncSpinner spinner(threadsNumber);

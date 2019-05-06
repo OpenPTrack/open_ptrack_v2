@@ -25,69 +25,12 @@
 
 #include "../utils.hpp"
 #include "ARDeviceHandler.hpp"
-#include "opt_msgs/ARDeviceRegistration.h"
+#include "opt_msgs/ARDevicePoseEstimate.h"
 
 
 
 using namespace std;
 
-
-/**
- * Computes a new estimation (if possible) using an image reeived from the AR
- * device. The estimation is computed using CameraPoseEstimator::imagesCallback()
- *
- * @param arcoreInputMsg       The message from the AR device
- * @param kinectInputCameraMsg Regular mono image message from the fixed camera
- * @param kinectInputDepthMsg  Depth image from the fixed camera
- */
-void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg)
-{
-	ROS_INFO_STREAM("");
-	ROS_INFO_STREAM("");
-	ROS_INFO_STREAM("");
-	ROS_INFO_STREAM("imagesCallback for device "<<ARDeviceId);
-	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
-	if(!lock.owns_lock())
-	{
-		ROS_ERROR_STREAM("ARDeviceHandler.imagesCallback(): failed to get mutex. Skipping message. ARDeviceId = "<<ARDeviceId);
-		return;
-	}
-
-
-	lastTimeReceivedMessage = std::chrono::steady_clock::now();
-
-
-	int r = estimator->imagesCallback(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,cameraInfo);
-	if(r<0)
-	{
-		ROS_WARN_STREAM("estimation for device "<<ARDeviceId<<" failed with code "<<r);
-	}
-	else if(r>0)
-	{
-		ROS_INFO_STREAM("skipping frame, update returned "<<r);
-	}
-	else
-	{
-		//publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
-
-
-
-
-		opt_msgs::ARDeviceRegistration outputRegistrationMsg;
-		outputRegistrationMsg.deviceId = getARDeviceId();
-		outputRegistrationMsg.fixed_sensor_name = fixed_sensor_name;
-		outputRegistrationMsg.matches_number = estimator->getLastEstimateMatchesNumber();
-		outputRegistrationMsg.reprojection_error = estimator->getLastEstimateReprojectionError();
-		outputRegistrationMsg.transform = estimator->getLastEstimate();
-		rawEstimationPublisher.publish(outputRegistrationMsg);
-
-		tf::StampedTransform tfTransform;
-		transformStampedMsgToTF(estimator->getLastEstimate(),tfTransform);
-		ROS_INFO_STREAM("Published transform = "<<poseToString(tfTransform));
-	}
-}
 
 /**
  * Computes a new estimation (if possible) using the precomputed features received from the AR
@@ -127,20 +70,60 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 	{
 		//publishTransformAsTfFrame(estimator->getEstimation(),estimator->getARDeviceId()+"_world_filtered","/world",arcoreInputMsg->header.stamp);
 
-		opt_msgs::ARDeviceRegistration outputRegistrationMsg;
-		outputRegistrationMsg.deviceId = getARDeviceId();
-		outputRegistrationMsg.fixed_sensor_name = fixed_sensor_name;
-		outputRegistrationMsg.matches_number = estimator->getLastEstimateMatchesNumber();
-		outputRegistrationMsg.reprojection_error = estimator->getLastEstimateReprojectionError();
-		outputRegistrationMsg.transform = estimator->getLastEstimate();
-		outputRegistrationMsg.header.stamp = arcoreInputMsg->header.stamp;
-		rawEstimationPublisher.publish(outputRegistrationMsg);
+
+
+
+		opt_msgs::ARDevicePoseEstimate outputPoseMsg;
+		outputPoseMsg.deviceId = getARDeviceId();
+		outputPoseMsg.fixed_sensor_name = fixed_sensor_name;
+		outputPoseMsg.matches_number = estimator->getLastEstimateMatchesNumber();
+		outputPoseMsg.reprojection_error = estimator->getLastEstimateReprojectionError();
+		outputPoseMsg.cameraPose = estimator->getLastPoseEstimate();
+		outputPoseMsg.header.stamp = arcoreInputMsg->header.stamp;
+		outputPoseMsg.cameraPose_mobileFrame = arcoreInputMsg->mobileFramePose;
+		poseEstimatePublisher.publish(outputPoseMsg);
+
+
+
+
+		tf::Pose phonePoseTf_world;
+		tf::poseMsgToTF(estimator->getLastPoseEstimate().pose,phonePoseTf_world);
+		//You don't belive me? Dim:
+		// let phonePoseArcoreFrameConverted = Pa
+		// let arcoreWorld = A
+		// let phonePoseTf_world = Pr
+		//
+		// A*Pa*0 = Pr*0
+		// so:
+		// A*Pa = Pr
+		// so:
+		// A*Pa*Pa^-1 = Pr*Pa^-1
+		// so:
+		// A = Pr*Pa^-1
+
+		tf::Pose arcoreWorld = phonePoseTf_world * convertCameraPoseArcoreToRos(arcoreInputMsg->mobileFramePose).inverse();
+
+		if(!isPoseValid(arcoreWorld))
+		{
+			ROS_WARN_STREAM("Dropping transform estimate as it is invalid");
+			return;
+		}
+
+		publishTransformAsTfFrame(phonePoseTf_world,ARDeviceId+"_estimate_"+fixed_sensor_name,"/world",arcoreInputMsg->header.stamp);
+		publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world_"+fixed_sensor_name,"/world",arcoreInputMsg->header.stamp);
+
+
+		tf::StampedTransform stampedTransform(arcoreWorld, arcoreInputMsg->header.stamp, "/world", getARDeviceId()+"_world");
+		geometry_msgs::TransformStamped stampedTransformMsg;
+		tf::transformStampedTFToMsg(stampedTransform,stampedTransformMsg);
+
 
 		tf::StampedTransform tfTransform;
-		transformStampedMsgToTF(estimator->getLastEstimate(),tfTransform);
+		transformStampedMsgToTF(stampedTransformMsg,tfTransform);
 		ROS_INFO_STREAM("Published transform = "<<poseToString(tfTransform));
 	}
 }
+
 
 /**
  * Constructs a new ARDeviceHandler, you will neew to start it with ARDeviceHandler::start()
@@ -158,7 +141,7 @@ ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
 									std::string fixedCameraDepthTopicName,
 									std::string cameraInfoTopicName,
 									std::string fixed_sensor_name,
-									std::string outputRawEstimationTopic,
+									std::string poseEstimateTopicName,
 									std::shared_ptr<FeaturesMemory> featuresMemory)
 {
 
@@ -167,7 +150,7 @@ ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
 	this->fixedCameraMonoTopicName = fixedCameraMonoTopicName;
 	this->fixedCameraDepthTopicName = fixedCameraDepthTopicName;
 	this->cameraInfoTopicName = cameraInfoTopicName;
-	this->outputRawEstimationTopic = outputRawEstimationTopic;
+	this->poseEstimateTopicName = poseEstimateTopicName;
 	this->featuresMemory = featuresMemory;
 
 	arDeviceCameraMsgTopicName = "optar/"+ARDeviceId+"/camera";
@@ -216,7 +199,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 		return -1;
 	}
 
-	rawEstimationPublisher = nodeHandle->advertise<opt_msgs::ARDeviceRegistration>(outputRawEstimationTopic, 10);
+	poseEstimatePublisher = nodeHandle->advertise<opt_msgs::ARDevicePoseEstimate>(poseEstimateTopicName, 10);
 
 
 
@@ -286,35 +269,6 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 	//set up the input topics listeners
-
-	//instantiate and set up the policy
-	MyApproximateSynchronizationPolicy policy = MyApproximateSynchronizationPolicy(60);//instatiate setting up the queue size
-	//We set a lower bound of half the period of the slower publisher, this should mek the algorithm behave better (according to the authors)
-	policy.setInterMessageLowerBound(0,ros::Duration(0,250000000));// 2fps
-	policy.setInterMessageLowerBound(1,ros::Duration(0,15000000));// about 30 fps but sometimes more
-	policy.setInterMessageLowerBound(2,ros::Duration(0,15000000));// about 30 fps but sometimes more
-	policy.setMaxIntervalDuration(ros::Duration(5,0));// 5 seconds
-
-
-	arcoreCamera_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraImage>>(*nodeHandle, arDeviceCameraMsgTopicName, 5);
-	kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraMonoTopicName, 30*10);
-	kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraDepthTopicName, 30*10);
-
-
-	//Instantiate a Synchronizer with our policy.
-	synchronizer = std::make_shared<message_filters::Synchronizer<MyApproximateSynchronizationPolicy>>(MyApproximateSynchronizationPolicy(policy), *arcoreCamera_sub, *kinect_img_sub, *kinect_depth_sub);
-
-	//registers the callback
-	auto f = boost::bind( &ARDeviceHandler::imagesCallback, this, _1, _2, _3);
-
-	ROS_INFO_STREAM("Setting up images synchronizer with topics:"<<endl<<
-		ros::names::remap(arDeviceCameraMsgTopicName)<<endl<<
-		ros::names::remap(fixedCameraMonoTopicName)<<endl<<
-		ros::names::remap(fixedCameraDepthTopicName)<<endl);
-	synchronizer->registerCallback(f);
-
-
-
 
 
 

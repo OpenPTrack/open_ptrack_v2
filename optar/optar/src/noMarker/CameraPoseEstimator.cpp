@@ -244,133 +244,9 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
 	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
 	ROS_INFO("total duration is %lu ms",totalDuration);
 
-
 	return r;
 }
 
-
-/**
- * Updates the estimate using a live image from the mobile camera and live images from
- * the fixed camera. And, if enabled, the features memory
- *
- * @param  arcoreInputMsg       Message from the mobile camera, containing a camera image,
- *                              camera info, and camera position in the mobile frame
- * @param  kinectInputCameraMsg Regular mono image from the fixed camera
- * @param  kinectInputDepthMsg  Depth image from the fixed camera
- * @param  kinectCameraInfo     Camera info for the fixed camera
- * @return                      returns zero in case of success, a negative value in case of an
- *                              internal error, a positive value greater than zero if it couldn't
- *                              determine the transformation because the device is looking at
- *                              something too different to what the fixed camera is seeing.
- */
-int CameraPoseEstimator::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
-					const sensor_msgs::CameraInfo& kinectCameraInfo)
-{
-	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
-	long arcoreTime = arcoreInputMsg->header.stamp.sec*1000000000L + arcoreInputMsg->header.stamp.nsec;
-	long kinectTime = kinectInputCameraMsg->header.stamp.sec*1000000000L + kinectInputCameraMsg->header.stamp.nsec;
-	ROS_DEBUG("Received images. time diff = %+7.5f sec.  arcore time = %012ld  kinect time = %012ld",(arcoreTime-kinectTime)/1000000000.0, arcoreTime, kinectTime);
-
-
-
-
-
-	//:::::::::::::::Decode received images and stuff::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-	int r;
-
-
-
-	cv::Mat arcoreCameraMatrix;
-	cv::Mat kinectCameraMatrix;
-	cv::Mat arcoreImg;
-	cv::Mat kinectCameraImg;
-	cv::Mat kinectDepthImg;
-	tf::Pose phonePoseArcoreFrameConverted;
-	r = readReceivedImageMessages( arcoreInputMsg,
-					kinectInputCameraMsg,
-					kinectInputDepthMsg,
-					kinectCameraInfo,
-					arcoreCameraMatrix,
-					arcoreImg,
-					kinectCameraMatrix,
-					kinectCameraImg,
-					kinectDepthImg,
-					phonePoseArcoreFrameConverted);
-	if(r<0)
-	{
-		ROS_ERROR("Invalid input messages. Dropping frame");
-		return -1;
-	}
-
-
-
-	//:::::::::::::::Compute the features in the images::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-
-
-
-
-
-
-
-
-
-	//find matches
-	std::vector<cv::KeyPoint>  arcoreKeypoints;
-	cv::Mat arcoreDescriptors;
-	r = computeOrbFeatures(arcoreImg, arcoreKeypoints, arcoreDescriptors);
-	if(r<0)
-	{
-		ROS_ERROR("error computing arcore features");
-		return -2;
-	}
-	std::vector<cv::KeyPoint>  fixedKeypoints;
-	cv::Mat kinectDescriptors;
-	r =computeOrbFeatures(kinectCameraImg, fixedKeypoints, kinectDescriptors);
-	if(r<0)
-	{
-		ROS_ERROR("error computing camera features");
-		return -3;
-	}
-
-
-	if(enableFeaturesMemory)
-	{
-		const vector<FeaturesMemory::Feature> featuresFromMemory = featuresMemory->getFeatures();
-		ROS_INFO_STREAM("got "<<featuresFromMemory.size()<<" features from memory");
-		for(const FeaturesMemory::Feature& feature : featuresFromMemory)
-		{
-			fixedKeypoints.push_back(feature.keypoint);
-			kinectDescriptors.push_back(feature.descriptor);
-		}
-	}
-
-	r = 10*update (	arcoreKeypoints,
-				arcoreDescriptors,
-				fixedKeypoints,
-				kinectDescriptors,
-				arcoreImg.size(),
-				kinectCameraImg.size(),
-				arcoreCameraMatrix,
-				kinectCameraMatrix,
-				kinectDepthImg,
-				kinectCameraImg,
-				arcoreImg,
-				phonePoseArcoreFrameConverted,
-				arcoreInputMsg->header.stamp,
-				kinectInputCameraMsg->header.frame_id);
-
-
-	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
-	ROS_INFO("total duration is %lu ms",totalDuration);
-
-
-	return r;
-}
 
 
 /**
@@ -598,55 +474,6 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 
 
-
-
-
-
-
-
-
-	tf::Pose phonePoseTf_world;
-	tf::poseMsgToTF(phonePose_world.pose,phonePoseTf_world);
-	ROS_DEBUG_STREAM("phonePoseTf_world = "<<poseToString(phonePoseTf_world));
-	//You don't belive me? Dim:
-	// let phonePoseArcoreFrameConverted = Pa
-	// let arcoreWorld = A
-	// let phonePoseTf_world = Pr
-	//
-	// A*Pa*0 = Pr*0
-	// so:
-	// A*Pa = Pr
-	// so:
-	// A*Pa*Pa^-1 = Pr*Pa^-1
-	// so:
-	// A = Pr*Pa^-1
-	tf::Pose arcoreWorld = phonePoseTf_world * phonePoseArcoreFrameConverted.inverse();
-	//publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world","/world",arcoreInputMsg->header.stamp);
-	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,ARDeviceId+"/"+"phone_arcore_arcore","/arcore_world",arcoreInputMsg->header.stamp);
-	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted.inverse(),ARDeviceId+"/"+"phone_arcore_conv_inv","/phone_estimate",arcoreInputMsg->header.stamp);
-
-
-	if(!isPoseValid(arcoreWorld))
-	{
-		ROS_WARN_STREAM("Dropping transform estimate as it is invalid");
-		return -8;
-	}
-
-
-	publishTransformAsTfFrame(phonePoseTf_world,ARDeviceId+"_estimate_"+fixed_sensor_name,"/world",timestamp);
-	publishTransformAsTfFrame(arcoreWorld,ARDeviceId+"_world_"+fixed_sensor_name,"/world",timestamp);
-
-
-	tf::StampedTransform stampedTransform(arcoreWorld, timestamp, "/world", getARDeviceId()+"_world");
-	geometry_msgs::TransformStamped stampedTransformMsg;
-	tf::transformStampedTFToMsg(stampedTransform,stampedTransformMsg);
-
-	lastEstimate = stampedTransformMsg;
-	lastEstimateMatchesNumber = goodMatches.size();
-	lastEstimateReprojectionError = reprojectionError;
-	didComputeEstimate=true;
-
-
 	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<featureMemoryNonBackgroundRemovalDuration);
 	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
 	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<_3dPositionsComputationDuration);
@@ -678,7 +505,7 @@ geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& 
 	if(didComputeEstimate) //initialize with the previous estimate
 	{
 		tf::Pose lastEstimateTf;
-		tf::transformMsgToTF(lastEstimate.transform,lastEstimateTf);
+		poseMsgToTF(lastPoseEstimate.pose,lastEstimateTf);
 		tfPoseToOpenCvPose(lastEstimateTf, rvec, tvec);
 	}
 
@@ -1418,12 +1245,12 @@ double CameraPoseEstimator::getLastEstimateReprojectionError()
 }
 
 /**
- * Gets the last registration estimate
+ * Gets the last pose estimate
  * @return The estimate
  */
-geometry_msgs::TransformStamped CameraPoseEstimator::getLastEstimate()
+geometry_msgs::PoseStamped CameraPoseEstimator::getLastPoseEstimate()
 {
-	return lastEstimate;
+	return lastPoseEstimate;
 }
 
 /**

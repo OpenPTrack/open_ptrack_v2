@@ -25,14 +25,13 @@
 
 
 /**
- * Class for estimating the registration between a mobile camera and the ROS
- * tf coordinate frame system
+ * Class for estimating the pose of a mobile camera using features also seen from
+ * a fixed depth camera
  */
 class CameraPoseEstimator
 {
 private:
-  /** Stores the last computed estimate */
-	geometry_msgs::TransformStamped lastEstimate;
+
 	/** Laste estimate of the phone pose */
 	geometry_msgs::PoseStamped lastPoseEstimate;
 	/** Number of matches used to compute the last estimate */
@@ -119,12 +118,6 @@ public:
 						unsigned int minimumMatchesNumber,
 						bool enableFeaturesMemory);
 
-
-	int imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
-					const sensor_msgs::CameraInfo& kinectCameraInfo);
-
 	int featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
@@ -145,7 +138,7 @@ public:
 				const ros::Time& timestamp,
 				const std::string fixedCameraFrameId);
 
-	geometry_msgs::TransformStamped getLastEstimate();
+	geometry_msgs::PoseStamped getLastPoseEstimate();
 
 	std::string getARDeviceId();
 

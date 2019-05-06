@@ -57,4 +57,6 @@ bool isPoseValid(const tf::Pose& pose);
 
 geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, std::string frame_id, ros::Time timestamp);
 
+tf::Pose convertCameraPoseArcoreToRos(const geometry_msgs::Pose& cameraPoseArcore);
+
 #endif
