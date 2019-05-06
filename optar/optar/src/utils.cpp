@@ -802,3 +802,21 @@ bool isPoseValid(const tf::Pose& pose)
 
 	return true;
 }
+
+
+/**
+ * Builds a PoseStamepd from a regular Pose
+ * @param  pose      The pose to use
+ * @param  frame_id  The frame id to assign to the pose
+ * @param  timestamp The timestamp for the pose
+ * @return           The resolution stamped pose
+ */
+geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, string frame_id, ros::Time timestamp)
+{
+	geometry_msgs::PoseStamped poseStamped;
+	poseStamped.pose = pose;
+	poseStamped.header.frame_id = frame_id;
+	poseStamped.header.stamp = timestamp;
+
+	return poseStamped;
+}

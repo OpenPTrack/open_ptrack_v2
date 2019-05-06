@@ -204,6 +204,33 @@ private:
 	    std::vector<cv::Point3f>& matches3dPos,
 	    std::vector<cv::Point2f>& matchesImgPos);
 
+	geometry_msgs::Pose computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
+                              const std::vector<cv::Point3f>& matches3dPositions,
+                              const std::vector<cv::Point2f>& matchesImgPixelPos,
+                              std::vector<int>& inliers);
+
+  void drawAndSendReproectionImage(const cv::Mat& arcoreImage,
+																const std::vector<int>& inliers,
+																const std::vector<cv::Point2f>& matchesImgPixelPos,
+																const std::vector<cv::Point2f>& reprojectedPoints);
+
+
+	double computeReprojectionError(const geometry_msgs::Pose& pose,
+														const std::vector<cv::Point3f>& points3d,
+														const cv::Mat& mobileCameraMatrix,
+														const std::vector<cv::Point2f>& points2d,
+														const std::vector<int>& inliers,
+														std::vector<cv::Point2f> reprojectedPoints);
+
+	double computeAngleFromZAxis(const geometry_msgs::Pose& pose);
+
+	void saveInliersToMemory(const std::vector<int>& inliers,
+		const std::vector<cv::Point3f>& goodMatches3dPos,
+		const geometry_msgs::Pose& cameraPose_fixedCameraFrame,
+		const std::vector<cv::DMatch>& goodMatches,
+		const std::vector<cv::KeyPoint>& fixedKeypoints,
+		const cv::Mat& fixedDescriptors,
+		const cv::Mat& kinectDepthImage);
 
 	void closeWindows();
 

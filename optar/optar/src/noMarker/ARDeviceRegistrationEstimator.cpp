@@ -508,29 +508,25 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	//ROS_DEBUG("3D positions computation took %lu ms",_3dPositionsComputationDuration);
 
 
-	//used to publish visualizations to rviz
+	//send markers to rviz and publish matches image
 	visualization_msgs::MarkerArray markerArray;
 	for(unsigned int i=0; i<goodMatches3dPos.size(); i++)//build the rviz markers
-	{
-		cv::Point3f pos3d = goodMatches3dPos.at(i);
-		markerArray.markers.push_back( buildMarker(	pos3d,"match"+std::to_string(i),0,0,1,1, 0.2, fixedCameraFrameId));//matches are blue
-	}
+		markerArray.markers.push_back( buildMarker(	goodMatches3dPos.at(i),"match"+std::to_string(i),0,0,1,1, 0.2, fixedCameraFrameId));//matches are blue
 	debug_markers_pub.publish(markerArray);
 	sensor_msgs::ImagePtr matchesDebugImg;
+	std::chrono::steady_clock::time_point beforeMatchesimage = std::chrono::steady_clock::now();
 	if(showImages)
 	{
 		cv::Mat matchesImg;
 		cv::drawMatches(arcoreImage, arcoreKeypoints, kinectMonoImage, fixedKeypoints, goodMatches, matchesImg, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		cv::putText(matchesImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,matchesImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
-		matchesDebugImg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", matchesImg).toImageMsg();
+		matches_images_pub.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", matchesImg).toImageMsg());
 	}
+	std::chrono::steady_clock::time_point afterMatchesImage = std::chrono::steady_clock::now();
 
 	//If we have less than 4 matches we cannot procede, pnp wouldn't be able to estimate the phone position
 	if(goodMatches.size()<4 || goodMatches.size()<minimumMatchesNumber)
 	{
-		//cv::drawKeypoints(arcoreImg,arcoreKeypoints)
-		if(showImages)//if we have to send debug images
-			matches_images_pub.publish(matchesDebugImg);
 		ROS_WARN("not enough matches to determine position");
 		return 1;
 	}
@@ -546,145 +542,44 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	//:::::::::::::::Determine the phone position::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
-
-
-
-
-
-
-
-
-
-	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
-	cv::Vec3d tvec;
-	cv::Vec3d rvec;
-	if(didComputeEstimate) //initialize with the previous estimate
-	{
-		tf::Pose lastEstimateTf;
-		tf::transformMsgToTF(lastEstimate.transform,lastEstimateTf);
-		tfPoseToOpenCvPose(lastEstimateTf, rvec, tvec);
-	}
 	std::vector<int> inliers;
-	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
-	cv::solvePnPRansac(	goodMatches3dPos,goodMatchesImgPos,
-						arcoreCameraMatrix,cv::noArray(),
-						rvec,tvec,
-						didComputeEstimate,
-						pnpIterations,
-						pnpReprojectionError,
-						pnpConfidence,
-						inliers);
+	std::chrono::steady_clock::time_point beforePnPComputation = std::chrono::steady_clock::now();
+	geometry_msgs::Pose cameraPose_fixedCameraFrame = computeMobileCameraPose(arcoreCameraMatrix,goodMatches3dPos,goodMatchesImgPos, inliers);
+	std::chrono::steady_clock::time_point afterPnPComputation = std::chrono::steady_clock::now();
 
-	ROS_DEBUG_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
+	std::chrono::steady_clock::time_point beforeReprojection = std::chrono::steady_clock::now();
+	std::vector<cv::Point2f> reprojectedPoints;
+	double reprojectionError = computeReprojectionError(cameraPose_fixedCameraFrame,goodMatches3dPos, arcoreCameraMatrix, goodMatchesImgPos, inliers, reprojectedPoints);
+	std::chrono::steady_clock::time_point afterReprojection = std::chrono::steady_clock::now();
+	ROS_DEBUG("Reprojection error computation took %lu ms",std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
 
-	std::chrono::steady_clock::time_point afterPnpComputation = std::chrono::steady_clock::now();
-	unsigned long pnpComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterPnpComputation - after3dpositionsComputation).count();
-	//ROS_DEBUG("PNP computation took %lu ms",pnpComputationDuration);
-
-	//reproject points to then check reprojection error (and visualize them)
-	std::vector<Point2f> reprojPoints;
-	cv::projectPoints(goodMatches3dPos,
-						rvec, tvec,
-						arcoreCameraMatrix,
-						cv::noArray(),
-						reprojPoints);
-
-
-	//debug image to show the reprojection errors
-
-	double reprojError = 0;
-	//calculate reprojection error mean and draw reprojections
-	for(unsigned int i=0;i<inliers.size();i++)
-	{
-		Point2f pix = goodMatchesImgPos.at(inliers.at(i));
-		Point2f reprojPix = reprojPoints.at(inliers.at(i));
-		reprojError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojPoints.size();
-	}
-
-	ROS_INFO_STREAM("inliers reprojection error = "<<reprojError);
-
-
-	std::chrono::steady_clock::time_point reprojectionComputation = std::chrono::steady_clock::now();
-	unsigned long reprojectionComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(reprojectionComputation- afterPnpComputation).count();
-	ROS_DEBUG("Reprojection error computation took %lu ms",reprojectionComputationDuration);
-
-	//if we have to send debug images
+	std::chrono::steady_clock::time_point beforeDrawingReproj = std::chrono::steady_clock::now();
 	if(showImages)
+		drawAndSendReproectionImage(arcoreImage,inliers,goodMatchesImgPos,reprojectedPoints);
+	std::chrono::steady_clock::time_point afterDrawingReproj = std::chrono::steady_clock::now();
+
+		//discard bad frames
+	if(reprojectionError>reprojectionErrorDiscardThreshold)
 	{
-		cv::Mat reprojectionImg;
-		//draw the reprojection image
-		cvtColor(arcoreImage, reprojectionImg, CV_GRAY2RGB);
-		for(size_t i=0;i<inliers.size();i++)
-		{
-			Point2f pix = goodMatchesImgPos.at(inliers.at(i));
-			Point2f reprojPix = reprojPoints.at(inliers.at(i));
-
-			int r = ((double)rand())/RAND_MAX*255;
-			int g = ((double)rand())/RAND_MAX*255;
-			int b = ((double)rand())/RAND_MAX*255;
-			Scalar color = Scalar(r,g,b);
-			cv::circle(reprojectionImg,pix,15,color,5);
-			cv::line(reprojectionImg,pix,reprojPix,color,3);
-		}
-		cv::putText(reprojectionImg, std::to_string(goodMatches.size()).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
-		sensor_msgs::ImagePtr msgReproj = cv_bridge::CvImage(std_msgs::Header(), "bgr8", reprojectionImg).toImageMsg();
-
-		//send the images
-		reproj_images_pub.publish(msgReproj);
-		matches_images_pub.publish(matchesDebugImg);
-	}
-
-
-	std::chrono::steady_clock::time_point afterDrawMatches = std::chrono::steady_clock::now();
-	unsigned long drawMatchesDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawMatches - reprojectionComputation).count();
-	ROS_DEBUG("drawing and sending debug images took %lu ms",drawMatchesDuration);
-
-
-	//discard bad frames
-	if(reprojError>reprojectionErrorDiscardThreshold)
-	{
-		ROS_WARN("Reprojection error beyond threshold, discarding frame");
+		ROS_WARN("Reprojection error beyond threshold, aborting estimation");
 		return 2;
 	}
 
-	//convert to ros format
-	Eigen::Vector3d position;
-	Eigen::Quaterniond rotation;
-	opencvPoseToEigenPose(rvec,tvec,position,rotation);
-	geometry_msgs::Pose poseNotStamped = buildRosPose(position,rotation);
-	//invert the pose, because that's what you do
-	tf::Pose poseTf;
-	tf::poseMsgToTF(poseNotStamped,poseTf);
-	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
-	//make it stamped
-	geometry_msgs::PoseStamped phonePose_kinect;
-	phonePose_kinect.pose = poseNotStamped;
-	phonePose_kinect.header.frame_id = "kinect01_rgb_optical_frame";
-	phonePose_kinect.header.stamp = timestamp;
 	//transform to world frame
 	geometry_msgs::PoseStamped phonePose_world;
-	tf2::doTransform(phonePose_kinect,phonePose_world,transformFixedCameraToWorld);
+	tf2::doTransform(poseToPoseStamped(cameraPose_fixedCameraFrame,"kinect01_rgb_optical_frame", timestamp),phonePose_world,transformFixedCameraToWorld);
 	phonePose_world.header.frame_id = "/world";
 
 	//ROS_INFO_STREAM("estimated pose before transform: "<<phonePose_kinect.pose.position.x<<" "<<phonePose_kinect.pose.position.y<<" "<<phonePose_kinect.pose.position.z<<" ; "<<phonePose_kinect.pose.orientation.x<<" "<<phonePose_kinect.pose.orientation.y<<" "<<phonePose_kinect.pose.orientation.z<<" "<<phonePose_kinect.pose.orientation.w);
 
 	pose_raw_pub.publish(phonePose_world);
-	//publishPoseAsTfFrame(phonePose_world,ARDeviceId+"/"+"mobile_pose");
-
-
 	ROS_DEBUG_STREAM("estimated pose is                "<<phonePose_world.pose.position.x<<" "<<phonePose_world.pose.position.y<<" "<<phonePose_world.pose.position.z<<" ; "<<phonePose_world.pose.orientation.x<<" "<<phonePose_world.pose.orientation.y<<" "<<phonePose_world.pose.orientation.z<<" "<<phonePose_world.pose.orientation.w);
 
 
 	//TODO: this check should not be done if we use the features memory, which should
-	// ideally be always
-
+	// ideally be always.
 	//compute orientation difference with respect to the fixed camera
-	tf::Pose phonePoseTf_fixedCameraFrame;
-	tf::poseMsgToTF(phonePose_kinect.pose,phonePoseTf_fixedCameraFrame);
-	tf::Vector3 zUnitVector(0,0,1);
-	tf::Vector3 phoneOpticalAxis_kinectFrame = tf::Transform(phonePoseTf_fixedCameraFrame.getRotation()) * zUnitVector;
-	double phoneToCameraRotationAngle = std::abs(phoneOpticalAxis_kinectFrame.angle(zUnitVector))*180/3.14159;
-	//ROS_INFO_STREAM("phoneOpticalAxis_kinectFrame = "<<phoneOpticalAxis_kinectFrame.x()<<" "<<phoneOpticalAxis_kinectFrame.y()<<" "<<phoneOpticalAxis_kinectFrame.z());
+	double phoneToCameraRotationAngle = computeAngleFromZAxis(cameraPose_fixedCameraFrame);
 	ROS_DEBUG_STREAM("Angle = "<<phoneToCameraRotationAngle);
 	if(phoneToCameraRotationAngle>phoneOrientationDifferenceThreshold_deg)
 	{
@@ -694,25 +589,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 
 	//save the features we used to memory, they are useful!
-	for(unsigned int i=0;i<inliers.size();i++)
-	{
-		Point3f feature3dPosCv = goodMatches3dPos.at(inliers.at(i));
-		tf::Vector3 feature3dPosTf(feature3dPosCv.x,feature3dPosCv.y,feature3dPosCv.z);//this position is in the fixed camera frame
-		tf::Vector3 phonePosition = phonePoseTf_fixedCameraFrame.getOrigin();
-		Point3f phonePositionCv(phonePosition.x(),phonePosition.y(),phonePosition.z());
-		DMatch& match = goodMatches.at(inliers.at(i));
-
-
-		const KeyPoint& keypoint = fixedKeypoints.at(match.trainIdx);
-		const Mat& descriptor = fixedDescriptors.row(match.trainIdx);
-		double observerDistance_meters = feature3dPosTf.distance(phonePosition);
-		Point3f observerDirection(feature3dPosCv.x-phonePositionCv.x,feature3dPosCv.y-phonePositionCv.y,feature3dPosCv.z-phonePositionCv.z);//this will be in the fixed camera frame
-		uint16_t depth = kinectDepthImage.at<uint16_t>(keypoint.pt);
-
-
-		FeaturesMemory::Feature feature(keypoint, descriptor, observerDistance_meters, observerDirection, depth);
-		featuresMemory->saveFeature(feature);
-	}
+	saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, fixedKeypoints, fixedDescriptors, kinectDepthImage);
 
 	//:::::::::::::::Get arcore world frame of reference::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -764,16 +641,17 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 	lastEstimate = stampedTransformMsg;
 	lastEstimateMatchesNumber = goodMatches.size();
-	lastEstimateReprojectionError = reprojError;
+	lastEstimateReprojectionError = reprojectionError;
 	didComputeEstimate=true;
 
 
 	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<featureMemoryNonBackgroundRemovalDuration);
 	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
 	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<_3dPositionsComputationDuration);
-	ROS_DEBUG_STREAM("pnpComputationDuration="<<pnpComputationDuration);
-	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<reprojectionComputationDuration);
-	ROS_DEBUG_STREAM("drawMatchesDuration="<<drawMatchesDuration);
+	ROS_DEBUG_STREAM("pnpComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterPnPComputation - beforePnPComputation).count());
+	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
+	ROS_DEBUG_STREAM("drawMatchesDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesImage - beforeMatchesimage).count());
+	ROS_DEBUG_STREAM("drawReprojection="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawingReproj - beforeDrawingReproj).count());
 
 
 	return 0;
@@ -782,9 +660,206 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 
 
+/**
+ * Computes the pose of the mobile camera using PnP
+ * @return [description]
+ */
+geometry_msgs::Pose ARDeviceRegistrationEstimator::computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
+                                                          const std::vector<cv::Point3f>& matches3dPositions,
+                                                          const std::vector<cv::Point2f>& matchesImgPixelPos,
+                                                          std::vector<int>& inliers)
+{
+
+	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<mobileCameraMatrix);
+	cv::Vec3d tvec;
+	cv::Vec3d rvec;
+	if(didComputeEstimate) //initialize with the previous estimate
+	{
+		tf::Pose lastEstimateTf;
+		tf::transformMsgToTF(lastEstimate.transform,lastEstimateTf);
+		tfPoseToOpenCvPose(lastEstimateTf, rvec, tvec);
+	}
+
+	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
+	cv::solvePnPRansac(	matches3dPositions,matchesImgPixelPos,
+						mobileCameraMatrix,cv::noArray(),
+						rvec,tvec,
+						didComputeEstimate,
+						pnpIterations,
+						pnpReprojectionError,
+						pnpConfidence,
+						inliers);
+
+	ROS_DEBUG_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
+
+	//ROS_DEBUG("PNP computation took %lu ms",pnpComputationDuration);
+
+
+	//convert to ros format
+	Eigen::Vector3d position;
+	Eigen::Quaterniond rotation;
+	opencvPoseToEigenPose(rvec,tvec,position,rotation);
+	geometry_msgs::Pose poseNotStamped = buildRosPose(position,rotation);
+
+	//invert the pose, because that's what you do
+	tf::Pose poseTf;
+	tf::poseMsgToTF(poseNotStamped,poseTf);
+	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
+
+
+	return poseNotStamped;
+}
 
 
 
+/**
+ * Saves to memory the features indicated in the inliers vector, taking the information from the other arguments
+ * @param inliers                     elements to save to memory
+ * @param goodMatches3dPos            3d positions of the points
+ * @param cameraPose_fixedCameraFrame pose of the mobile camera in the fixed camera frame
+ * @param goodMatches                 list containing the opencv matches
+ * @param keypoints                   keypoints associated with the provided matches
+ * @param descriptors                 descriptors associated with the provided matches
+ * @param kinectDepthImage            depth image form the fixed camera
+ */
+void ARDeviceRegistrationEstimator::saveInliersToMemory(const std::vector<int>& inliers,
+	const std::vector<cv::Point3f>& goodMatches3dPos,
+	const geometry_msgs::Pose& cameraPose_fixedCameraFrame,
+	const std::vector<DMatch>& goodMatches,
+	const std::vector<cv::KeyPoint>& fixedKeypoints,
+	const cv::Mat& fixedDescriptors,
+	const cv::Mat& kinectDepthImage)
+{
+	//save the features we used to memory, they are useful!
+	for(unsigned int i=0;i<inliers.size();i++)
+	{
+		Point3f feature3dPosCv = goodMatches3dPos.at(inliers.at(i));
+		tf::Vector3 feature3dPosTf(feature3dPosCv.x,feature3dPosCv.y,feature3dPosCv.z);//this position is in the fixed camera frame
+		tf::Pose cameraPoseTf_fixedCameraFrame;
+		tf::poseMsgToTF(cameraPose_fixedCameraFrame,cameraPoseTf_fixedCameraFrame);
+		tf::Vector3 phonePosition = cameraPoseTf_fixedCameraFrame.getOrigin();
+		Point3f phonePositionCv(phonePosition.x(),phonePosition.y(),phonePosition.z());
+		const DMatch& match = goodMatches.at(inliers.at(i));
+
+
+		const KeyPoint& keypoint = fixedKeypoints.at(match.trainIdx);
+		const Mat& descriptor = fixedDescriptors.row(match.trainIdx);
+		double observerDistance_meters = feature3dPosTf.distance(phonePosition);
+		Point3f observerDirection(feature3dPosCv.x-phonePositionCv.x,feature3dPosCv.y-phonePositionCv.y,feature3dPosCv.z-phonePositionCv.z);//this will be in the fixed camera frame
+		uint16_t depth = kinectDepthImage.at<uint16_t>(keypoint.pt);
+
+
+		FeaturesMemory::Feature feature(keypoint, descriptor, observerDistance_meters, observerDirection, depth);
+		featuresMemory->saveFeature(feature);
+	}
+}
+
+/**
+ * Computes the angle between the absolute z axis and the z axis local to the proivided pose
+ * @param  pose the pose
+ * @return      the angle
+ */
+double ARDeviceRegistrationEstimator::computeAngleFromZAxis(const geometry_msgs::Pose& pose)
+{
+	tf::Pose poseTf;
+	tf::poseMsgToTF(pose,poseTf);
+	tf::Vector3 zUnitVector(0,0,1);
+	tf::Vector3 opticalAxis = tf::Transform(poseTf.getRotation()) * zUnitVector;
+	return std::abs(opticalAxis.angle(zUnitVector))*180/3.14159;
+}
+
+
+/**
+ * Draws and send a representation of the reprojection of the privided points
+ * @param arcoreImage        the image on which to draw
+ * @param inliers            the points to use
+ * @param matchesImgPixelPos the original 2d pixel position
+ * @param reprojectedPoints  the reprojected 2d pixel positions
+ */
+void ARDeviceRegistrationEstimator::drawAndSendReproectionImage(const cv::Mat& arcoreImage,
+	 const std::vector<int>& inliers,
+	 const std::vector<cv::Point2f>& matchesImgPixelPos,
+   const std::vector<cv::Point2f>& reprojectedPoints)
+{
+		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+	//if we have to send debug images
+		cv::Mat reprojectionImg;
+		//draw the reprojection image
+		cvtColor(arcoreImage, reprojectionImg, CV_GRAY2RGB);
+		for(size_t i=0;i<inliers.size();i++)
+		{
+			Point2f pix = matchesImgPixelPos.at(inliers.at(i));
+			Point2f reprojPix = reprojectedPoints.at(inliers.at(i));
+
+			int r = ((double)rand())/RAND_MAX*255;
+			int g = ((double)rand())/RAND_MAX*255;
+			int b = ((double)rand())/RAND_MAX*255;
+			Scalar color = Scalar(r,g,b);
+			cv::circle(reprojectionImg,pix,15,color,5);
+			cv::line(reprojectionImg,pix,reprojPix,color,3);
+		}
+		cv::putText(reprojectionImg, std::to_string(matchesImgPixelPos.size()).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
+		sensor_msgs::ImagePtr msgReproj = cv_bridge::CvImage(std_msgs::Header(), "bgr8", reprojectionImg).toImageMsg();
+
+		//send the image
+		reproj_images_pub.publish(msgReproj);
+
+
+		std::chrono::steady_clock::time_point afterDrawMatches = std::chrono::steady_clock::now();
+		unsigned long drawMatchesDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawMatches - start).count();
+		ROS_DEBUG("drawing and sending debug images took %lu ms",drawMatchesDuration);
+}
+
+/**
+ * Computes the reprojection error of the provided 3d points on a camera at the provided pose
+ * with the provided matrix
+ * @param  pose               the camera pose
+ * @param  points3d           the 3d positions of the points
+ * @param  mobileCameraMatrix the camera matrix
+ * @param  points2d           the correct 2d poses of the points
+ * @param  inliers            Indicates which points to use of the provided ones
+ * @param  reprojectedPoints  the function returns here the reprojected points
+ * @return                    the reprojection error
+ */
+double ARDeviceRegistrationEstimator::computeReprojectionError(const geometry_msgs::Pose& pose,
+																const std::vector<cv::Point3f>& points3d,
+																const cv::Mat& mobileCameraMatrix,
+																const std::vector<cv::Point2f>& points2d,
+																const std::vector<int>& inliers,
+																std::vector<cv::Point2f> reprojectedPoints)
+{
+
+	cv::Vec3d tvec;
+	cv::Vec3d rvec;
+	tf::Pose poseTf;
+	tf::poseMsgToTF(pose,poseTf);
+	tfPoseToOpenCvPose(poseTf,rvec,tvec);
+
+	//reproject points to then check reprojection error (and visualize them)
+	cv::projectPoints(points3d,
+						rvec, tvec,
+						mobileCameraMatrix,
+						cv::noArray(),
+						reprojectedPoints);
+
+
+	//debug image to show the reprojection errors
+
+	double reprojError = 0;
+	//calculate reprojection error mean and draw reprojections
+	for(unsigned int i=0;i<inliers.size();i++)
+	{
+		Point2f pix = points2d.at(inliers.at(i));
+		Point2f reprojPix = reprojectedPoints.at(inliers.at(i));
+		reprojError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojectedPoints.size();
+	}
+
+	ROS_INFO_STREAM("inliers reprojection error = "<<reprojError);
+
+
+	return reprojError;
+}
 
 
 

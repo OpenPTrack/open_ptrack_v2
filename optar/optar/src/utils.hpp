@@ -55,4 +55,6 @@ tf::Vector3 averagePosePositions(std::vector<tf::Pose> poses);
 
 bool isPoseValid(const tf::Pose& pose);
 
+geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, std::string frame_id, ros::Time timestamp);
+
 #endif
