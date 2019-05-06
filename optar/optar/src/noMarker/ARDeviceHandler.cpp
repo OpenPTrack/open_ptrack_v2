@@ -34,7 +34,7 @@ using namespace std;
 
 /**
  * Computes a new estimation (if possible) using an image reeived from the AR
- * device. The estimation is computed using ARDeviceRegistrationEstimator::imagesCallback()
+ * device. The estimation is computed using CameraPoseEstimator::imagesCallback()
  *
  * @param arcoreInputMsg       The message from the AR device
  * @param kinectInputCameraMsg Regular mono image message from the fixed camera
@@ -91,7 +91,7 @@ void ARDeviceHandler::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& 
 
 /**
  * Computes a new estimation (if possible) using the precomputed features received from the AR
- * device. The estimation is computed using ARDeviceRegistrationEstimator::featuresCallback()
+ * device. The estimation is computed using CameraPoseEstimator::featuresCallback()
  *
  * @param arcoreInputMsg       The message from the AR device
  * @param kinectInputCameraMsg Regular mono image message from the fixed camera
@@ -270,7 +270,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 	//setup the registration estimator
-	estimator = std::make_shared<ARDeviceRegistrationEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, fixed_sensor_name, featuresMemory);
+	estimator = std::make_shared<CameraPoseEstimator>(ARDeviceId, *nodeHandle, transformKinectToWorld, fixed_sensor_name, featuresMemory);
 	estimator->setupParameters(pnpReprojectionError,
 								pnpConfidence,
 								pnpIterations,
@@ -374,18 +374,18 @@ int ARDeviceHandler::stop()
 
 /**
  * Updates the parameters to be used
- * @param  pnpReprojectionError                    See ARDeviceRegistrationEstimator#setupParameters()
- * @param  pnpConfidence                           See ARDeviceRegistrationEstimator#setupParameters()
- * @param  pnpIterations                           See ARDeviceRegistrationEstimator#setupParameters()
- * @param  matchingThreshold                       See ARDeviceRegistrationEstimator#setupParameters()
- * @param  reprojectionErrorDiscardThreshold       See ARDeviceRegistrationEstimator#setupParameters()
- * @param  orbMaxPoints                            See ARDeviceRegistrationEstimator#setupParameters()
- * @param  orbScaleFactor                          See ARDeviceRegistrationEstimator#setupParameters()
- * @param  orbLevelsNumber                         See ARDeviceRegistrationEstimator#setupParameters()
- * @param  phoneOrientationDifferenceThreshold_deg See ARDeviceRegistrationEstimator#setupParameters()
- * @param  showImages                              See ARDeviceRegistrationEstimator#setupParameters()
- * @param  minimumMatchesNumber                    See ARDeviceRegistrationEstimator#setupParameters()
- * @param  enableFeaturesMemory                    See ARDeviceRegistrationEstimator#setupParameters()
+ * @param  pnpReprojectionError                    See CameraPoseEstimator#setupParameters()
+ * @param  pnpConfidence                           See CameraPoseEstimator#setupParameters()
+ * @param  pnpIterations                           See CameraPoseEstimator#setupParameters()
+ * @param  matchingThreshold                       See CameraPoseEstimator#setupParameters()
+ * @param  reprojectionErrorDiscardThreshold       See CameraPoseEstimator#setupParameters()
+ * @param  orbMaxPoints                            See CameraPoseEstimator#setupParameters()
+ * @param  orbScaleFactor                          See CameraPoseEstimator#setupParameters()
+ * @param  orbLevelsNumber                         See CameraPoseEstimator#setupParameters()
+ * @param  phoneOrientationDifferenceThreshold_deg See CameraPoseEstimator#setupParameters()
+ * @param  showImages                              See CameraPoseEstimator#setupParameters()
+ * @param  minimumMatchesNumber                    See CameraPoseEstimator#setupParameters()
+ * @param  enableFeaturesMemory                    See CameraPoseEstimator#setupParameters()
  * @return                                         0 on success, a negative value on fail
  */
 int ARDeviceHandler::setupParameters(double pnpReprojectionError,

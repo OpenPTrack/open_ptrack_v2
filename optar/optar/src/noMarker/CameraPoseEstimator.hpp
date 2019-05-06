@@ -5,7 +5,7 @@
  * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  *
- * ARDeviceRegistrationEstimator class declaration file
+ * CameraPoseEstimator class declaration file
  */
 
 #ifndef AR_DEVICE_REGISTRATION_ESIMATOR_HPP
@@ -28,11 +28,13 @@
  * Class for estimating the registration between a mobile camera and the ROS
  * tf coordinate frame system
  */
-class ARDeviceRegistrationEstimator
+class CameraPoseEstimator
 {
 private:
   /** Stores the last computed estimate */
 	geometry_msgs::TransformStamped lastEstimate;
+	/** Laste estimate of the phone pose */
+	geometry_msgs::PoseStamped lastPoseEstimate;
 	/** Number of matches used to compute the last estimate */
 	int lastEstimateMatchesNumber = -1;
 	/** Reprojection error in the last estimation */
@@ -96,7 +98,7 @@ private:
 
 public:
 
-	ARDeviceRegistrationEstimator(	std::string ARDeviceId,
+	CameraPoseEstimator(	std::string ARDeviceId,
 									ros::NodeHandle& nh,
 									geometry_msgs::TransformStamped transformFixedCameraToWorld,
 									std::string fixed_sensor_name,

@@ -5,10 +5,10 @@
  * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  *
- * ARDeviceRegistrationEstimator methods implementation file
+ * CameraPoseEstimator methods implementation file
  */
 
-#include "ARDeviceRegistrationEstimator.hpp"
+#include "CameraPoseEstimator.hpp"
 #include <opencv2/highgui/highgui.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <ros/ros.h>
@@ -44,7 +44,7 @@ using namespace cv;
  * @param fixed_sensor_name           Sensor name of the fixed camera
  * @param featuresMemory              Features memory to use
  */
-ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId,
+CameraPoseEstimator::CameraPoseEstimator(	string ARDeviceId,
 																ros::NodeHandle& nh,
 																geometry_msgs::TransformStamped transformFixedCameraToWorld,
 																std::string fixed_sensor_name,
@@ -55,7 +55,7 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId,
 	this->fixed_sensor_name = fixed_sensor_name;
 	this->featuresMemory = featuresMemory;
 
-	pose_raw_pub = nh.advertise<geometry_msgs::PoseStamped>("optar/"+ARDeviceId+"/"+outputPoseRaw_topicName, 10);
+	//pose_raw_pub = nh.advertise<geometry_msgs::PoseStamped>("optar/"+ARDeviceId+"/"+outputPoseRaw_topicName, 10);
 	debug_markers_pub = nh.advertise<visualization_msgs::MarkerArray>("optar/"+ARDeviceId+"/"+outputPoseMarker_topicName, 1);
 
 	image_transport::ImageTransport it(nh);
@@ -92,7 +92,7 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(	string ARDeviceId,
  *                                                4 it will be as if it was 4.
  * @param enableFeaturesMemory                    Controls if the feature memory is used
  */
-void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
+void CameraPoseEstimator::setupParameters(double pnpReprojectionError,
 					double pnpConfidence,
 					double pnpIterations,
 					double matchingThreshold,
@@ -131,7 +131,7 @@ void ARDeviceRegistrationEstimator::setupParameters(double pnpReprojectionError,
  * @param  kinectCameraInfo     Camera info for the fixed camera
  * @return                      0 on success, a negative value on fail
  */
-int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo)
@@ -263,7 +263,7 @@ int ARDeviceRegistrationEstimator::featuresCallback(const opt_msgs::ArcoreCamera
  *                              determine the transformation because the device is looking at
  *                              something too different to what the fixed camera is seeing.
  */
-int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
+int CameraPoseEstimator::imagesCallback(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo)
@@ -375,7 +375,7 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
 
 /**
  * Estimates the transformation using the descriptors and keypoints from the fixed camera
- * and the AR device. If ARDeviceRegistrationEstimator#showImages is set it will also publish
+ * and the AR device. If CameraPoseEstimator#showImages is set it will also publish
  * an image showing the matches between the images.
  *
  * @param[in]  arcoreKeypoints                The keypoints in the AR device image
@@ -401,7 +401,7 @@ int ARDeviceRegistrationEstimator::imagesCallback(const opt_msgs::ArcoreCameraIm
  *             positive value greater than zero if it couldn't determine the transformation because
  *             the device is looking at something too different to what the fixed camera is seeing.
  */
-int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
+int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoints,
 				const cv::Mat& arcoreDescriptors,
 				const std::vector<cv::KeyPoint>& fixedKeypoints,
 				const cv::Mat& fixedDescriptors,
@@ -569,10 +569,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	geometry_msgs::PoseStamped phonePose_world;
 	tf2::doTransform(poseToPoseStamped(cameraPose_fixedCameraFrame,"kinect01_rgb_optical_frame", timestamp),phonePose_world,transformFixedCameraToWorld);
 	phonePose_world.header.frame_id = "/world";
-
-	//ROS_INFO_STREAM("estimated pose before transform: "<<phonePose_kinect.pose.position.x<<" "<<phonePose_kinect.pose.position.y<<" "<<phonePose_kinect.pose.position.z<<" ; "<<phonePose_kinect.pose.orientation.x<<" "<<phonePose_kinect.pose.orientation.y<<" "<<phonePose_kinect.pose.orientation.z<<" "<<phonePose_kinect.pose.orientation.w);
-
-	pose_raw_pub.publish(phonePose_world);
+	//pose_raw_pub.publish(phonePose_world);
 	ROS_DEBUG_STREAM("estimated pose is                "<<phonePose_world.pose.position.x<<" "<<phonePose_world.pose.position.y<<" "<<phonePose_world.pose.position.z<<" ; "<<phonePose_world.pose.orientation.x<<" "<<phonePose_world.pose.orientation.y<<" "<<phonePose_world.pose.orientation.z<<" "<<phonePose_world.pose.orientation.w);
 
 
@@ -591,6 +588,11 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 	//save the features we used to memory, they are useful!
 //	saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, fixedKeypoints, fixedDescriptors, kinectDepthImage);
 	saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, arcoreKeypoints,arcoreDescriptors,kinectDepthImage);
+
+	lastPoseEstimate = phonePose_world;
+	lastEstimateMatchesNumber = goodMatches.size();
+	lastEstimateReprojectionError = reprojectionError;
+	didComputeEstimate = true;
 	//:::::::::::::::Get arcore world frame of reference::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
@@ -664,7 +666,7 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
  * Computes the pose of the mobile camera using PnP
  * @return [description]
  */
-geometry_msgs::Pose ARDeviceRegistrationEstimator::computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
+geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
                                                           const std::vector<cv::Point3f>& matches3dPositions,
                                                           const std::vector<cv::Point2f>& matchesImgPixelPos,
                                                           std::vector<int>& inliers)
@@ -722,7 +724,7 @@ geometry_msgs::Pose ARDeviceRegistrationEstimator::computeMobileCameraPose(const
  * @param descriptors                 descriptors associated with the provided matches
  * @param kinectDepthImage            depth image form the fixed camera
  */
-void ARDeviceRegistrationEstimator::saveInliersToMemory(const std::vector<int>& inliers,
+void CameraPoseEstimator::saveInliersToMemory(const std::vector<int>& inliers,
 	const std::vector<cv::Point3f>& goodMatches3dPos,
 	const geometry_msgs::Pose& cameraPose_fixedCameraFrame,
 	const std::vector<DMatch>& goodMatches,
@@ -759,7 +761,7 @@ void ARDeviceRegistrationEstimator::saveInliersToMemory(const std::vector<int>& 
  * @param  pose the pose
  * @return      the angle
  */
-double ARDeviceRegistrationEstimator::computeAngleFromZAxis(const geometry_msgs::Pose& pose)
+double CameraPoseEstimator::computeAngleFromZAxis(const geometry_msgs::Pose& pose)
 {
 	tf::Pose poseTf;
 	tf::poseMsgToTF(pose,poseTf);
@@ -776,7 +778,7 @@ double ARDeviceRegistrationEstimator::computeAngleFromZAxis(const geometry_msgs:
  * @param matchesImgPixelPos the original 2d pixel position
  * @param reprojectedPoints  the reprojected 2d pixel positions
  */
-void ARDeviceRegistrationEstimator::drawAndSendReproectionImage(const cv::Mat& arcoreImage,
+void CameraPoseEstimator::drawAndSendReproectionImage(const cv::Mat& arcoreImage,
 	 const std::vector<int>& inliers,
 	 const std::vector<cv::Point2f>& matchesImgPixelPos,
    const std::vector<cv::Point2f>& reprojectedPoints)
@@ -822,7 +824,7 @@ void ARDeviceRegistrationEstimator::drawAndSendReproectionImage(const cv::Mat& a
  * @param  reprojectedPoints  the function returns here the reprojected points
  * @return                    the reprojection error
  */
-double ARDeviceRegistrationEstimator::computeReprojectionError(const geometry_msgs::Pose& pose,
+double CameraPoseEstimator::computeReprojectionError(const geometry_msgs::Pose& pose,
 																const std::vector<cv::Point3f>& points3d,
 																const cv::Mat& mobileCameraMatrix,
 																const std::vector<cv::Point2f>& points2d,
@@ -874,7 +876,7 @@ double ARDeviceRegistrationEstimator::computeReprojectionError(const geometry_ms
  * @param[out]  descriptors The descriptors will be returned here
  * @return             0 on success, a negatove value on fail
  */
-int ARDeviceRegistrationEstimator::computeOrbFeatures(const cv::Mat& image,
+int CameraPoseEstimator::computeOrbFeatures(const cv::Mat& image,
 					std::vector<cv::KeyPoint>& keypoints,
 					cv::Mat& descriptors)
 {
@@ -908,7 +910,7 @@ int ARDeviceRegistrationEstimator::computeOrbFeatures(const cv::Mat& image,
  * @param  matches           The matches are returned here
  * @return                   0 on success
  */
-int ARDeviceRegistrationEstimator::findOrbMatches(
+int CameraPoseEstimator::findOrbMatches(
 													const cv::Mat& arcoreDescriptors,
 													const cv::Mat& kinectDescriptors,
 													std::vector<cv::DMatch>& matches)
@@ -929,7 +931,7 @@ int ARDeviceRegistrationEstimator::findOrbMatches(
  * @param  goodMatches The filtere mathces are returned here
  * @return             0 on success
  */
-int ARDeviceRegistrationEstimator::filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches)
+int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches)
 {
 	double max_dist = -10000000;
   	double min_dist = 10000000;
@@ -996,7 +998,7 @@ int ARDeviceRegistrationEstimator::filterMatches(const std::vector<cv::DMatch>& 
  * @param  phonePoseArcoreFrameConverted[out] The mobile camera pose in the mobile camera frame is returned here
  * @return                                    0 on success, negative in case of error
  */
-int ARDeviceRegistrationEstimator::readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
+int CameraPoseEstimator::readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo,
@@ -1147,7 +1149,7 @@ int ARDeviceRegistrationEstimator::readReceivedImageMessages(const opt_msgs::Arc
  * @param  debugArcoreImage[out]              The debug image from the mobile amera is retuend here
  * @return                                    0 on success, a negative value on fail
  */
-int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+int CameraPoseEstimator::readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
 					const sensor_msgs::CameraInfo& kinectCameraInfo,
@@ -1326,7 +1328,7 @@ int ARDeviceRegistrationEstimator::readReceivedMessages_features(const opt_msgs:
  * @param  outputMatches  The fixed matches are returned here
  * @return                0 on success
  */
-int ARDeviceRegistrationEstimator::fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& fixedKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches)
+int CameraPoseEstimator::fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& inputMatches, const std::vector<cv::KeyPoint>& fixedKeypoints, cv::Mat& kinectDepthImg,std::vector<cv::DMatch>& outputMatches)
 {
 	outputMatches.clear();
 	for( unsigned int i = 0; i < inputMatches.size(); i++ )
@@ -1368,7 +1370,7 @@ int ARDeviceRegistrationEstimator::fixMatchesDepthOrDrop(const std::vector<cv::D
  *                                 image are returned here
  * @return                         0 on success
  */
-int ARDeviceRegistrationEstimator::get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
+int CameraPoseEstimator::get3dPositionsAndImagePositions(const std::vector<cv::DMatch>& inputMatches,
 	const std::vector<cv::KeyPoint>& fixedKeypoints,
 	const std::vector<cv::KeyPoint>& arcoreKeypoints,
 	const cv::Mat& kinectDepthImg,
@@ -1401,7 +1403,7 @@ int ARDeviceRegistrationEstimator::get3dPositionsAndImagePositions(const std::ve
  * Gets the number of matches used in the last estimation
  * @return The number of matches
  */
-int ARDeviceRegistrationEstimator::getLastEstimateMatchesNumber()
+int CameraPoseEstimator::getLastEstimateMatchesNumber()
 {
 	return lastEstimateMatchesNumber;
 }
@@ -1410,7 +1412,7 @@ int ARDeviceRegistrationEstimator::getLastEstimateMatchesNumber()
  * Gets the reprojection error of the last estimate
  * @return The reprojection error
  */
-double ARDeviceRegistrationEstimator::getLastEstimateReprojectionError()
+double CameraPoseEstimator::getLastEstimateReprojectionError()
 {
 	return lastEstimateReprojectionError;
 }
@@ -1419,7 +1421,7 @@ double ARDeviceRegistrationEstimator::getLastEstimateReprojectionError()
  * Gets the last registration estimate
  * @return The estimate
  */
-geometry_msgs::TransformStamped ARDeviceRegistrationEstimator::getLastEstimate()
+geometry_msgs::TransformStamped CameraPoseEstimator::getLastEstimate()
 {
 	return lastEstimate;
 }
@@ -1428,7 +1430,7 @@ geometry_msgs::TransformStamped ARDeviceRegistrationEstimator::getLastEstimate()
  * Gets the device ID of the AR device of which we are estimating the registration
  * @return [description]
  */
-string ARDeviceRegistrationEstimator::getARDeviceId()
+string CameraPoseEstimator::getARDeviceId()
 {
 	return ARDeviceId;
 }
@@ -1437,7 +1439,7 @@ string ARDeviceRegistrationEstimator::getARDeviceId()
  * Tells if this estimator has ever computed an estimate successfully
  * @return did it?
  */
-bool ARDeviceRegistrationEstimator::hasEstimate()
+bool CameraPoseEstimator::hasEstimate()
 {
 	return didComputeEstimate;
 }

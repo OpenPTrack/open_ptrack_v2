@@ -63,7 +63,7 @@ You can then tune the parameters running rqt
 
 #### Single Camera nodes
 The parameters for the ardevices_registration_single_camera_raw nodes are those of
-the ARDeviceRegistrationEstimator::setupParameters() method. You can find a description
+the CameraPoseEstimator::setupParameters() method. You can find a description
 for each parameter in the method documentation.
 
 #### Aggregator node

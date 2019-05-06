@@ -30,7 +30,7 @@
 #include "../utils.hpp"
 #include "ARDeviceHandler.hpp"
 
-#include "ARDeviceRegistrationEstimator.hpp"
+#include "CameraPoseEstimator.hpp"
 #include "FeaturesMemory.hpp"
 
 /**
@@ -50,14 +50,14 @@
  * (opt_msgs::ArcoreCameraImage messages) or from precomputed features sent from
  * the AR device (opt_msgs::ArcoreCameraFeatures messages)
  *
- * To perform the actual estimation it uses an ARDeviceRegistrationEstimator object
+ * To perform the actual estimation it uses an CameraPoseEstimator object
  *
  * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  */
 class ARDeviceHandler
 {
 private:
-	std::shared_ptr<ARDeviceRegistrationEstimator> estimator;
+	std::shared_ptr<CameraPoseEstimator> estimator;
 	std::string ARDeviceId;
 
 	std::string fixedCameraMonoTopicName;
@@ -116,29 +116,29 @@ private:
 
 
 
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	double pnpReprojectionError = 5;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	double pnpConfidence = 0.99;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	double pnpIterations = 1000;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	double matchingThreshold = 25;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	double reprojectionErrorDiscardThreshold = 5;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	int orbMaxPoints = 500;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	double orbScaleFactor = 1.2;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	int orbLevelsNumber = 8;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	double phoneOrientationDifferenceThreshold_deg = 45;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	bool showImages = true;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	unsigned int minimumMatchesNumber = 4;
-	/** See ARDeviceRegistrationEstimator#setupParameters() */
+	/** See CameraPoseEstimator#setupParameters() */
 	bool enableFeaturesMemory = false;
 
 public:
