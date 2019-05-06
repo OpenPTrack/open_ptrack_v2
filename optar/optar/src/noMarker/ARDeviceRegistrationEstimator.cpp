@@ -589,8 +589,8 @@ int ARDeviceRegistrationEstimator::update(	const std::vector<cv::KeyPoint>& arco
 
 
 	//save the features we used to memory, they are useful!
-	saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, fixedKeypoints, fixedDescriptors, kinectDepthImage);
-
+//	saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, fixedKeypoints, fixedDescriptors, kinectDepthImage);
+	saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, arcoreKeypoints,arcoreDescriptors,kinectDepthImg);
 	//:::::::::::::::Get arcore world frame of reference::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 
