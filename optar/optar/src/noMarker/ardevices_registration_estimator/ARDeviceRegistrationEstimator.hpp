@@ -5,7 +5,7 @@
  * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  *
- * ARDevicePoseEstimatorSingleCamera class declaration file
+ * ARDeviceRegistrationEstimator class declaration file
  */
 
 #ifndef AR_DEVICE_REGISTRATION_ESTIMATOR_HPP
@@ -29,9 +29,9 @@ private:
     geometry_msgs::PoseStamped pose;
     std::chrono::steady_clock::time_point receptionTime;
   };
-  static std::timed_mutex queueMutex;
+  std::timed_mutex queueMutex;
   std::deque<SavedArcorePose> arcorePosesQueue;
-  unsigned int maxTimeInList_millis;
+  ros::Duration queueMaxMsgAge;
 
   PoseFilterEuler poseFilter;
   double pnpMeasurementVarianceFactor;
@@ -45,11 +45,14 @@ private:
   geometry_msgs::TransformStamped lastRegistrationEstimate;
   ros::Time lastFilteredPoseTime;
 
+  ros::Timer oldMsgsProcessorCallerTimer;
+
   void computeAndPublishRegistration(const tf::Pose& arcorePose, const tf::Pose& rosPose, const ros::Time& timestamp);
 
-  void processArcoreQueueUntilSendTime(const ros::Time& time);
+  void processArcoreQueueMsgsSentBeforeTime(const ros::Time& time);
+  void processOldArcoreMsgs(const ros::TimerEvent&);
 public:
-  ARDeviceRegistrationEstimator(std::string arDeviceId, unsigned int maxTimeInList_millis);
+  ARDeviceRegistrationEstimator(const std::string& arDeviceId, const ros::Duration& queueMaxMsgAge);
   std::string getARDeviceId();
   void setupParameters(double positionProcessVariance, double positionMeasurementVariance,
                        double orientationProcessVariance, double orientationMeasurementVariance,
@@ -58,6 +61,8 @@ public:
 
   void onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimate& poseEstimate);
   void onArcorePoseReceived(const geometry_msgs::PoseStamped& pose);
+
+  void start(std::shared_ptr<ros::NodeHandle> nodeHandle);
 };
 
 #endif

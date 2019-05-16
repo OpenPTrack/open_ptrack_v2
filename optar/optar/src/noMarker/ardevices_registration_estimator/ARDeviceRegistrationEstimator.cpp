@@ -1,15 +1,15 @@
 
 #include "ARDeviceRegistrationEstimator.hpp"
-#include "../utils.hpp"
+#include "../../utils.hpp"
 #include <mutex>
 
 using namespace std;
 
-ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator( std::string arDeviceId,
-                                                              unsigned int maxTimeInList_millis)
+ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(const std::string& arDeviceId,
+                                                             const ros::Duration& queueMaxMsgAge)
 {
   this->arDeviceId = arDeviceId;
-  this->maxTimeInList_millis = maxTimeInList_millis;
+  this->queueMaxMsgAge = queueMaxMsgAge;
 
   poseFilter.setupParameters(1,1,1,1);
 }
@@ -66,7 +66,7 @@ void ARDeviceRegistrationEstimator::computeAndPublishRegistration(const tf::Pose
 }
 
 
-void ARDeviceRegistrationEstimator::processArcoreQueueUntilSendTime(const ros::Time& time)
+void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const ros::Time& time)
 {
 
   std::unique_lock<std::timed_mutex> lock(queueMutex, std::chrono::milliseconds(5000));
@@ -103,7 +103,7 @@ void ARDeviceRegistrationEstimator::processArcoreQueueUntilSendTime(const ros::T
 void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimate& poseEstimate)
 {
   //update the filter with the arcor estimates up to now
-  processArcoreQueueUntilSendTime(poseEstimate.header.stamp);
+  processArcoreQueueMsgsSentBeforeTime(poseEstimate.header.stamp);
 
   tf::Pose pose_world_tf;
   poseMsgToTF(poseEstimate.cameraPose.pose,pose_world_tf);
@@ -125,4 +125,16 @@ void ARDeviceRegistrationEstimator::onArcorePoseReceived(const geometry_msgs::Po
 		return;
 	}
   arcorePosesQueue.push_back(sap);
+}
+
+void ARDeviceRegistrationEstimator::processOldArcoreMsgs(const ros::TimerEvent&)
+{
+  processArcoreQueueMsgsSentBeforeTime(ros::Time::now()-queueMaxMsgAge);
+}
+
+void ARDeviceRegistrationEstimator::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
+{
+  oldMsgsProcessorCallerTimer = nodeHandle->createTimer(queueMaxMsgAge*0.5,
+                                                        &ARDeviceRegistrationEstimator::processOldArcoreMsgs,
+                                                        this);
 }

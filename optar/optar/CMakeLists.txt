@@ -182,9 +182,21 @@ target_link_libraries(ardevices_poses_republisher optarUtils ${catkin_LIBRARIES}
 add_dependencies(ardevices_poses_republisher optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 
-add_executable(ardevices_registration_aggregator src/noMarker/ardevices_registration_aggregator.cpp src/noMarker/TransformFilterKalman.cpp)
+add_executable(ardevices_registration_aggregator
+                    src/noMarker/ardevices_registration_aggregator.cpp
+                    src/noMarker/TransformFilterKalman.cpp)
 target_link_libraries(ardevices_registration_aggregator optarUtils ${catkin_LIBRARIES})
 add_dependencies(ardevices_registration_aggregator optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+
+
+add_executable(ardevices_registration_estimator
+                    src/noMarker/ardevices_registration_estimator/ardevices_registration_estimator.cpp
+                    src/noMarker/ARDevicesManager.cpp
+                    src/noMarker/ardevices_registration_estimator/ARDeviceRegistrationEstimator.cpp
+                    src/noMarker/ardevices_registration_estimator/PoseFilterEuler.cpp
+                    src/noMarker/ardevices_registration_estimator/Position3DKalmanFilter.cpp)
+target_link_libraries(ardevices_registration_estimator optarUtils ${catkin_LIBRARIES})
+add_dependencies(ardevices_registration_estimator optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 
 
