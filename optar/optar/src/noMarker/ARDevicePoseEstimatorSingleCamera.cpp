@@ -5,7 +5,7 @@
  * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  *
- * ARDeviceHandler methods implementation file
+ * ARDevicePoseEstimatorSingleCamera methods implementation file
  */
 
 
@@ -24,7 +24,7 @@
 #include <mutex>
 
 #include "../utils.hpp"
-#include "ARDeviceHandler.hpp"
+#include "ARDevicePoseEstimatorSingleCamera.hpp"
 #include "opt_msgs/ARDevicePoseEstimate.h"
 
 
@@ -40,7 +40,7 @@ using namespace std;
  * @param kinectInputCameraMsg Regular mono image message from the fixed camera
  * @param kinectInputDepthMsg  Depth image from the fixed camera
  */
-void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
+void ARDevicePoseEstimatorSingleCamera::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg)
 {
@@ -51,7 +51,7 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDeviceHandler.imagesCallback(): failed to get mutex. Skipping message. ARDeviceId = "<<ARDeviceId);
+		ROS_ERROR_STREAM("ARDevicePoseEstimatorSingleCamera.imagesCallback(): failed to get mutex. Skipping message. ARDeviceId = "<<ARDeviceId);
 		return;
 	}
 
@@ -126,7 +126,7 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
 
 
 /**
- * Constructs a new ARDeviceHandler, you will neew to start it with ARDeviceHandler::start()
+ * Constructs a new ARDevicePoseEstimatorSingleCamera, you will neew to start it with ARDevicePoseEstimatorSingleCamera::start()
  *
  * @param ARDeviceId                    device Id of the handled device
  * @param fixedCameraMonoTopicName      Topic for receiving the mono images from the fixed camera
@@ -136,7 +136,7 @@ void ARDeviceHandler::featuresCallback(const opt_msgs::ArcoreCameraFeaturesConst
  * @param outputRawEstimationTopic      Topic on which to output the registration estimation
  * @param featuresMemory                FeatureMemory object to remember and share useful features
  */
-ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
+ARDevicePoseEstimatorSingleCamera::ARDevicePoseEstimatorSingleCamera(	std::string ARDeviceId,
 									std::string fixedCameraMonoTopicName,
 									std::string fixedCameraDepthTopicName,
 									std::string cameraInfoTopicName,
@@ -162,12 +162,12 @@ ARDeviceHandler::ARDeviceHandler(	std::string ARDeviceId,
 /**
  * Destructs the object unsubscribing from the topics if needed
  */
-ARDeviceHandler::~ARDeviceHandler()
+ARDevicePoseEstimatorSingleCamera::~ARDevicePoseEstimatorSingleCamera()
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("~ARDeviceHandler(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
+		ROS_ERROR_STREAM("~ARDevicePoseEstimatorSingleCamera(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
 	}
 	if(!stopped)
 	{
@@ -190,12 +190,12 @@ ARDeviceHandler::~ARDeviceHandler()
  * @param  nodeHandle The ROS node handle
  * @return            0 on success, a negative value on fail
  */
-int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
+int ARDevicePoseEstimatorSingleCamera::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDeviceHandler.start(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
+		ROS_ERROR_STREAM("ARDevicePoseEstimatorSingleCamera.start(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
 		return -1;
 	}
 
@@ -291,7 +291,7 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 
 
 	//registers the callback
-	auto featuresCallbackFunction = boost::bind( &ARDeviceHandler::featuresCallback, this, _1, _2, _3);
+	auto featuresCallbackFunction = boost::bind( &ARDevicePoseEstimatorSingleCamera::featuresCallback, this, _1, _2, _3);
 
 	ROS_INFO_STREAM("Setting up images-features synchronizer with topics:"<<endl<<
 		ros::names::remap(arDeviceFeaturesMsgTopicName)<<endl<<
@@ -309,12 +309,12 @@ int ARDeviceHandler::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
  * Unsubscribes from the input topics
  * @return 0 on success, a negative value on fail
  */
-int ARDeviceHandler::stop()
+int ARDevicePoseEstimatorSingleCamera::stop()
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDeviceHandler.stop(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
+		ROS_ERROR_STREAM("ARDevicePoseEstimatorSingleCamera.stop(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
 		return -1;
 	}
 	if(stopped)
@@ -342,7 +342,7 @@ int ARDeviceHandler::stop()
  * @param  enableFeaturesMemory                    See CameraPoseEstimator#setupParameters()
  * @return                                         0 on success, a negative value on fail
  */
-int ARDeviceHandler::setupParameters(double pnpReprojectionError,
+int ARDevicePoseEstimatorSingleCamera::setupParameters(double pnpReprojectionError,
 					double pnpConfidence,
 					double pnpIterations,
 					double matchingThreshold,
@@ -358,7 +358,7 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDeviceHandler.setupParameters(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
+		ROS_ERROR_STREAM("ARDevicePoseEstimatorSingleCamera.setupParameters(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
 		return -1;
 	}
 	this->pnpReprojectionError=pnpReprojectionError;
@@ -396,7 +396,7 @@ int ARDeviceHandler::setupParameters(double pnpReprojectionError,
  * Gets the device ID for the AR device handled by this object
  * @return The device ID
  */
-string ARDeviceHandler::getARDeviceId()
+string ARDevicePoseEstimatorSingleCamera::getARDeviceId()
 {
 	return ARDeviceId;
 }
@@ -405,12 +405,12 @@ string ARDeviceHandler::getARDeviceId()
  * Return the time since this handler last reeived a message from the AR device, in milliseconds
  * @return Th time in milliseconds
  */
-int ARDeviceHandler::millisecondsSinceLastMessage()
+int ARDevicePoseEstimatorSingleCamera::millisecondsSinceLastMessage()
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDeviceHandler.setupParameters(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
+		ROS_ERROR_STREAM("ARDevicePoseEstimatorSingleCamera.setupParameters(): failed to get mutex. ARDeviceId = "<<ARDeviceId);
 		return -1;
 	}
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();

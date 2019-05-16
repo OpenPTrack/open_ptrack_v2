@@ -5,7 +5,7 @@
  * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  *
  *
- * ARDeviceHandler class declaration file
+ * ARDevicePoseEstimatorSingleCamera class declaration file
  */
 
 #ifndef AR_DEVICE_HANDLER_HPP_201903071552
@@ -28,7 +28,7 @@
 #include <mutex>
 
 #include "../utils.hpp"
-#include "ARDeviceHandler.hpp"
+#include "ARDevicePoseEstimatorSingleCamera.hpp"
 
 #include "CameraPoseEstimator.hpp"
 #include "FeaturesMemory.hpp"
@@ -37,7 +37,7 @@
  * Handler for one AR device that estimates the coordinate frame registration
  * between the device and the ROS tf system using one fixed RGB-D camera.
  *
- * After construting an object you need to call the ARDeviceHandler::start() method,
+ * After construting an object you need to call the ARDevicePoseEstimatorSingleCamera::start() method,
  * this will start listening for messages from the device and so estimating
  * the transform between the two coordinate systems.
  *
@@ -54,7 +54,7 @@
  *
  * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
  */
-class ARDeviceHandler
+class ARDevicePoseEstimatorSingleCamera
 {
 private:
 	std::shared_ptr<CameraPoseEstimator> estimator;
@@ -104,7 +104,7 @@ private:
 
 
 
-	/** Mutex to synchronize the methods of the ARDeviceHandler */
+	/** Mutex to synchronize the methods of the ARDevicePoseEstimatorSingleCamera */
 	std::timed_mutex objectMutex;
 	/** To keep track of the time we last received a message */
  	std::chrono::steady_clock::time_point lastTimeReceivedMessage;
@@ -142,7 +142,7 @@ private:
 	bool enableFeaturesMemory = false;
 
 public:
-	ARDeviceHandler(std::string ARDeviceId,
+	ARDevicePoseEstimatorSingleCamera(std::string ARDeviceId,
 					 std::string fixedCameraMonoTopicName,
 					 std::string fixedCameraDepthTopicName,
 					 std::string cameraInfoTopicName,
@@ -150,7 +150,7 @@ public:
 					 std::string outputRawEstimationTopic,
 					 std::shared_ptr<FeaturesMemory> featuresMemory);
 
-	~ARDeviceHandler();
+	~ARDevicePoseEstimatorSingleCamera();
 	int start(std::shared_ptr<ros::NodeHandle> NodeHandle);
 	int stop();
 

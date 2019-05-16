@@ -5,7 +5,7 @@
  *
  * Implementation of the ardevices_registration_aggregator ROS node
  * This node is responsible for aggregating the raw estimates produced by the
- * ardevices_registration_single_camera_raw nodes. So it receives all the raw
+ * ardevices_pose_estimator_single_camera_raw nodes. So it receives all the raw
  * estimates, aggregates them and filters them to generate a unique registration
  * for each AR device.
  *
@@ -111,7 +111,7 @@ void dynamicParametersCallback(optar::OptarAggregatorParametersConfig &config, u
 }
 
 /**
- * Callback for receiving the raw estimations from the ardevices_registration_single_camera_raw
+ * Callback for receiving the raw estimations from the ardevices_pose_estimator_single_camera_raw
  * nodes
  * @param inputRegistration Raw estimation from a single camera node
  */

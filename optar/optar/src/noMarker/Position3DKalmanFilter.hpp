@@ -27,18 +27,19 @@ private:
 	/** Size of the measurement vector */
 	const unsigned int measurementVectorSize = 3;
 
+	double processNoiseVarianceFactor;
 
+	bool didEverComputeState = false;
 
   cv::Mat processNoiseCovariance(double timestep);
 	cv::Mat transitionMatrix(double timestep);
-	void setupParameters( double measurementNoiseVarianceX,
-                        double measurementNoiseVarianceY,
-                        double measurementNoiseVarianceZ);
+
 
 public:
   Position3DKalmanFilter();
-	cv::Mat update(cv::Mat measurement, double timestep_sec);
-	tf::Vector3 update(tf::Vector3 measurement, double timestep_sec);
+	void setupParameters( double measurementNoiseVariance, double processNoiseVarianceFactor);
+	cv::Mat update(const cv::Mat& measurement, double timestep_sec);
+	tf::Vector3 update(const tf::Vector3& measurement, double timestep_sec);
 };
 
 #endif

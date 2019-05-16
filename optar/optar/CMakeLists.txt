@@ -160,9 +160,9 @@ add_dependencies(motion_control motion_control_cpp ${PROJECT_NAME}_generate_mess
 
 
 
-add_executable(ardevices_registration_single_camera_raw src/noMarker/ardevices_registration_single_camera_raw.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/CameraPoseEstimator.cpp src/noMarker/ARDeviceHandler.cpp src/noMarker/FeaturesMemory.cpp)
-target_link_libraries(ardevices_registration_single_camera_raw optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(ardevices_registration_single_camera_raw optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+add_executable(ardevices_pose_estimator_single_camera_raw src/noMarker/ardevices_pose_estimator_single_camera_raw.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/CameraPoseEstimator.cpp src/noMarker/ARDevicePoseEstimatorSingleCamera.cpp src/noMarker/FeaturesMemory.cpp)
+target_link_libraries(ardevices_pose_estimator_single_camera_raw optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(ardevices_pose_estimator_single_camera_raw optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 add_executable(dummy_track_publisher src/noMarker/dummyTrackPublisher.cpp)
 target_link_libraries(dummy_track_publisher ${catkin_LIBRARIES})
@@ -189,4 +189,4 @@ add_dependencies(ardevices_registration_aggregator optarUtils ${${PROJECT_NAME}_
 
 
 # make sure configure headers are built before any node using them
-add_dependencies(ardevices_registration_single_camera_raw ${PROJECT_NAME}_gencfg)
+add_dependencies(ardevices_pose_estimator_single_camera_raw ${PROJECT_NAME}_gencfg)

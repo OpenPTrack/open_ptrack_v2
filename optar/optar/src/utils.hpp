@@ -43,7 +43,7 @@ void publishTransformAsTfFrame(const tf::Transform& transform, std::string tfFra
 
 
 geometry_msgs::Point buildRosPoint(double positionX, double positionY, double positionZ);
-geometry_msgs::Quaternion& buildRosQuaternion(double quaternionX, double quaternionY, double quaternionZ, double quaternionW);
+geometry_msgs::Quaternion buildRosQuaternion(double quaternionX, double quaternionY, double quaternionZ, double quaternionW);
 geometry_msgs::Pose buildRosPose(double positionX, double positionY, double positionZ, double quaternionX, double quaternionY, double quaternionZ, double quaternionW);
 geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation);
 
@@ -58,5 +58,6 @@ bool isPoseValid(const tf::Pose& pose);
 geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, std::string frame_id, ros::Time timestamp);
 
 tf::Pose convertCameraPoseArcoreToRos(const geometry_msgs::Pose& cameraPoseArcore);
+tf::Pose convertCameraPoseArcoreToRos(const tf::Pose& cameraPoseArcore);
 
 #endif

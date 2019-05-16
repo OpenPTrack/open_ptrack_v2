@@ -28,6 +28,8 @@
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 
+#include "utils.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -590,7 +592,7 @@ void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTran
  *                   it will be deduced from winHeight using the aspect of the image
  *
  */
-void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHeight, int winWidth=-1)
+void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHeight, int winWidth)
 {
 	cv::namedWindow(winName, cv::WINDOW_NORMAL);
 	if(winWidth==-1)
@@ -838,14 +840,34 @@ geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, st
  */
 tf::Pose convertCameraPoseArcoreToRos(const geometry_msgs::Pose& cameraPoseArcore)
 {
+		tf::Pose phonePoseArcoreFrameUnity;
+		tf::poseMsgToTF(cameraPoseArcore,phonePoseArcoreFrameUnity);
+		return convertCameraPoseArcoreToRos(phonePoseArcoreFrameUnity);
+}
+
+
+/**
+ * Converts the mobile camera pose from the ARCore convention to the ROS covention
+ * ARCore on Unity uses Unity's coordinate system, which is left-handed, normally in arcore
+ * for Android the arcore camera position is defined with x pointing right, y pointing up and
+ * -z pointing where the camera is facing.
+ * ROS uses a right-handed system, with x pointing right, y pointing down and z pointing where
+ * the camera is facing.
+ * As provided from all ARCore APIs, Poses always describe the transformation from object's
+ * local coordinate space to the world coordinate space. This is the usual pose representation,
+ * same as ROS.
+ * @param  cameraPoseArcore The camera pose in ARCore's convention
+ * @return                  The camera pose in the ROS convention
+ */
+tf::Pose convertCameraPoseArcoreToRos(const tf::Pose& cameraPoseArcore)
+{
 
 		// Convert phone arcore pose
 		// ARCore on Unity uses Unity's coordinate systema, which is left-handed, normally in arcore for Android the arcore
 		// camera position is defined with x pointing right, y pointing up and -z pointing where the camera is facing.
 		// As provided from all ARCore APIs, Poses always describe the transformation from object's local coordinate space
 		// to the world coordinate space. This is the usual pose representation, same as ROS
-		tf::Pose phonePoseArcoreFrameUnity;
-		tf::poseMsgToTF(cameraPoseArcore,phonePoseArcoreFrameUnity);
+		tf::Pose phonePoseArcoreFrameUnity = cameraPoseArcore;
 		tf::Pose phonePoseArcoreFrame = convertPoseUnityToRos(phonePoseArcoreFrameUnity);
 
 		//publishTransformAsTfFrame(phonePoseArcoreFrame,"phone_arcore","/world",arcoreInputMsg->header.stamp);

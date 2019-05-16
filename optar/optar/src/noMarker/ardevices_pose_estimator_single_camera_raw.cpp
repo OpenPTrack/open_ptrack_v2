@@ -10,10 +10,10 @@
  *
  * New mobile cameras are detected listening at the heartbeats topic. Each mobile device
  * periodically sends an "heartbeat" message containing its deviceId. When this node
- * detects a new device it instantiates an ARDeviceHandler to listen for messages and
+ * detects a new device it instantiates an ARDevicePoseEstimatorSingleCamera to listen for messages and
  * estimate its coordinate frame pose.
  * If no message is received from a device in a specific timeout period (handler_no_msg_timeout)
- * then the node removes the ARDeviceHandler for the device, and so stops listeneing for messages
+ * then the node removes the ARDevicePoseEstimatorSingleCamera for the device, and so stops listeneing for messages
  * from that specific device and deletes its registration estimation.
  *
  */
@@ -47,14 +47,14 @@
 #include <optar/OptarSingleCameraParametersConfig.h>
 
 #include "../utils.hpp"
-#include "ARDeviceHandler.hpp"
+#include "ARDevicePoseEstimatorSingleCamera.hpp"
 #include "FeaturesMemory.hpp"
 
 using namespace cv;
 using namespace std;
 
 /** The ROS node name */
-static const string NODE_NAME 						= "ardevices_registration_single_camera_raw";
+static const string NODE_NAME 						= "ardevices_pose_estimator_single_camera_raw";
 /** topic for the fixed camera regular images */
 static const string input_kinect_camera_topic		    = "kinect_camera" ;
 /** topic for the fixed camera depth images */
@@ -104,7 +104,7 @@ const unsigned int threadsNumber = 8;
 
 
 /** Handlers for the actove devices */
-map<string, shared_ptr<ARDeviceHandler>> handlers;
+map<string, shared_ptr<ARDevicePoseEstimatorSingleCamera>> handlers;
 /** Mutex for \link handlers \endlink */
 timed_mutex handlersMutex;
 /** Ros handle for this node */
@@ -192,7 +192,7 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 	if(it==handlers.end())//if it dowsn't exist, create it
 	{
 		ROS_INFO_STREAM("New device detected, id="<<deviceName);
-		shared_ptr<ARDeviceHandler> newHandler = make_shared<ARDeviceHandler>(deviceName,
+		shared_ptr<ARDevicePoseEstimatorSingleCamera> newHandler = make_shared<ARDevicePoseEstimatorSingleCamera>(deviceName,
 																			 input_kinect_camera_topic,
 																			 input_kinect_depth_topic,
 																			 input_kinect_camera_info_topic,
@@ -222,7 +222,7 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 			ROS_ERROR_STREAM("Couldn't start device handler, error "<<r<<". Will not handle device "<<deviceName);
 			return;
 		}
-		handlers.insert(map<string, shared_ptr<ARDeviceHandler>>::value_type(newHandler->getARDeviceId(),newHandler));
+		handlers.insert(map<string, shared_ptr<ARDevicePoseEstimatorSingleCamera>>::value_type(newHandler->getARDeviceId(),newHandler));
 		ROS_INFO_STREAM("Started handler for device "<<newHandler->getARDeviceId());
 	}
 }
