@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   opt_msgs
   image_transport
+  eigen_conversions
   )
 
 
@@ -160,7 +161,11 @@ add_dependencies(motion_control motion_control_cpp ${PROJECT_NAME}_generate_mess
 
 
 
-add_executable(ardevices_pose_estimator_single_camera_raw src/noMarker/ardevices_pose_estimator_single_camera_raw.cpp src/noMarker/TransformFilterKalman.cpp src/noMarker/CameraPoseEstimator.cpp src/noMarker/ARDevicePoseEstimatorSingleCamera.cpp src/noMarker/FeaturesMemory.cpp)
+add_executable(ardevices_pose_estimator_single_camera_raw
+                    src/noMarker/ardevices_pose_estimator_single_camera_raw/ardevices_pose_estimator_single_camera_raw.cpp
+                    src/noMarker/ardevices_pose_estimator_single_camera_raw/CameraPoseEstimator.cpp
+                    src/noMarker/ardevices_pose_estimator_single_camera_raw/ARDevicePoseEstimatorSingleCamera.cpp
+                    src/noMarker/ardevices_pose_estimator_single_camera_raw/FeaturesMemory.cpp)
 target_link_libraries(ardevices_pose_estimator_single_camera_raw optarUtils ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(ardevices_pose_estimator_single_camera_raw optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
@@ -183,8 +188,8 @@ add_dependencies(ardevices_poses_republisher optarUtils ${${PROJECT_NAME}_EXPORT
 
 
 add_executable(ardevices_registration_aggregator
-                    src/noMarker/ardevices_registration_aggregator.cpp
-                    src/noMarker/TransformFilterKalman.cpp)
+                    src/noMarker/ardevices_registration_aggregator/ardevices_registration_aggregator.cpp
+                    src/noMarker/ardevices_registration_aggregator/TransformFilterKalman.cpp)
 target_link_libraries(ardevices_registration_aggregator optarUtils ${catkin_LIBRARIES})
 add_dependencies(ardevices_registration_aggregator optarUtils ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
@@ -202,3 +207,8 @@ add_dependencies(ardevices_registration_estimator optarUtils ${${PROJECT_NAME}_E
 
 # make sure configure headers are built before any node using them
 add_dependencies(ardevices_pose_estimator_single_camera_raw ${PROJECT_NAME}_gencfg)
+
+
+add_executable(integrate_calibration_refinement src/noMarker/integrate_calibration_refinement.cpp )
+target_link_libraries(integrate_calibration_refinement optarUtils ${catkin_LIBRARIES})
+add_dependencies(integrate_calibration_refinement ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)

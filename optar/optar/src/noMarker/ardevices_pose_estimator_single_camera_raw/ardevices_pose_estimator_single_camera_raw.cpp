@@ -46,7 +46,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <optar/OptarSingleCameraParametersConfig.h>
 
-#include "../utils.hpp"
+#include "../../utils.hpp"
 #include "ARDevicePoseEstimatorSingleCamera.hpp"
 #include "FeaturesMemory.hpp"
 

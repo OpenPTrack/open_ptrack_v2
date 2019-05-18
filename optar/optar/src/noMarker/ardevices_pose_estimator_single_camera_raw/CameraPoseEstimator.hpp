@@ -19,8 +19,10 @@
 #include <cv_bridge/cv_bridge.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <image_transport/image_transport.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <tf/tf.h>
 
-#include "TransformFilterKalman.hpp"
 #include "FeaturesMemory.hpp"
 
 

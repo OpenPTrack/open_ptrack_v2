@@ -363,9 +363,10 @@ visualization_msgs::Marker buildMarker(const cv::Point3f& position, std::string 
  */
 double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2)
 {
-	return std::sqrt((pose1.position.x*pose1.position.x - pose2.position.x*pose2.position.x) +
-					 (pose1.position.y*pose1.position.y - pose2.position.y*pose2.position.y) +
-					 (pose1.position.z*pose1.position.z - pose2.position.z*pose2.position.z));
+
+	return std::sqrt((pose1.position.x - pose2.position.x)*(pose1.position.x - pose2.position.x) +
+									 (pose1.position.y - pose2.position.y)*(pose1.position.y - pose2.position.y) +
+									 (pose1.position.z - pose2.position.z)*(pose1.position.z - pose2.position.z));
 }
 
 /**
@@ -378,9 +379,11 @@ double poseDistance(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2)
  */
 double poseDistance(tf::Pose pose1, tf::Pose pose2)
 {
-	return std::sqrt((pose1.getOrigin().x()*pose1.getOrigin().x() - pose2.getOrigin().x()*pose2.getOrigin().x()) +
-					 (pose1.getOrigin().y()*pose1.getOrigin().y() - pose2.getOrigin().y()*pose2.getOrigin().y()) +
-					 (pose1.getOrigin().z()*pose1.getOrigin().z() - pose2.getOrigin().z()*pose2.getOrigin().z()));
+	tf::Vector3 p1 = pose1.getOrigin();
+	tf::Vector3 p2 = pose2.getOrigin();
+	return std::sqrt(	(p1.x()-p2.x())*(p1.x()-p2.x()) +
+										(p1.y()-p2.y())*(p1.y()-p2.y()) +
+										(p1.z()-p2.z())*(p1.z()-p2.z()));
 }
 
 

@@ -27,8 +27,7 @@
 #include <thread>         // std::this_thread::sleep_for
 #include <mutex>
 
-#include "../utils.hpp"
-#include "ARDevicePoseEstimatorSingleCamera.hpp"
+#include "../../utils.hpp"
 
 #include "CameraPoseEstimator.hpp"
 #include "FeaturesMemory.hpp"
