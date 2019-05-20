@@ -203,10 +203,11 @@ private:
 	    std::vector<cv::Point3f>& matches3dPos,
 	    std::vector<cv::Point2f>& matchesImgPos);
 
-	geometry_msgs::Pose computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
+	int computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
                               const std::vector<cv::Point3f>& matches3dPositions,
                               const std::vector<cv::Point2f>& matchesImgPixelPos,
-                              std::vector<int>& inliers);
+                              std::vector<int>& inliers,
+															geometry_msgs::Pose& resultPose);
 
   void drawAndSendReproectionImage(const cv::Mat& arcoreImage,
 																const std::vector<int>& inliers,

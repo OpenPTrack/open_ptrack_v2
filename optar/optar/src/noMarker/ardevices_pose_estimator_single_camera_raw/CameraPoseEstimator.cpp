@@ -420,7 +420,8 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 	std::vector<int> inliers;
 	std::chrono::steady_clock::time_point beforePnPComputation = std::chrono::steady_clock::now();
-	geometry_msgs::Pose cameraPose_fixedCameraFrame = computeMobileCameraPose(arcoreCameraMatrix,goodMatches3dPos,goodMatchesImgPos, inliers);
+	geometry_msgs::Pose cameraPose_fixedCameraFrame;
+	r = computeMobileCameraPose(arcoreCameraMatrix,goodMatches3dPos,goodMatchesImgPos, inliers, cameraPose_fixedCameraFrame);
 	std::chrono::steady_clock::time_point afterPnPComputation = std::chrono::steady_clock::now();
 
 	std::chrono::steady_clock::time_point beforeReprojection = std::chrono::steady_clock::now();
@@ -433,7 +434,11 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	if(showImages)
 		drawAndSendReproectionImage(arcoreImage,inliers,goodMatchesImgPos,reprojectedPoints);
 	std::chrono::steady_clock::time_point afterDrawingReproj = std::chrono::steady_clock::now();
-
+	if(r<0)
+	{
+		ROS_ERROR("Failed to compute pose");
+		return -5;
+	}
 		//discard bad frames
 	if(reprojectionError>reprojectionErrorDiscardThreshold)
 	{
@@ -493,10 +498,11 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
  * Computes the pose of the mobile camera using PnP
  * @return [description]
  */
-geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
+int CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
                                                           const std::vector<cv::Point3f>& matches3dPositions,
                                                           const std::vector<cv::Point2f>& matchesImgPixelPos,
-                                                          std::vector<int>& inliers)
+                                                          std::vector<int>& inliers,
+																													geometry_msgs::Pose& resultPose)
 {
 
 	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<mobileCameraMatrix);
@@ -510,7 +516,7 @@ geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& 
 	}
 
 	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
-	cv::solvePnPRansac(	matches3dPositions,matchesImgPixelPos,
+	bool r = cv::solvePnPRansac(	matches3dPositions,matchesImgPixelPos,
 						mobileCameraMatrix,cv::noArray(),
 						rvec,tvec,
 						didComputeEstimate,
@@ -518,7 +524,10 @@ geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& 
 						pnpReprojectionError,
 						pnpConfidence,
 						inliers);
-
+	if(!r)
+	{
+		return -1;
+	}
 	ROS_DEBUG_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
 
 	//ROS_DEBUG("PNP computation took %lu ms",pnpComputationDuration);
@@ -535,8 +544,8 @@ geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& 
 	tf::poseMsgToTF(poseNotStamped,poseTf);
 	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
 
-
-	return poseNotStamped;
+	resultPose = poseNotStamped;
+	return 0;
 }
 
 
