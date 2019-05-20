@@ -9,9 +9,8 @@
 #include <Eigen/Dense>
 #include <eigen_conversions/eigen_msg.h>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/progress.hpp>
+
+#include <cstdio>
 
 #include "../utils.hpp"
 
@@ -236,11 +235,21 @@ double transformSensor(PoseAndInverse& sensor, const string& refinementFileName)
   return dist;
 }
 
-void moveFile(const string& origin, const string& destination)
+void copyFile(const string& origin, const string& destination)
 {
   std::ifstream  src(origin,        std::ios::binary);
   std::ofstream  dst(destination,   std::ios::binary);
   dst << src.rdbuf();
+}
+
+void moveFile(const string& origin, const string& destination)
+{
+  {
+    std::ifstream  src(origin,        std::ios::binary);
+    std::ofstream  dst(destination,   std::ios::binary);
+    dst << src.rdbuf();
+  }
+  remove(origin.c_str());
 }
 
 int main (int argc, char** argv)
@@ -261,6 +270,14 @@ int main (int argc, char** argv)
   vector<string> sensorNames = readSensorNamesFromParameterNetwork(nh);
   map<string, PoseAndInverse> sensors = readPosesFromParameterServer(nh,sensorNames);
 
+  if(sensors.size()==0)
+  {
+      ROS_ERROR("Couldn't detect any sensor. Did you load the parameters?");
+      ROS_ERROR("You should run these two commands:");
+      ROS_ERROR("   rosparam load opt_calibration/conf/camera_poses.yaml");
+      ROS_ERROR("   rosparam load opt_calibration/conf/camera_network.yaml");
+  }
+
   vector<string> usedRefinementFiles;
   for(string sensorToBeTransformed : sensorNames)
   {
@@ -268,11 +285,13 @@ int main (int argc, char** argv)
     if(sensor!=sensors.end())
     {
       string refinementFileName = ros::package::getPath("opt_calibration")+"/conf/registration_"+sensorToBeTransformed+"_rgb_optical_frame.txt";
+      string refinementFileName_ir = ros::package::getPath("opt_calibration")+"/conf/registration_"+sensorToBeTransformed+"_ir_optical_frame.txt";
       if(ifstream(refinementFileName).good())
       {
         double dist = transformSensor(sensor->second, refinementFileName);
         cout<<"Computed new pose for sensor "<<sensorToBeTransformed<<". The sensor has been moved by "<<dist<<"m"<<endl;
         usedRefinementFiles.push_back(refinementFileName);
+        usedRefinementFiles.push_back(refinementFileName_ir);
       }
       else
       {
@@ -290,6 +309,8 @@ int main (int argc, char** argv)
   string now = to_string(ros::Time::now().sec);
   for(string refinementFile : usedRefinementFiles)
   {
+    if(!ifstream(outputCalibrationFileName.c_str()).good())//if the file to be moved doesn't exist
+      continue;
     string newFilename = refinementFile+"."+now+".bak";
     moveFile(refinementFile, newFilename);
   }
@@ -298,7 +319,7 @@ int main (int argc, char** argv)
   if(outFileAlreadyExist)//if the output file exists already make a backup
   {
     string backupCalibrationFile = outputCalibrationFileName+"."+now+".bak";
-    moveFile(outputCalibrationFileName,backupCalibrationFile);
+    copyFile(outputCalibrationFileName,backupCalibrationFile);
     cout<<"The old calibration has been saved to "<<backupCalibrationFile<<endl;
   }
 
