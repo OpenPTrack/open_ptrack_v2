@@ -325,7 +325,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
   //filter matches
 	std::vector< cv::DMatch > goodMatchesWithNull;
-	r = filterMatches(matches,goodMatchesWithNull);
+	r = filterMatches(matches,goodMatchesWithNull,arcoreKeypoints,fixedKeypoints);
 	if(r<0)
 	{
 		ROS_ERROR("error filtering matches");
@@ -628,7 +628,7 @@ void CameraPoseEstimator::drawAndSendReproectionImage(const cv::Mat& arcoreImage
 			cv::circle(reprojectionImg,pix,15,color,5);
 			cv::line(reprojectionImg,pix,reprojPix,color,3);
 		}
-		cv::putText(reprojectionImg, std::to_string(matchesImgPixelPos.size()).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
+		cv::putText(reprojectionImg, (std::to_string(inliers.size()) + "/" + std::to_string(matchesImgPixelPos.size())).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
 		sensor_msgs::ImagePtr msgReproj = cv_bridge::CvImage(std_msgs::Header(), "bgr8", reprojectionImg).toImageMsg();
 
 		//send the image
@@ -656,7 +656,7 @@ double CameraPoseEstimator::computeReprojectionError(const geometry_msgs::Pose& 
 																const cv::Mat& mobileCameraMatrix,
 																const std::vector<cv::Point2f>& points2d,
 																const std::vector<int>& inliers,
-																std::vector<cv::Point2f> reprojectedPoints)
+																std::vector<cv::Point2f>& reprojectedPoints)
 {
 
 	cv::Vec3d tvec;
@@ -673,7 +673,6 @@ double CameraPoseEstimator::computeReprojectionError(const geometry_msgs::Pose& 
 						reprojectedPoints);
 
 
-	//debug image to show the reprojection errors
 
 	double reprojError = 0;
 	//calculate reprojection error mean and draw reprojections
@@ -758,7 +757,9 @@ int CameraPoseEstimator::findOrbMatches(
  * @param  goodMatches The filtere mathces are returned here
  * @return             0 on success
  */
-int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches)
+int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches,
+										const std::vector<cv::KeyPoint>& arcoreKeypoints,
+										const std::vector<cv::KeyPoint>& fixedKeypoints)
 {
 	double max_dist = -10000000;
   	double min_dist = 10000000;
@@ -786,6 +787,64 @@ int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, s
 		}
 	}
 
+	//Merge matches that link the same two points
+	//Remove contradicting matches
+	for(size_t i=0; i<goodMatches.size(); i++)
+	{
+		cv::KeyPoint arcoreKeypoint1 = arcoreKeypoints.at(goodMatches.at(i).queryIdx);
+		std::vector<int> matchesWithSameOrigin;
+		for(size_t j=i; j<goodMatches.size(); j++)
+		{
+			cv::KeyPoint arcoreKeypoint2 = arcoreKeypoints.at(goodMatches.at(j).queryIdx);
+			if(cv::norm(arcoreKeypoint1.pt - arcoreKeypoint2.pt)<=keypointMinDistThreshold)
+				matchesWithSameOrigin.push_back(j);
+		}
+		//ROS_INFO_STREAM("Found "<<matchesWithSameOrigin.size()<< " matches with the same origin");
+		if(matchesWithSameOrigin.size()<=1)
+			continue;
+		bool haveSameDestination = true;
+		cv::KeyPoint fixedKeypoint1 = fixedKeypoints.at(goodMatches.at(i).trainIdx);
+		for(int mwso : matchesWithSameOrigin)
+		{
+			ROS_INFO_STREAM("One is "<<mwso);
+			cv::KeyPoint fixedKeypoint2 = fixedKeypoints.at(goodMatches.at(mwso).trainIdx);
+			if(cv::norm(fixedKeypoint1.pt - fixedKeypoint2.pt)>keypointMinDistThreshold)
+			{
+				haveSameDestination = false;
+				break;
+			}
+		}
+		//ROS_INFO_STREAM("haveSameDestination = "<<haveSameDestination);
+
+
+		if(!haveSameDestination)
+		{
+			//remove all of them
+			int elementsErased = 0;
+			for(int mwso : matchesWithSameOrigin)
+			{
+				goodMatches.erase(goodMatches.begin() + mwso - elementsErased);
+				elementsErased++;
+			}
+		}
+		else
+		{
+			//merge them in one
+			float averageDist = 0;
+			for(int mwso : matchesWithSameOrigin)
+				averageDist += goodMatches.at(mwso).distance;
+			averageDist/=matchesWithSameOrigin.size();
+			goodMatches.at(i).distance=averageDist;
+			int elementsErased = 0;
+			for(size_t j=1; j<matchesWithSameOrigin.size(); j++)
+			{
+				//ROS_INFO_STREAM("Removing "<<matchesWithSameOrigin.at(j)<<". That now is "<<( matchesWithSameOrigin.at(j) - elementsErased));
+				goodMatches.erase(goodMatches.begin() + matchesWithSameOrigin.at(j) - elementsErased);
+				//ROS_INFO("removed");
+				elementsErased++;
+			}
+		}
+	}
 /*
 	//take best 4
 	std::vector<int> goodMatchesIdx;

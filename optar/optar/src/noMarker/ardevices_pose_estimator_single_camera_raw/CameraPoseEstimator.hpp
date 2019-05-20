@@ -96,7 +96,7 @@ private:
 	/** See #setupParameters() */
 	bool enableFeaturesMemory = false;
 
-
+	float keypointMinDistThreshold = 2;
 public:
 
 	CameraPoseEstimator(	std::string ARDeviceId,
@@ -163,8 +163,10 @@ private:
 						const cv::Mat& kinectDescriptors,
 						std::vector<cv::DMatch>& matches);
 
-	int filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches);
-
+	int filterMatches(const std::vector<cv::DMatch>& matches,
+		 								std::vector<cv::DMatch>& goodMatches,
+										const std::vector<cv::KeyPoint>& arcoreKeypoints,
+										const std::vector<cv::KeyPoint>& fixedKeypoints);
 	int readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
 						const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 						const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
@@ -217,7 +219,7 @@ private:
 														const cv::Mat& mobileCameraMatrix,
 														const std::vector<cv::Point2f>& points2d,
 														const std::vector<int>& inliers,
-														std::vector<cv::Point2f> reprojectedPoints);
+														std::vector<cv::Point2f>& reprojectedPoints);
 
 	double computeAngleFromZAxis(const geometry_msgs::Pose& pose);
 
