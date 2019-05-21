@@ -13,6 +13,7 @@
 #include <opt_msgs/ARDevicePoseEstimate.h>
 #include "../ARDevicesManager.hpp"
 #include "ARDeviceRegistrationEstimator.hpp"
+#include <mutex>
 
 using namespace std;
 
@@ -25,23 +26,40 @@ static const string inputRawPnPPoseTopic		= "input_raw_pose_estimate_topic";
 shared_ptr<ros::NodeHandle> nodeHandle;
 /** list of the registration estimators */
 map<string,shared_ptr<ARDeviceRegistrationEstimator>> estimators;
+/** mutex for the estimators map */
+std::timed_mutex estimatorsMutex;
 
 void onPoseReceived(const std::string& deviceName, const geometry_msgs::PoseStampedConstPtr& poseMsg)
 {
+
+	std::unique_lock<std::timed_mutex> lock(estimatorsMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM(""<<__func__<<": failed to get mutex. Aborting.");
+		return;
+	}
 	auto it = estimators.find(deviceName);
 	if(it==estimators.end())//if it doesn't exist, create it
 	{
 		ROS_ERROR_STREAM("Received ARCore pose for disconnected device. Ignoring it.");
 		return;
 	}
+
 	it->second->onArcorePoseReceived(*poseMsg);
 }
 
 void onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimatePtr& inputPoseMsg)
 {
 	ROS_INFO("Received raw PnP pose estimate");
+
+	std::unique_lock<std::timed_mutex> lock(estimatorsMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM(""<<__func__<<": failed to get mutex. Aborting.");
+		return;
+	}
 	auto it = estimators.find(inputPoseMsg->deviceId);
-  if(it==estimators.end())//if it doesn't exist, create it
+  if(it==estimators.end())//if it doesn't exist
   {
 		ROS_ERROR_STREAM("Received pnp pose for disconnected device. Ignoring it.");
 		return;
@@ -52,14 +70,31 @@ void onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimatePtr& inputPoseMsg)
 
 void onArDeviceConnected(const string& deviceName)
 {
+
+	std::unique_lock<std::timed_mutex> lock(estimatorsMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM(""<<__func__<<": failed to get mutex. Aborting.");
+		return;
+	}
+
 	ROS_INFO_STREAM("New device connected with id = "<<deviceName);
 	shared_ptr<ARDeviceRegistrationEstimator> newEstimator = make_shared<ARDeviceRegistrationEstimator>(deviceName, ros::Duration(1.5));
 	estimators.insert(std::map<string, shared_ptr<ARDeviceRegistrationEstimator>>::value_type(deviceName,newEstimator));
 	newEstimator->start(nodeHandle);
+	ROS_INFO_STREAM("Built estimator for device "<<deviceName);
 }
 
 void onArDeviceDisconnected(const string& deviceName)
 {
+
+	std::unique_lock<std::timed_mutex> lock(estimatorsMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM(""<<__func__<<": failed to get mutex. Aborting.");
+		return;
+	}
+
 	ROS_INFO_STREAM("Device disconnected, id = "<<deviceName);
 	estimators.erase(deviceName);
 }
@@ -86,7 +121,7 @@ int main(int argc, char** argv)
 
 	ros::AsyncSpinner spinner(2);
 	spinner.start();
-	ros::spin();
+	ros::waitForShutdown();
 
 	return 0;
 }

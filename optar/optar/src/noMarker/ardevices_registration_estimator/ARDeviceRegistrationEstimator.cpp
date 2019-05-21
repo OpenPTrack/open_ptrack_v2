@@ -76,6 +76,8 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
 		return;
 	}
 
+  ROS_INFO_STREAM("Processing msgs in queue until "<<time.sec<<" (queue size = "<<arcorePosesQueue.size()<<")");
+  int c = 0;
   while(arcorePosesQueue.front().pose.header.stamp < time)
   {
     geometry_msgs::PoseStamped pose = arcorePosesQueue.front().pose;
@@ -94,9 +96,10 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
                               orientationMeasurementVariance*arcoreMeasurementVarianceFactor);
       lastFilteredPoseTime = pose.header.stamp;
       computeAndPublishRegistration(pose_world_tf,filteredPose,pose.header.stamp);
-
     }
+    c++;
   }
+  ROS_INFO_STREAM("Processed "<<c<<" messages");
 }
 
 
@@ -104,6 +107,7 @@ void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePo
 {
   //update the filter with the arcor estimates up to now
   processArcoreQueueMsgsSentBeforeTime(poseEstimate.header.stamp);
+
 
   tf::Pose pose_world_tf;
   poseMsgToTF(poseEstimate.cameraPose.pose,pose_world_tf);

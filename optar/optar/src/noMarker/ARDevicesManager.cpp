@@ -27,9 +27,13 @@ void ARDevicesManager::signalDeviceAlive(std::string arDeviceId)
   std::unique_lock<std::timed_mutex> lock(aliveDevicesMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Skipping. ARDeviceId = "<<arDeviceId);
+    ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Aborting. last = "<<lastLockingMethod);
 		return;
 	}
+  std::string str( "signalDeviceAlive" );
+
+  str.copy(lastLockingMethod, 49);
+  lastLockingMethod[str.length()] = '\0';
 
   auto it = aliveDevices.find(arDeviceId);
   if(it==aliveDevices.end())//if it doesn't exist, create it
@@ -52,23 +56,35 @@ void ARDevicesManager::heartbeatCallback(const std_msgs::StringConstPtr& msg)
 
 void ARDevicesManager::cleanupDeadDevices()
 {
+  ROS_INFO_STREAM("starting cleanupDeadDevices()");
   std::unique_lock<std::timed_mutex> lock(aliveDevicesMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Aborting.");
+    ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Aborting. last = "<<lastLockingMethod);
 		return;
 	}
+  ROS_INFO_STREAM("cleanupDeadDevices(): got mutex");
+  std::string str( "cleanupDeadDevices" );
+
+  str.copy(lastLockingMethod, 49);
+  lastLockingMethod[str.length()] = '\0';
 
   ros::Time now = ros::Time::now();
-  for (auto it = aliveDevices.cbegin(); it != aliveDevices.cend();)
+  auto it = aliveDevices.cbegin();
+  while(it != aliveDevices.end())
   {
     if(now - it->second->deviceInfo.lastSeenAlive > deviceAliveTimeout)
     {
       std::string arDeviceId = it->second->deviceInfo.arDeviceId;
-      aliveDevices.erase(it++);
+      it = aliveDevices.erase(it);
       onDeviceDisconnected(arDeviceId);
     }
+    else
+    {
+      it++;
+    }
   }
+  ROS_INFO_STREAM("cleanupDeadDevices(): finished");
 }
 
 
@@ -86,9 +102,13 @@ bool ARDevicesManager::isDeviceAlive(std::string arDeviceId)
   std::unique_lock<std::timed_mutex> lock(aliveDevicesMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Aborting. ARDeviceId = "<<arDeviceId);
+    ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Aborting. last = "<<lastLockingMethod);
 		return false;
 	}
+  std::string str( "isDeviceAlive" );
+  str.copy(lastLockingMethod, 49);
+  lastLockingMethod[str.length()] = '\0';
+
   return aliveDevices.find(arDeviceId) != aliveDevices.end();
 }
 
@@ -100,9 +120,13 @@ std::vector<ARDevicesManager::Device::DeviceInfo> ARDevicesManager::getAliveDevi
   std::unique_lock<std::timed_mutex> lock(aliveDevicesMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
-		ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Aborting.");
+		ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Aborting. last = "<<lastLockingMethod);
 		return ret;
 	}
+  std::string str( "getAliveDevicesInfo" );
+  str.copy(lastLockingMethod, 49);
+  lastLockingMethod[str.length()] = '\0';
+
   for (auto it = aliveDevices.cbegin(); it != aliveDevices.cend();)
     ret.push_back(it->second->deviceInfo);
   return ret;

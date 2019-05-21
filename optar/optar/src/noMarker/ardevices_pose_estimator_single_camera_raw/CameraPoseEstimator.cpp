@@ -485,7 +485,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	{
 		Point2f pix = goodMatchesImgPos.at(inliers.at(i));
 		Point2f reprojPix = reprojectedPoints.at(inliers.at(i));
-		reprojectionError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojectedPoints.size();
+		reprojectionError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/inliers.size();
 	}
 
 	//convert to ros format
@@ -548,7 +548,8 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 	//save the features we used to memory, they are useful!
 //	saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, fixedKeypoints, fixedDescriptors, kinectDepthImage);
-	saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, arcoreKeypoints,arcoreDescriptors,kinectDepthImage);
+	if(enableFeaturesMemory)
+		saveInliersToMemory(inliers, goodMatches3dPos, cameraPose_fixedCameraFrame, goodMatches, arcoreKeypoints,arcoreDescriptors,kinectDepthImage);
 
 	lastPoseEstimate = phonePose_world;
 	lastEstimateMatchesNumber = goodMatches.size();
@@ -647,6 +648,7 @@ void CameraPoseEstimator::saveInliersToMemory(const std::vector<int>& inliers,
 	//save the features we used to memory, they are useful!
 	for(unsigned int i=0;i<inliers.size();i++)
 	{
+		ROS_INFO_STREAM("Saving inlier #"<<i);
 		Point3f feature3dPosCv = goodMatches3dPos.at(inliers.at(i));
 		tf::Vector3 feature3dPosTf(feature3dPosCv.x,feature3dPosCv.y,feature3dPosCv.z);//this position is in the fixed camera frame
 		tf::Pose cameraPoseTf_fixedCameraFrame;
@@ -703,8 +705,11 @@ void CameraPoseEstimator::drawAndSendReproectionImage(const cv::Mat& arcoreImage
 		cvtColor(arcoreImage, reprojectionImg, CV_GRAY2RGB);
 		for(size_t i=0;i<inliers.size();i++)
 		{
+			ROS_INFO_STREAM("Getting pix for inlier #"<<i<<" = match #"<<inliers.at(i));
 			Point2f pix = matchesImgPixelPos.at(inliers.at(i));
+			ROS_INFO_STREAM("Getting reprojPix for inlier #"<<i<<" = match #"<<inliers.at(i));
 			Point2f reprojPix = reprojectedPoints.at(inliers.at(i));
+			ROS_INFO("Got reprojPix");
 
 			int r = ((double)rand())/RAND_MAX*255;
 			int g = ((double)rand())/RAND_MAX*255;
@@ -767,7 +772,7 @@ double CameraPoseEstimator::computeReprojectionError(const geometry_msgs::Pose& 
 	{
 		Point2f pix = points2d.at(inliers.at(i));
 		Point2f reprojPix = reprojectedPoints.at(inliers.at(i));
-		reprojError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojectedPoints.size();
+		reprojError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/inliers.size();
 	}
 
 	ROS_INFO_STREAM("inliers reprojection error = "<<reprojError);

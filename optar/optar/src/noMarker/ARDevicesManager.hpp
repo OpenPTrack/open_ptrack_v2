@@ -52,6 +52,7 @@ private:
 
   std::timed_mutex aliveDevicesMutex;
   map<string, shared_ptr<Device>> aliveDevices;
+  char lastLockingMethod[50] = {0};
   ros::Timer updateCallerTimer;
   ros::Subscriber heartbeatsSubscriber;
 
