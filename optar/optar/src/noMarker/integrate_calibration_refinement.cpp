@@ -1,3 +1,30 @@
+/**
+ * @file
+ *
+ *
+ * @author Carlo Rizzardo (crizz, cr.git.mail@gmail.com)
+ *
+ *
+ * This ROS node allows you to integrate the information from the calibration refinement
+ * in the actual calibration.
+ * To make this work you will need to first load the network parameters and the
+ * current calibration with rosparam:
+ *  rosparm load opt_calibration/conf/camera_poses.yaml
+ *  rosparm load opt_calibration/conf/camera_network.yaml
+ *
+ * The you can run this node:
+ *  rosrun optar integrate_calibration_refinement
+ *
+ * This just updated the camera_poses.yaml file and moved the refinement files
+ * (opt_calibration/conf/registration_*) so that they are not used anymore.
+ * To actually use the new calibration you have to update the launch files, because
+ * it seems the actual information is hardcoded in those.
+ * To do so run this on the master PC:
+ *  roslaunch opt_calibration detection_initializer.launch
+ * and this on all the clients (I guess also on the master):
+ *  roslaunch opt_calibration listener.launch
+ *
+ */
 
 #include <ros/ros.h>
 #include <ros/package.h>
