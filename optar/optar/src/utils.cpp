@@ -892,3 +892,15 @@ tf::Pose convertCameraPoseArcoreToRos(const tf::Pose& cameraPoseArcore)
 		//tf::Pose phonePoseArcoreInverted = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0),0),phonePoseArcoreFrame.getOrigin()).inverse() * tf::Transform(phonePoseArcoreFrame.getRotation()).inverse();
 		return  justTranslation *cameraConventionTransform*justRotation;
 }
+
+
+
+
+geometry_msgs::Pose invertPose(const geometry_msgs::Pose& pose)
+{
+	tf::Pose poseTf;
+	tf::poseMsgToTF(pose,poseTf);
+	geometry_msgs::Pose ret;
+	tf::poseTFToMsg(poseTf.inverse(),ret);
+	return ret;
+}

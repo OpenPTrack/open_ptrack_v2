@@ -61,4 +61,6 @@ geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, st
 tf::Pose convertCameraPoseArcoreToRos(const geometry_msgs::Pose& cameraPoseArcore);
 tf::Pose convertCameraPoseArcoreToRos(const tf::Pose& cameraPoseArcore);
 
+geometry_msgs::Pose invertPose(const geometry_msgs::Pose& pose);
+
 #endif

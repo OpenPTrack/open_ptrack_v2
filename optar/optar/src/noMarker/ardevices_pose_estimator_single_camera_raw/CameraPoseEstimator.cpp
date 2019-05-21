@@ -429,8 +429,8 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	double reprojectionError = computeReprojectionError(cameraPose_fixedCameraFrame,goodMatches3dPos, arcoreCameraMatrix, goodMatchesImgPos, inliers, reprojectedPoints);
 	std::chrono::steady_clock::time_point afterReprojection = std::chrono::steady_clock::now();
 	ROS_DEBUG("Reprojection error computation took %lu ms",std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
-*/
 
+*/
 
 
 
@@ -443,13 +443,13 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	cv::Vec3d tvec;
 	cv::Vec3d rvec;
 	bool usePreviousEstimate = false;
-/*	if(didComputeEstimate) //initialize with the previous estimate
+	if(didComputeEstimate) //initialize with the previous estimate
 	{
 		tf::Pose lastEstimateTf;
 		tf::poseMsgToTF(lastPoseEstimate.pose,lastEstimateTf);
 		tfPoseToOpenCvPose(lastEstimateTf, rvec, tvec);
 		usePreviousEstimate = true;
-	}*/
+	}
 	std::vector<int> inliers;
 	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
 	bool rb = cv::solvePnPRansac(	goodMatches3dPos,goodMatchesImgPos,
@@ -492,7 +492,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	Eigen::Vector3d position;
 	Eigen::Quaterniond rotation;
 	opencvPoseToEigenPose(rvec,tvec,position,rotation);
-	geometry_msgs::Pose cameraPose_fixedCameraFrame = buildRosPose(position,rotation);
+	geometry_msgs::Pose cameraPose_fixedCameraFrame = invertPose(buildRosPose(position,rotation));
 
 	ROS_INFO_STREAM("inliers reprojection error = "<<reprojectionError);
 
@@ -620,11 +620,7 @@ int CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& mobileCameraMatr
 	geometry_msgs::Pose poseNotStamped = buildRosPose(position,rotation);
 
 	//invert the pose, because that's what you do
-	tf::Pose poseTf;
-	tf::poseMsgToTF(poseNotStamped,poseTf);
-	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
-
-	resultPose = poseNotStamped;
+	resultPose = invertPose(poseNotStamped);
 	return 0;
 }
 
@@ -750,8 +746,10 @@ double CameraPoseEstimator::computeReprojectionError(const geometry_msgs::Pose& 
 
 	cv::Vec3d tvec;
 	cv::Vec3d rvec;
+	//invert because yes
+	geometry_msgs::Pose invertedPose = 	invertPose(pose);
 	tf::Pose poseTf;
-	tf::poseMsgToTF(pose,poseTf);
+	tf::poseMsgToTF(invertedPose,poseTf);
 	tfPoseToOpenCvPose(poseTf,rvec,tvec);
 
 	//reproject points to then check reprojection error (and visualize them)
