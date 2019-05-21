@@ -876,6 +876,7 @@ int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, s
 		}
 	}
 
+	/*
 	//Merge matches that link the same two points
 	//Remove contradicting matches
 	for(size_t i=0; i<goodMatches.size(); i++)
@@ -934,6 +935,7 @@ int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, s
 			}
 		}
 	}
+	*/
 /*
 	//take best 4
 	std::vector<int> goodMatchesIdx;
