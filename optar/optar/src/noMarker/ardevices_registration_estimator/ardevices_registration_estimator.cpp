@@ -39,6 +39,7 @@ void onPoseReceived(const std::string& deviceName, const geometry_msgs::PoseStam
 
 void onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimatePtr& inputPoseMsg)
 {
+	ROS_INFO("Received raw PnP pose estimate");
 	auto it = estimators.find(inputPoseMsg->deviceId);
   if(it==estimators.end())//if it doesn't exist, create it
   {
@@ -51,12 +52,15 @@ void onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimatePtr& inputPoseMsg)
 
 void onArDeviceConnected(const string& deviceName)
 {
+	ROS_INFO_STREAM("New device connected with id = "<<deviceName);
 	shared_ptr<ARDeviceRegistrationEstimator> newEstimator = make_shared<ARDeviceRegistrationEstimator>(deviceName, ros::Duration(1.5));
+	estimators.insert(std::map<string, shared_ptr<ARDeviceRegistrationEstimator>>::value_type(deviceName,newEstimator));
 	newEstimator->start(nodeHandle);
 }
 
 void onArDeviceDisconnected(const string& deviceName)
 {
+	ROS_INFO_STREAM("Device disconnected, id = "<<deviceName);
 	estimators.erase(deviceName);
 }
 /**
@@ -72,6 +76,7 @@ int main(int argc, char** argv)
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
 
 	ros::Subscriber pnpPosesReceiver = nodeHandle->subscribe(inputRawPnPPoseTopic, 100, onPnPPoseReceived);
+	ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(inputRawPnPPoseTopic));
 
 	ARDevicesManager devicesManager(true, ros::Duration(5));
 	devicesManager.setOnPoseReceivedCallback(onPoseReceived);
@@ -79,6 +84,8 @@ int main(int argc, char** argv)
 	devicesManager.setOnDeviceDisconnected(onArDeviceDisconnected);
 	devicesManager.start(nodeHandle);
 
+	ros::AsyncSpinner spinner(2);
+	spinner.start();
 	ros::spin();
 
 	return 0;

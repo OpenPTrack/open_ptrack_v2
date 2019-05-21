@@ -83,6 +83,8 @@ void ARDevicePoseEstimatorSingleCamera::featuresCallback(const opt_msgs::ArcoreC
 		outputPoseMsg.cameraPose_mobileFrame = arcoreInputMsg->mobileFramePose;
 		poseEstimatePublisher.publish(outputPoseMsg);
 
+		ROS_INFO_STREAM("Published raw pose estimate "<<poseToString(outputPoseMsg.cameraPose.pose));
+
 
 
 
@@ -120,7 +122,7 @@ void ARDevicePoseEstimatorSingleCamera::featuresCallback(const opt_msgs::ArcoreC
 
 		tf::StampedTransform tfTransform;
 		transformStampedMsgToTF(stampedTransformMsg,tfTransform);
-		ROS_INFO_STREAM("Published transform = "<<poseToString(tfTransform));
+		ROS_DEBUG_STREAM("Published raw transform = "<<poseToString(tfTransform));
 	}
 }
 

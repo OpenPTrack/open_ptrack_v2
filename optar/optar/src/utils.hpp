@@ -48,6 +48,7 @@ geometry_msgs::Pose buildRosPose(double positionX, double positionY, double posi
 geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation);
 
 std::string poseToString(tf::Pose pose);
+std::string poseToString(geometry_msgs::Pose pose);
 
 
 tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose);

@@ -730,6 +730,12 @@ std::string poseToString(tf::Pose pose)
 }
 
 
+std::string poseToString(geometry_msgs::Pose pose)
+{
+	tf::Pose poseTf;
+	poseMsgToTF(pose,poseTf);
+	return poseToString(poseTf);
+}
 
 /**
  * Converts a transform in a left-handed coordinate space to a transform in a right-handed coordinate space

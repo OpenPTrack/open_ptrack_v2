@@ -416,8 +416,8 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 
 	//:::::::::::::::Determine the phone position::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-
+//----------------------------------------------------------------------
+/*
 	std::vector<int> inliers;
 	std::chrono::steady_clock::time_point beforePnPComputation = std::chrono::steady_clock::now();
 	geometry_msgs::Pose cameraPose_fixedCameraFrame;
@@ -429,6 +429,86 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	double reprojectionError = computeReprojectionError(cameraPose_fixedCameraFrame,goodMatches3dPos, arcoreCameraMatrix, goodMatchesImgPos, inliers, reprojectedPoints);
 	std::chrono::steady_clock::time_point afterReprojection = std::chrono::steady_clock::now();
 	ROS_DEBUG("Reprojection error computation took %lu ms",std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
+*/
+
+
+
+
+
+
+
+
+
+	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
+	cv::Vec3d tvec;
+	cv::Vec3d rvec;
+	bool usePreviousEstimate = false;
+/*	if(didComputeEstimate) //initialize with the previous estimate
+	{
+		tf::Pose lastEstimateTf;
+		tf::poseMsgToTF(lastPoseEstimate.pose,lastEstimateTf);
+		tfPoseToOpenCvPose(lastEstimateTf, rvec, tvec);
+		usePreviousEstimate = true;
+	}*/
+	std::vector<int> inliers;
+	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
+	bool rb = cv::solvePnPRansac(	goodMatches3dPos,goodMatchesImgPos,
+						arcoreCameraMatrix,cv::noArray(),
+						rvec,tvec,
+						usePreviousEstimate,
+						pnpIterations,
+						pnpReprojectionError,
+						pnpConfidence,
+						inliers);
+	if(!rb)
+		r = -1;
+	ROS_DEBUG_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
+
+	//std::chrono::steady_clock::time_point afterPnpComputation = std::chrono::steady_clock::now();
+	//unsigned long pnpComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterPnpComputation - after3dpositionsComputation).count();
+	//ROS_DEBUG("PNP computation took %lu ms",pnpComputationDuration);
+
+	//reproject points to then check reprojection error (and visualize them)
+	std::vector<Point2f> reprojectedPoints;
+	cv::projectPoints(goodMatches3dPos,
+						rvec, tvec,
+						arcoreCameraMatrix,
+						cv::noArray(),
+						reprojectedPoints);
+
+
+	//debug image to show the reprojection errors
+
+	double reprojectionError = 0;
+	//calculate reprojection error mean and draw reprojections
+	for(unsigned int i=0;i<inliers.size();i++)
+	{
+		Point2f pix = goodMatchesImgPos.at(inliers.at(i));
+		Point2f reprojPix = reprojectedPoints.at(inliers.at(i));
+		reprojectionError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojectedPoints.size();
+	}
+
+	//convert to ros format
+	Eigen::Vector3d position;
+	Eigen::Quaterniond rotation;
+	opencvPoseToEigenPose(rvec,tvec,position,rotation);
+	geometry_msgs::Pose cameraPose_fixedCameraFrame = buildRosPose(position,rotation);
+
+	ROS_INFO_STREAM("inliers reprojection error = "<<reprojectionError);
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------
+
+
+
+
 
 	std::chrono::steady_clock::time_point beforeDrawingReproj = std::chrono::steady_clock::now();
 	if(showImages)
@@ -482,8 +562,8 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<featureMemoryNonBackgroundRemovalDuration);
 	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
 	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<_3dPositionsComputationDuration);
-	ROS_DEBUG_STREAM("pnpComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterPnPComputation - beforePnPComputation).count());
-	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
+//	ROS_DEBUG_STREAM("pnpComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterPnPComputation - beforePnPComputation).count());
+//	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
 	ROS_DEBUG_STREAM("drawMatchesDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesImage - beforeMatchesimage).count());
 	ROS_DEBUG_STREAM("drawReprojection="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawingReproj - beforeDrawingReproj).count());
 

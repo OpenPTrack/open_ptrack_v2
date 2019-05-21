@@ -62,7 +62,7 @@ void ARDeviceRegistrationEstimator::computeAndPublishRegistration(const tf::Pose
   }
 
   publishTransformAsTfFrame(arcoreWorld,arDeviceId+"_world_filtered","/world",timestamp);
-
+  ROS_INFO_STREAM("Published fltered transform");
 }
 
 

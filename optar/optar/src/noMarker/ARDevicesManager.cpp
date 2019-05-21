@@ -15,6 +15,8 @@ void ARDevicesManager::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 {
   heartbeatsSubscriber = nodeHandle->subscribe(devices_heartbeats_topicName, 10,
                                                &ARDevicesManager::heartbeatCallback, this);
+  ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(devices_heartbeats_topicName));
+
   this->nodeHandle = nodeHandle;
 
   updateCallerTimer = nodeHandle->createTimer(ros::Duration(1), &ARDevicesManager::updateCallback, this);
