@@ -325,7 +325,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
   //filter matches
 	std::vector< cv::DMatch > goodMatchesWithNull;
-	r = filterMatches(matches,goodMatchesWithNull);
+	r = filterMatches(matches,goodMatchesWithNull,arcoreKeypoints,fixedKeypoints);
 	if(r<0)
 	{
 		ROS_ERROR("error filtering matches");
@@ -416,11 +416,12 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 
 	//:::::::::::::::Determine the phone position::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-
+//----------------------------------------------------------------------
+/*
 	std::vector<int> inliers;
 	std::chrono::steady_clock::time_point beforePnPComputation = std::chrono::steady_clock::now();
-	geometry_msgs::Pose cameraPose_fixedCameraFrame = computeMobileCameraPose(arcoreCameraMatrix,goodMatches3dPos,goodMatchesImgPos, inliers);
+	geometry_msgs::Pose cameraPose_fixedCameraFrame;
+	r = computeMobileCameraPose(arcoreCameraMatrix,goodMatches3dPos,goodMatchesImgPos, inliers, cameraPose_fixedCameraFrame);
 	std::chrono::steady_clock::time_point afterPnPComputation = std::chrono::steady_clock::now();
 
 	std::chrono::steady_clock::time_point beforeReprojection = std::chrono::steady_clock::now();
@@ -429,11 +430,95 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	std::chrono::steady_clock::time_point afterReprojection = std::chrono::steady_clock::now();
 	ROS_DEBUG("Reprojection error computation took %lu ms",std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
 
+*/
+
+
+
+
+
+
+
+
+	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
+	cv::Vec3d tvec;
+	cv::Vec3d rvec;
+	bool usePreviousEstimate = false;
+	if(didComputeEstimate) //initialize with the previous estimate
+	{
+		tf::Pose lastEstimateTf;
+		tf::poseMsgToTF(lastPoseEstimate.pose,lastEstimateTf);
+		tfPoseToOpenCvPose(lastEstimateTf, rvec, tvec);
+		usePreviousEstimate = true;
+	}
+	std::vector<int> inliers;
+	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
+	bool rb = cv::solvePnPRansac(	goodMatches3dPos,goodMatchesImgPos,
+						arcoreCameraMatrix,cv::noArray(),
+						rvec,tvec,
+						usePreviousEstimate,
+						pnpIterations,
+						pnpReprojectionError,
+						pnpConfidence,
+						inliers);
+	if(!rb)
+		r = -1;
+	ROS_DEBUG_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
+
+	//std::chrono::steady_clock::time_point afterPnpComputation = std::chrono::steady_clock::now();
+	//unsigned long pnpComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterPnpComputation - after3dpositionsComputation).count();
+	//ROS_DEBUG("PNP computation took %lu ms",pnpComputationDuration);
+
+	//reproject points to then check reprojection error (and visualize them)
+	std::vector<Point2f> reprojectedPoints;
+	cv::projectPoints(goodMatches3dPos,
+						rvec, tvec,
+						arcoreCameraMatrix,
+						cv::noArray(),
+						reprojectedPoints);
+
+
+	//debug image to show the reprojection errors
+
+	double reprojectionError = 0;
+	//calculate reprojection error mean and draw reprojections
+	for(unsigned int i=0;i<inliers.size();i++)
+	{
+		Point2f pix = goodMatchesImgPos.at(inliers.at(i));
+		Point2f reprojPix = reprojectedPoints.at(inliers.at(i));
+		reprojectionError += hypot(pix.x-reprojPix.x, pix.y-reprojPix.y)/reprojectedPoints.size();
+	}
+
+	//convert to ros format
+	Eigen::Vector3d position;
+	Eigen::Quaterniond rotation;
+	opencvPoseToEigenPose(rvec,tvec,position,rotation);
+	geometry_msgs::Pose cameraPose_fixedCameraFrame = invertPose(buildRosPose(position,rotation));
+
+	ROS_INFO_STREAM("inliers reprojection error = "<<reprojectionError);
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------
+
+
+
+
+
 	std::chrono::steady_clock::time_point beforeDrawingReproj = std::chrono::steady_clock::now();
 	if(showImages)
 		drawAndSendReproectionImage(arcoreImage,inliers,goodMatchesImgPos,reprojectedPoints);
 	std::chrono::steady_clock::time_point afterDrawingReproj = std::chrono::steady_clock::now();
-
+	if(r<0)
+	{
+		ROS_ERROR("Failed to compute pose");
+		return -5;
+	}
 		//discard bad frames
 	if(reprojectionError>reprojectionErrorDiscardThreshold)
 	{
@@ -477,8 +562,8 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<featureMemoryNonBackgroundRemovalDuration);
 	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
 	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<_3dPositionsComputationDuration);
-	ROS_DEBUG_STREAM("pnpComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterPnPComputation - beforePnPComputation).count());
-	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
+//	ROS_DEBUG_STREAM("pnpComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterPnPComputation - beforePnPComputation).count());
+//	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
 	ROS_DEBUG_STREAM("drawMatchesDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesImage - beforeMatchesimage).count());
 	ROS_DEBUG_STREAM("drawReprojection="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawingReproj - beforeDrawingReproj).count());
 
@@ -493,10 +578,11 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
  * Computes the pose of the mobile camera using PnP
  * @return [description]
  */
-geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
+int CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& mobileCameraMatrix,
                                                           const std::vector<cv::Point3f>& matches3dPositions,
                                                           const std::vector<cv::Point2f>& matchesImgPixelPos,
-                                                          std::vector<int>& inliers)
+                                                          std::vector<int>& inliers,
+																													geometry_msgs::Pose& resultPose)
 {
 
 	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<mobileCameraMatrix);
@@ -510,7 +596,7 @@ geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& 
 	}
 
 	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
-	cv::solvePnPRansac(	matches3dPositions,matchesImgPixelPos,
+	bool r = cv::solvePnPRansac(	matches3dPositions,matchesImgPixelPos,
 						mobileCameraMatrix,cv::noArray(),
 						rvec,tvec,
 						didComputeEstimate,
@@ -518,7 +604,10 @@ geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& 
 						pnpReprojectionError,
 						pnpConfidence,
 						inliers);
-
+	if(!r)
+	{
+		return -1;
+	}
 	ROS_DEBUG_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
 
 	//ROS_DEBUG("PNP computation took %lu ms",pnpComputationDuration);
@@ -531,12 +620,8 @@ geometry_msgs::Pose CameraPoseEstimator::computeMobileCameraPose(const cv::Mat& 
 	geometry_msgs::Pose poseNotStamped = buildRosPose(position,rotation);
 
 	//invert the pose, because that's what you do
-	tf::Pose poseTf;
-	tf::poseMsgToTF(poseNotStamped,poseTf);
-	tf::poseTFToMsg(poseTf.inverse(),poseNotStamped);
-
-
-	return poseNotStamped;
+	resultPose = invertPose(poseNotStamped);
+	return 0;
 }
 
 
@@ -628,7 +713,7 @@ void CameraPoseEstimator::drawAndSendReproectionImage(const cv::Mat& arcoreImage
 			cv::circle(reprojectionImg,pix,15,color,5);
 			cv::line(reprojectionImg,pix,reprojPix,color,3);
 		}
-		cv::putText(reprojectionImg, std::to_string(matchesImgPixelPos.size()).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
+		cv::putText(reprojectionImg, (std::to_string(inliers.size()) + "/" + std::to_string(matchesImgPixelPos.size())).c_str(),cv::Point(0,reprojectionImg.rows-5),FONT_HERSHEY_SIMPLEX,2,Scalar(255,0,0),3);
 		sensor_msgs::ImagePtr msgReproj = cv_bridge::CvImage(std_msgs::Header(), "bgr8", reprojectionImg).toImageMsg();
 
 		//send the image
@@ -656,13 +741,15 @@ double CameraPoseEstimator::computeReprojectionError(const geometry_msgs::Pose& 
 																const cv::Mat& mobileCameraMatrix,
 																const std::vector<cv::Point2f>& points2d,
 																const std::vector<int>& inliers,
-																std::vector<cv::Point2f> reprojectedPoints)
+																std::vector<cv::Point2f>& reprojectedPoints)
 {
 
 	cv::Vec3d tvec;
 	cv::Vec3d rvec;
+	//invert because yes
+	geometry_msgs::Pose invertedPose = 	invertPose(pose);
 	tf::Pose poseTf;
-	tf::poseMsgToTF(pose,poseTf);
+	tf::poseMsgToTF(invertedPose,poseTf);
 	tfPoseToOpenCvPose(poseTf,rvec,tvec);
 
 	//reproject points to then check reprojection error (and visualize them)
@@ -673,7 +760,6 @@ double CameraPoseEstimator::computeReprojectionError(const geometry_msgs::Pose& 
 						reprojectedPoints);
 
 
-	//debug image to show the reprojection errors
 
 	double reprojError = 0;
 	//calculate reprojection error mean and draw reprojections
@@ -758,7 +844,9 @@ int CameraPoseEstimator::findOrbMatches(
  * @param  goodMatches The filtere mathces are returned here
  * @return             0 on success
  */
-int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches)
+int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, std::vector<cv::DMatch>& goodMatches,
+										const std::vector<cv::KeyPoint>& arcoreKeypoints,
+										const std::vector<cv::KeyPoint>& fixedKeypoints)
 {
 	double max_dist = -10000000;
   	double min_dist = 10000000;
@@ -786,6 +874,66 @@ int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, s
 		}
 	}
 
+	/*
+	//Merge matches that link the same two points
+	//Remove contradicting matches
+	for(size_t i=0; i<goodMatches.size(); i++)
+	{
+		cv::KeyPoint arcoreKeypoint1 = arcoreKeypoints.at(goodMatches.at(i).queryIdx);
+		std::vector<int> matchesWithSameOrigin;
+		for(size_t j=i; j<goodMatches.size(); j++)
+		{
+			cv::KeyPoint arcoreKeypoint2 = arcoreKeypoints.at(goodMatches.at(j).queryIdx);
+			if(cv::norm(arcoreKeypoint1.pt - arcoreKeypoint2.pt)<=keypointMinDistThreshold)
+				matchesWithSameOrigin.push_back(j);
+		}
+		//ROS_INFO_STREAM("Found "<<matchesWithSameOrigin.size()<< " matches with the same origin");
+		if(matchesWithSameOrigin.size()<=1)
+			continue;
+		bool haveSameDestination = true;
+		cv::KeyPoint fixedKeypoint1 = fixedKeypoints.at(goodMatches.at(i).trainIdx);
+		for(int mwso : matchesWithSameOrigin)
+		{
+			ROS_INFO_STREAM("One is "<<mwso);
+			cv::KeyPoint fixedKeypoint2 = fixedKeypoints.at(goodMatches.at(mwso).trainIdx);
+			if(cv::norm(fixedKeypoint1.pt - fixedKeypoint2.pt)>keypointMinDistThreshold)
+			{
+				haveSameDestination = false;
+				break;
+			}
+		}
+		//ROS_INFO_STREAM("haveSameDestination = "<<haveSameDestination);
+
+
+		if(!haveSameDestination)
+		{
+			//remove all of them
+			int elementsErased = 0;
+			for(int mwso : matchesWithSameOrigin)
+			{
+				goodMatches.erase(goodMatches.begin() + mwso - elementsErased);
+				elementsErased++;
+			}
+		}
+		else
+		{
+			//merge them in one
+			float averageDist = 0;
+			for(int mwso : matchesWithSameOrigin)
+				averageDist += goodMatches.at(mwso).distance;
+			averageDist/=matchesWithSameOrigin.size();
+			goodMatches.at(i).distance=averageDist;
+			int elementsErased = 0;
+			for(size_t j=1; j<matchesWithSameOrigin.size(); j++)
+			{
+				//ROS_INFO_STREAM("Removing "<<matchesWithSameOrigin.at(j)<<". That now is "<<( matchesWithSameOrigin.at(j) - elementsErased));
+				goodMatches.erase(goodMatches.begin() + matchesWithSameOrigin.at(j) - elementsErased);
+				//ROS_INFO("removed");
+				elementsErased++;
+			}
+		}
+	}
+	*/
 /*
 	//take best 4
 	std::vector<int> goodMatchesIdx;

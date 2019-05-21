@@ -48,6 +48,7 @@ geometry_msgs::Pose buildRosPose(double positionX, double positionY, double posi
 geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation);
 
 std::string poseToString(tf::Pose pose);
+std::string poseToString(geometry_msgs::Pose pose);
 
 
 tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose);
@@ -59,5 +60,7 @@ geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, st
 
 tf::Pose convertCameraPoseArcoreToRos(const geometry_msgs::Pose& cameraPoseArcore);
 tf::Pose convertCameraPoseArcoreToRos(const tf::Pose& cameraPoseArcore);
+
+geometry_msgs::Pose invertPose(const geometry_msgs::Pose& pose);
 
 #endif
