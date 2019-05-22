@@ -172,7 +172,7 @@ void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePo
   tf::Pose pose_world_tf_filtered = filterPose(pose_world_tf,poseEstimate.cameraPose.header.stamp,false);
 
 
-  computeAndPublishRegistration(pose_world_tf_filtered, pose_arcore_tf, poseEstimate.cameraPose.header.stamp);
+  computeAndPublishRegistration(pose_arcore_tf, pose_world_tf_filtered, poseEstimate.cameraPose.header.stamp);
 }
 
 void ARDeviceRegistrationEstimator::onArcorePoseReceived(const geometry_msgs::PoseStamped& pose)
