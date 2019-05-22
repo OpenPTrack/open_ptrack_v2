@@ -187,7 +187,7 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 		return;
 	}
 
-	ROS_INFO_STREAM("Received heartbeat from "<<msg->data);
+	ROS_DEBUG_STREAM("Received heartbeat from "<<msg->data);
 	auto it = handlers.find(deviceName);
 	if(it==handlers.end())//if it dowsn't exist, create it
 	{
@@ -225,7 +225,12 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 		handlers.insert(map<string, shared_ptr<ARDevicePoseEstimatorSingleCamera>>::value_type(newHandler->getARDeviceId(),newHandler));
 		ROS_INFO_STREAM("Started handler for device "<<newHandler->getARDeviceId());
 	}
+	else
+	{
+		it->second->signalDeviceAlive();
+	}
 }
+
 
 /**
  * Remove handlers for devices for which we didn't received a message for a time

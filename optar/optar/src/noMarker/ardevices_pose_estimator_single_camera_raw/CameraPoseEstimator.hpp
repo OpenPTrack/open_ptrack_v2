@@ -96,7 +96,7 @@ private:
 	/** See #setupParameters() */
 	bool enableFeaturesMemory = false;
 
-	float keypointMinDistThreshold = 2;
+	float keypointMinDistThreshold = 5;
 public:
 
 	CameraPoseEstimator(	std::string ARDeviceId,

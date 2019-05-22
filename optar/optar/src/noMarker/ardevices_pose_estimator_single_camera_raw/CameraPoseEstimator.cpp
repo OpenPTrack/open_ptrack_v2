@@ -541,7 +541,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	ROS_DEBUG_STREAM("Angle = "<<phoneToCameraRotationAngle);
 	if(phoneToCameraRotationAngle>phoneOrientationDifferenceThreshold_deg)
 	{
-		ROS_INFO_STREAM("Orientation difference between phone and camera is too high, discarding estimation ("<<phoneToCameraRotationAngle<<")");
+		ROS_WARN_STREAM("Orientation difference between phone and camera is too high, discarding estimation ("<<phoneToCameraRotationAngle<<")");
 		return 3;
 	}
 
@@ -705,11 +705,11 @@ void CameraPoseEstimator::drawAndSendReproectionImage(const cv::Mat& arcoreImage
 		cvtColor(arcoreImage, reprojectionImg, CV_GRAY2RGB);
 		for(size_t i=0;i<inliers.size();i++)
 		{
-			ROS_INFO_STREAM("Getting pix for inlier #"<<i<<" = match #"<<inliers.at(i));
+			//ROS_INFO_STREAM("Getting pix for inlier #"<<i<<" = match #"<<inliers.at(i));
 			Point2f pix = matchesImgPixelPos.at(inliers.at(i));
-			ROS_INFO_STREAM("Getting reprojPix for inlier #"<<i<<" = match #"<<inliers.at(i));
+			//ROS_INFO_STREAM("Getting reprojPix for inlier #"<<i<<" = match #"<<inliers.at(i));
 			Point2f reprojPix = reprojectedPoints.at(inliers.at(i));
-			ROS_INFO("Got reprojPix");
+			//ROS_INFO("Got reprojPix");
 
 			int r = ((double)rand())/RAND_MAX*255;
 			int g = ((double)rand())/RAND_MAX*255;
@@ -879,7 +879,7 @@ int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, s
 		}
 	}
 
-	/*
+
 	//Merge matches that link the same two points
 	//Remove contradicting matches
 	for(size_t i=0; i<goodMatches.size(); i++)
@@ -899,7 +899,7 @@ int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, s
 		cv::KeyPoint fixedKeypoint1 = fixedKeypoints.at(goodMatches.at(i).trainIdx);
 		for(int mwso : matchesWithSameOrigin)
 		{
-			ROS_INFO_STREAM("One is "<<mwso);
+			//ROS_INFO_STREAM("One is "<<mwso);
 			cv::KeyPoint fixedKeypoint2 = fixedKeypoints.at(goodMatches.at(mwso).trainIdx);
 			if(cv::norm(fixedKeypoint1.pt - fixedKeypoint2.pt)>keypointMinDistThreshold)
 			{
@@ -938,7 +938,7 @@ int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, s
 			}
 		}
 	}
-	*/
+
 /*
 	//take best 4
 	std::vector<int> goodMatchesIdx;

@@ -170,6 +170,8 @@ public:
 
 	int millisecondsSinceLastMessage();
 
+	void signalDeviceAlive();
+
 private:
 
 	void featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,

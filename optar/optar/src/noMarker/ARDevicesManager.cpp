@@ -56,14 +56,14 @@ void ARDevicesManager::heartbeatCallback(const std_msgs::StringConstPtr& msg)
 
 void ARDevicesManager::cleanupDeadDevices()
 {
-  ROS_INFO_STREAM("starting cleanupDeadDevices()");
+  //ROS_INFO_STREAM("starting cleanupDeadDevices()");
   std::unique_lock<std::timed_mutex> lock(aliveDevicesMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
 	{
     ROS_ERROR_STREAM("ARDevicesManager::"<<__func__<<": failed to get mutex. Aborting. last = "<<lastLockingMethod);
 		return;
 	}
-  ROS_INFO_STREAM("cleanupDeadDevices(): got mutex");
+  //ROS_INFO_STREAM("cleanupDeadDevices(): got mutex");
   std::string str( "cleanupDeadDevices" );
 
   str.copy(lastLockingMethod, 49);
@@ -84,7 +84,7 @@ void ARDevicesManager::cleanupDeadDevices()
       it++;
     }
   }
-  ROS_INFO_STREAM("cleanupDeadDevices(): finished");
+  //ROS_INFO_STREAM("cleanupDeadDevices(): finished");
 }
 
 

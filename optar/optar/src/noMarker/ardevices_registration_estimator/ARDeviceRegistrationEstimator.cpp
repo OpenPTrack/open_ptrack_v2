@@ -62,7 +62,7 @@ void ARDeviceRegistrationEstimator::computeAndPublishRegistration(const tf::Pose
   }
 
   publishTransformAsTfFrame(arcoreWorld,arDeviceId+"_world_filtered","/world",timestamp);
-  ROS_INFO_STREAM("Published fltered transform");
+  ROS_INFO_STREAM("Published filtered transform "<<poseToString(arcoreWorld));
 }
 
 
@@ -76,12 +76,14 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
 		return;
 	}
 
-  ROS_INFO_STREAM("Processing msgs in queue until "<<time.sec<<" (queue size = "<<arcorePosesQueue.size()<<")");
+  ROS_DEBUG_STREAM("Processing msgs in queue until "<<time.sec<<" (queue size = "<<arcorePosesQueue.size()<<", didComputeEstimate="<<didComputeEstimate<<")");
   int c = 0;
-  while(arcorePosesQueue.front().pose.header.stamp < time)
+  while(arcorePosesQueue.size() > 0 && arcorePosesQueue.front().pose.header.stamp < time)
   {
     geometry_msgs::PoseStamped pose = arcorePosesQueue.front().pose;
+    //ROS_INFO_STREAM("Got front #"<<c);
     arcorePosesQueue.pop_front();
+    //ROS_INFO("Removed front");
     if(didComputeEstimate)
     {
       geometry_msgs::PoseStamped pose_world;
@@ -90,16 +92,19 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
   		poseMsgToTF(pose_world.pose,pose_world_tf);
 
       double timeDiff = (pose.header.stamp - lastFilteredPoseTime).toSec();
+      //ROS_INFO("filtering...");
       tf::Pose filteredPose = poseFilter.update(pose_world_tf,
                               timeDiff,
                               positionMeasurementVariance*arcoreMeasurementVarianceFactor,
                               orientationMeasurementVariance*arcoreMeasurementVarianceFactor);
+      //ROS_INFO("Filtered");
       lastFilteredPoseTime = pose.header.stamp;
       computeAndPublishRegistration(pose_world_tf,filteredPose,pose.header.stamp);
+      //ROS_INFO("Published");
     }
     c++;
   }
-  ROS_INFO_STREAM("Processed "<<c<<" messages");
+  //ROS_INFO_STREAM("Processed "<<c<<" messages");
 }
 
 

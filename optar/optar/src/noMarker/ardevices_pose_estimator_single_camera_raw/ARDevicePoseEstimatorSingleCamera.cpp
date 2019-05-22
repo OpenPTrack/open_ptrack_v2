@@ -282,10 +282,10 @@ int ARDevicePoseEstimatorSingleCamera::start(std::shared_ptr<ros::NodeHandle> no
 	featuresPolicy.setInterMessageLowerBound(2,ros::Duration(0,15000000));// about 30 fps but sometimes more
 	featuresPolicy.setMaxIntervalDuration(ros::Duration(5,0));// 5 seconds
 
-
-	featuresTpc_arcore_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>>(*nodeHandle, arDeviceFeaturesMsgTopicName, 1);
-	featuresTpc_kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraMonoTopicName, 1);
-	featuresTpc_kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraDepthTopicName, 1);
+	int queueSize = 1000;
+	featuresTpc_arcore_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>>(*nodeHandle, arDeviceFeaturesMsgTopicName, queueSize);
+	featuresTpc_kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraMonoTopicName, queueSize);
+	featuresTpc_kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraDepthTopicName, queueSize);
 
 	//Instantiate a Synchronizer with our policy.
 	featuresTpc_synchronizer = std::make_shared<message_filters::Synchronizer<FeaturesApproximateSynchronizationPolicy>>(FeaturesApproximateSynchronizationPolicy(featuresPolicy), *featuresTpc_arcore_sub, *featuresTpc_kinect_img_sub, *featuresTpc_kinect_depth_sub);
@@ -417,4 +417,19 @@ int ARDevicePoseEstimatorSingleCamera::millisecondsSinceLastMessage()
 	}
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	return  std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimeReceivedMessage).count();
+}
+
+/**
+ * Signals that the device is still alive. It updates the time used by millisecondsSinceLastMessage()
+ */
+void ARDevicePoseEstimatorSingleCamera::signalDeviceAlive()
+{
+	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
+	if(!lock.owns_lock())
+	{
+		ROS_ERROR_STREAM("ARDevicePoseEstimatorSingleCamera::"<<__func__<<": failed to get mutex. ARDeviceId = "<<ARDeviceId);
+		return;
+	}
+
+	lastTimeReceivedMessage = std::chrono::steady_clock::now();
 }
