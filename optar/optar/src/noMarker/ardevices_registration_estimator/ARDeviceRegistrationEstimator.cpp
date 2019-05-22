@@ -98,7 +98,7 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
       tf2::doTransform(pose_arcore,pose_world,lastRegistrationEstimate);
       tf::Pose pose_world_tf;
       poseMsgToTF(pose_world.pose,pose_world_tf);
-
+      publishPoseAsTfFrame(pose_world,"pose_arcore_transformed");
 
       tf::Pose filtered_pose_world_tf = filterPose(pose_world_tf, pose_world.header.stamp, true);
 
@@ -142,6 +142,7 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
                           timeDiff,
                           positionVariance,
                           orientationVariance);
+  filteredPose.setRotation(newPoseMeasurement.getRotation());//bypass orientation filtering
   ROS_INFO_STREAM("Filtered, pose = "<<poseToString(filteredPose));
   lastFilteredPoseTime = timestamp;
   return filteredPose;
@@ -155,8 +156,7 @@ void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePo
 
   tf::Pose pose_world_tf;
   poseMsgToTF(poseEstimate.cameraPose.pose,pose_world_tf);
-  tf::Pose pose_arcore_tf;
-  poseMsgToTF(poseEstimate.cameraPose_mobileFrame,pose_arcore_tf);
+  tf::Pose pose_arcore_tf = convertCameraPoseArcoreToRos(poseEstimate.cameraPose_mobileFrame);
   if(!isPoseValid(pose_world_tf))
   {
     ROS_WARN_STREAM(""<<__func__<<": Skipping, received invalid ROS pose "<<poseToString(pose_world_tf));
@@ -171,6 +171,7 @@ void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePo
 
   tf::Pose pose_world_tf_filtered = filterPose(pose_world_tf,poseEstimate.cameraPose.header.stamp,false);
 
+  publishTransformAsTfFrame(pose_arcore_tf, arDeviceId+"_arcore", "/world", poseEstimate.header.stamp);
 
   computeAndPublishRegistration(pose_arcore_tf, pose_world_tf_filtered, poseEstimate.cameraPose.header.stamp);
 }
@@ -200,6 +201,8 @@ void ARDeviceRegistrationEstimator::onArcorePoseReceived(const geometry_msgs::Po
     return;
   }
   //ROS_INFO_STREAM("Received valid ARCore pose "<<poseToString(pose_arcore_tf));
+  publishTransformAsTfFrame(convertedPose_tf, arDeviceId+"_arcore", "/world", pose.header.stamp);
+
   arcorePosesQueue.push_back(sap);
 }
 

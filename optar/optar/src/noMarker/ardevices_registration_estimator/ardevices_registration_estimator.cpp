@@ -80,8 +80,8 @@ void onArDeviceConnected(const string& deviceName)
 
 	ROS_INFO_STREAM("New device connected with id = "<<deviceName);
 	shared_ptr<ARDeviceRegistrationEstimator> newEstimator = make_shared<ARDeviceRegistrationEstimator>(deviceName, ros::Duration(1.5));
-	newEstimator->setupParameters( 1, 	1,
-						                     0.1, 0.1,
+	newEstimator->setupParameters( 0.01, 	1,
+						                     0.1, 1,
 						                     1, 	10);
 	estimators.insert(std::map<string, shared_ptr<ARDeviceRegistrationEstimator>>::value_type(deviceName,newEstimator));
 	newEstimator->start(nodeHandle);
