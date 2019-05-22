@@ -604,7 +604,19 @@ void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHei
     cv::imshow(winName,image);
 }
 
-
+/**
+ *
+ * Publishes the provided transform as a tf frame
+ *
+ * @param stampedTransform   The transform to be published
+ */
+void publishTransformAsTfFrame(const tf::StampedTransform& stampedTransform)
+{
+	static tf2_ros::StaticTransformBroadcaster br;
+	geometry_msgs::TransformStamped stampedTransformMsg;
+	tf::transformStampedTFToMsg(stampedTransform,stampedTransformMsg);
+	br.sendTransform(stampedTransformMsg);
+}
 
 /**
  *
@@ -617,11 +629,7 @@ void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHei
  */
 void publishTransformAsTfFrame(const tf::Transform& transform, std::string tfFrameName, std::string parentFrame, const ros::Time& time)
 {
-	static tf2_ros::StaticTransformBroadcaster br;
-	tf::StampedTransform stampedTransform(transform, time, parentFrame, tfFrameName);
-	geometry_msgs::TransformStamped stampedTransformMsg;
-	tf::transformStampedTFToMsg(stampedTransform,stampedTransformMsg);
-	br.sendTransform(stampedTransformMsg);
+	publishTransformAsTfFrame(tf::StampedTransform(transform, time, parentFrame, tfFrameName));
 }
 
 /**
@@ -755,6 +763,7 @@ tf::Transform convertPoseUnityToRos(const tf::Transform& leftHandedPose)
 
 	return tf::Transform(rightHandedRotation,rightHandedOrigin);
 }
+
 
 /**
  * Computes the average position of the provided poses (does not look at the orientations)

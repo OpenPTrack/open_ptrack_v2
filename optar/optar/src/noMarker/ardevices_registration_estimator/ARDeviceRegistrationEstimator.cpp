@@ -53,7 +53,7 @@ void ARDeviceRegistrationEstimator::computeAndPublishRegistration(const tf::Pose
   // so:
   // A = Pr*Pa^-1
 
-  tf::Pose arcoreWorld = rosPose * convertCameraPoseArcoreToRos(arcorePose).inverse();
+  tf::Pose arcoreWorld = rosPose * arcorePose.inverse();
 
   if(!isPoseValid(arcoreWorld))
   {
@@ -61,7 +61,15 @@ void ARDeviceRegistrationEstimator::computeAndPublishRegistration(const tf::Pose
     return;
   }
 
-  publishTransformAsTfFrame(arcoreWorld,arDeviceId+"_world_filtered","/world",timestamp);
+  tf::StampedTransform stampedTransform(arcoreWorld, timestamp, "/world", arDeviceId+"_world_filtered");
+  geometry_msgs::TransformStamped geomTransf;
+  tf::transformStampedTFToMsg(stampedTransform,geomTransf);
+
+  publishTransformAsTfFrame(stampedTransform);
+  publishTransformAsTfFrame(rosPose,arDeviceId+"_estimate_filtered","/world",timestamp);
+
+  lastRegistrationEstimate = geomTransf;
+  didComputeEstimate = true;
   ROS_INFO_STREAM("Published filtered transform "<<poseToString(arcoreWorld));
 }
 
@@ -80,33 +88,64 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
   int c = 0;
   while(arcorePosesQueue.size() > 0 && arcorePosesQueue.front().pose.header.stamp < time)
   {
-    geometry_msgs::PoseStamped pose = arcorePosesQueue.front().pose;
-    //ROS_INFO_STREAM("Got front #"<<c);
+    geometry_msgs::PoseStamped pose_arcore = arcorePosesQueue.front().pose;
+    ROS_INFO_STREAM("Got front #"<<c);
     arcorePosesQueue.pop_front();
-    //ROS_INFO("Removed front");
+    ROS_INFO("Removed front");
     if(didComputeEstimate)
     {
       geometry_msgs::PoseStamped pose_world;
-      tf2::doTransform(pose,pose_world,lastRegistrationEstimate);
+      tf2::doTransform(pose_arcore,pose_world,lastRegistrationEstimate);
       tf::Pose pose_world_tf;
-  		poseMsgToTF(pose_world.pose,pose_world_tf);
+      poseMsgToTF(pose_world.pose,pose_world_tf);
 
-      double timeDiff = (pose.header.stamp - lastFilteredPoseTime).toSec();
-      //ROS_INFO("filtering...");
-      tf::Pose filteredPose = poseFilter.update(pose_world_tf,
-                              timeDiff,
-                              positionMeasurementVariance*arcoreMeasurementVarianceFactor,
-                              orientationMeasurementVariance*arcoreMeasurementVarianceFactor);
-      //ROS_INFO("Filtered");
-      lastFilteredPoseTime = pose.header.stamp;
-      computeAndPublishRegistration(pose_world_tf,filteredPose,pose.header.stamp);
-      //ROS_INFO("Published");
+
+      tf::Pose filtered_pose_world_tf = filterPose(pose_world_tf, pose_world.header.stamp, true);
+
+
+      tf::Pose pose_arcore_tf;
+      poseMsgToTF(pose_arcore.pose,pose_arcore_tf);
+      computeAndPublishRegistration(pose_arcore_tf,filtered_pose_world_tf,pose_arcore.header.stamp);
+      ROS_INFO("Published");
     }
     c++;
   }
   //ROS_INFO_STREAM("Processed "<<c<<" messages");
 }
 
+/**
+ * Updates the kalman filter with the provided pose
+ * @param  newPoseMeasurement The new pose measurement to use. It has to be in the /world frame
+ * @param  isARCore           true if it is a pose coming from ARCore, false otherwise
+ * @return                    The filtered pose
+ */
+tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasurement, const ros::Time& timestamp, bool isARCore)
+{
+
+  double timeDiff = (timestamp - lastFilteredPoseTime).toSec();
+  ROS_INFO_STREAM("filtering with pose "<<poseToString(newPoseMeasurement));
+
+  double positionVariance = positionMeasurementVariance;
+  double orientationVariance = orientationMeasurementVariance;
+  if(isARCore)
+  {
+    positionVariance *= arcoreMeasurementVarianceFactor;
+    orientationVariance *= arcoreMeasurementVarianceFactor;
+  }
+  else
+  {
+    positionVariance *= pnpMeasurementVarianceFactor;
+    orientationVariance *= pnpMeasurementVarianceFactor;
+  }
+
+  tf::Pose filteredPose = poseFilter.update(newPoseMeasurement,
+                          timeDiff,
+                          positionVariance,
+                          orientationVariance);
+  ROS_INFO_STREAM("Filtered, pose = "<<poseToString(filteredPose));
+  lastFilteredPoseTime = timestamp;
+  return filteredPose;
+}
 
 void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimate& poseEstimate)
 {
@@ -118,13 +157,33 @@ void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePo
   poseMsgToTF(poseEstimate.cameraPose.pose,pose_world_tf);
   tf::Pose pose_arcore_tf;
   poseMsgToTF(poseEstimate.cameraPose_mobileFrame,pose_arcore_tf);
-  computeAndPublishRegistration(pose_world_tf, pose_arcore_tf, poseEstimate.cameraPose.header.stamp);
+  if(!isPoseValid(pose_world_tf))
+  {
+    ROS_WARN_STREAM(""<<__func__<<": Skipping, received invalid ROS pose "<<poseToString(pose_world_tf));
+    return;
+  }
+  if(!isPoseValid(pose_arcore_tf))
+  {
+    ROS_WARN_STREAM(""<<__func__<<": Skipping, received invalid ARCore pose "<<poseToString(pose_arcore_tf));
+    return;
+  }
+
+
+  tf::Pose pose_world_tf_filtered = filterPose(pose_world_tf,poseEstimate.cameraPose.header.stamp,false);
+
+
+  computeAndPublishRegistration(pose_world_tf_filtered, pose_arcore_tf, poseEstimate.cameraPose.header.stamp);
 }
 
 void ARDeviceRegistrationEstimator::onArcorePoseReceived(const geometry_msgs::PoseStamped& pose)
 {
+
+  tf::Pose convertedPose_tf = convertCameraPoseArcoreToRos(pose.pose);
+  geometry_msgs::PoseStamped convertedPose = pose;
+  tf::poseTFToMsg(convertedPose_tf,convertedPose.pose);
+
   SavedArcorePose sap;
-  sap.pose = pose;
+  sap.pose = convertedPose;
   sap.receptionTime = std::chrono::steady_clock::now();
 
   std::unique_lock<std::timed_mutex> lock(queueMutex, std::chrono::milliseconds(5000));
@@ -133,6 +192,14 @@ void ARDeviceRegistrationEstimator::onArcorePoseReceived(const geometry_msgs::Po
 		ROS_ERROR_STREAM(""<<__func__<<": failed to get mutex. Aborting ("<<arDeviceId<<")");
 		return;
 	}
+  tf::Pose pose_arcore_tf;
+  poseMsgToTF(pose.pose,pose_arcore_tf);
+  if(!isPoseValid(pose_arcore_tf))
+  {
+    ROS_WARN_STREAM(""<<__func__<<": Skipping, received invalid ARCore pose "<<poseToString(pose_arcore_tf));
+    return;
+  }
+  //ROS_INFO_STREAM("Received valid ARCore pose "<<poseToString(pose_arcore_tf));
   arcorePosesQueue.push_back(sap);
 }
 

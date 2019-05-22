@@ -28,8 +28,11 @@ tf::Pose PoseFilterEuler::update(const tf::Pose& measurement, double timestep_se
   mat.getEulerYPR(yaw, pitch, roll);
   tf::Vector3 orientationYPR(yaw,pitch,roll);
 
+  //ROS_INFO("Updating position filter");
   tf::Vector3 positionState = positionFilter.update(positionMeasurement,timestep_sec);
+  //ROS_INFO("Updating orientation filter");
   tf::Vector3 orientationStateYPR = orientationFilter.update(orientationYPR,timestep_sec);
+  //ROS_INFO("Filter updated");
 
   tf::Quaternion orientationQuaternionState;
   orientationQuaternionState.setEuler(orientationStateYPR.x(),orientationStateYPR.y(), orientationStateYPR.z());

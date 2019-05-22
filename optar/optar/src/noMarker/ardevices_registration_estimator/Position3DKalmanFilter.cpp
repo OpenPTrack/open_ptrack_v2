@@ -64,7 +64,7 @@ cv::Mat Position3DKalmanFilter::transitionMatrix(double timestep)
 cv::Mat Position3DKalmanFilter::processNoiseCovariance(double timestep)
 {
   double t = timestep;
-  cv::Mat G = (Mat_<double>(3,9) << t*t/2,  0,      0,
+  cv::Mat G = (Mat_<double>(9,3) << t*t/2,  0,      0,
                                     t,      0,      0,
                                     1,      0,      0,
                                     0,      t*t/2,  0,
@@ -91,12 +91,26 @@ cv::Mat Position3DKalmanFilter::update(const cv::Mat& measurement, double timest
   {
     //measurement matrix is ok
     //measurement noise matrix should be ok
+    //ROS_INFO("Predicting");
+    //ROS_INFO_STREAM("temp1.size()="<<kalmanFilter.temp1.size().height<<";"<<kalmanFilter.temp1.size().width);
+    //ROS_INFO_STREAM("transitionMatrix.size()="<<kalmanFilter.transitionMatrix.size().height<<";"<<kalmanFilter.transitionMatrix.size().width);
+    //ROS_INFO_STREAM("processNoiseCov.size()="<<kalmanFilter.processNoiseCov.size().height<<";"<<kalmanFilter.processNoiseCov.size().width);
     kalmanFilter.predict();
+    //ROS_INFO("Correcting");
     return kalmanFilter.correct( measurement);
   }
   else
   {
-    kalmanFilter.statePost = measurement;
+    //ROS_INFO("Initializing Kalman filter");
+    kalmanFilter.statePost = (Mat_<double>(9,1) <<  measurement.at<double>(0,0),
+                                                    measurement.at<double>(1,0),
+                                                    measurement.at<double>(2,0),
+                                                    0,
+                                                    0,
+                                                    0,
+                                                    0,
+                                                    0,
+                                                    0);
     didEverComputeState = true;
     return measurement;
   }

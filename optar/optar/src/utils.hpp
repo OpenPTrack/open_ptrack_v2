@@ -40,6 +40,7 @@ void transformCvPoint3f(const cv::Point3f& in, cv::Point3f& out, tf::StampedTran
 void prepareOpencvImageForShowing(std::string winName, cv::Mat image, int winHeight, int winWidth=-1);
 void publishPoseAsTfFrame(const geometry_msgs::PoseStamped& pose, std::string tfFrameName);
 void publishTransformAsTfFrame(const tf::Transform& transform, std::string tfFrameName, std::string parentFrame, const ros::Time& time);
+void publishTransformAsTfFrame(const tf::StampedTransform& stampedTransform);
 
 
 geometry_msgs::Point buildRosPoint(double positionX, double positionY, double positionZ);

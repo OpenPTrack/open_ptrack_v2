@@ -51,6 +51,9 @@ private:
 
   void processArcoreQueueMsgsSentBeforeTime(const ros::Time& time);
   void processOldArcoreMsgs(const ros::TimerEvent&);
+
+  tf::Pose filterPose(const tf::Pose& newPoseMeasurement, const ros::Time& timestamp, bool isARCore);
+
 public:
   ARDeviceRegistrationEstimator(const std::string& arDeviceId, const ros::Duration& queueMaxMsgAge);
   std::string getARDeviceId();
