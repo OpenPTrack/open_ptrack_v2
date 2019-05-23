@@ -38,7 +38,7 @@ tf::Pose PoseFilterEuler::update(const tf::Pose& measurement, double timestep_se
   orientationQuaternionState.setEuler(orientationStateYPR.x(),orientationStateYPR.y(), orientationStateYPR.z());
   tf::Pose poseState(orientationQuaternionState, positionState);
   lastPoseEstimate = poseState;
-  didEverComputeEstimate = true;
+  mDidEverComputeEstimate = true;
   return lastPoseEstimate;
 }
 
@@ -46,4 +46,17 @@ tf::Pose PoseFilterEuler::update(const tf::Pose& measurement, double timestep_se
 {
   setupParameters(positionProcessVarianceFactor, positionMeasurementVariance,orientationProcessVarianceFactor, orientationMeasurementVariance);
   return update(measurement, timestep_sec);
+}
+
+
+bool PoseFilterEuler::didEverComputeEstimate()
+{
+  return mDidEverComputeEstimate;
+}
+
+tf::Pose PoseFilterEuler::getLastPoseEstimate()
+{
+  if(!didEverComputeEstimate())
+    throw logic_error(""+string(__func__)+": called with didEverComputeEstimate==false");
+  return lastPoseEstimate;
 }

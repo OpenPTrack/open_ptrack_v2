@@ -1,4 +1,5 @@
 #include "Position3DKalmanFilter.hpp"
+#include <stdexcept>
 
 using namespace cv;
 using namespace std;
@@ -87,7 +88,7 @@ cv::Mat Position3DKalmanFilter::update(const cv::Mat& measurement, double timest
 {
   kalmanFilter.transitionMatrix = transitionMatrix(timestep_sec);
   kalmanFilter.processNoiseCov  = processNoiseCovariance(timestep_sec);
-  if(didEverComputeState)
+  if(mDidEverComputeState)
   {
     //measurement matrix is ok
     //measurement noise matrix should be ok
@@ -111,7 +112,7 @@ cv::Mat Position3DKalmanFilter::update(const cv::Mat& measurement, double timest
                                                     0,
                                                     0,
                                                     0);
-    didEverComputeState = true;
+    mDidEverComputeState = true;
     return measurement;
   }
 }
@@ -127,4 +128,20 @@ tf::Vector3 Position3DKalmanFilter::update(const tf::Vector3& measurement, doubl
   cv::Mat measurement_cv = (Mat_<double>(3,1) << measurement.x(), measurement.y(), measurement.z());
   cv::Mat newState = update(measurement_cv, timestep_sec);
   return tf::Vector3(newState.at<double>(0,0),newState.at<double>(1,0),newState.at<double>(2,0));
+}
+
+/**
+ * Returns true if the state has ever been estimated successfully
+ * @return true if the state has ever been estimated successfully
+ */
+bool Position3DKalmanFilter::didEverComputeState()
+{
+  return mDidEverComputeState;
+}
+
+tf::Vector3 Position3DKalmanFilter::getState()
+{
+  if(!didEverComputeState())
+    throw logic_error(""+string(__func__)+": called with didEverComputeState==false");
+  return lastStateEstimate;
 }

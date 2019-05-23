@@ -172,7 +172,6 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
 	cv::Mat kinectCameraMatrix;
 	cv::Mat kinectCameraImg;
 	cv::Mat kinectDepthImg;
-	tf::Pose phonePoseArcoreFrameConverted;
 	cv::Mat arcoreImage;
 	r = readReceivedMessages_features(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,kinectCameraInfo,
 					arcoreCameraMatrix,
@@ -182,7 +181,6 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
 					kinectCameraMatrix,
 					kinectCameraImg,
 					kinectDepthImg,
-					phonePoseArcoreFrameConverted,
 					arcoreImage);
 	if(r<0)
 	{
@@ -235,7 +233,6 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
 				kinectDepthImg,
 				kinectCameraImg,
 				arcoreImage,
-				phonePoseArcoreFrameConverted,
 				arcoreInputMsg->header.stamp,
 				kinectInputCameraMsg->header.frame_id);
 
@@ -288,7 +285,6 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 				cv::Mat& kinectDepthImage,
 				const cv::Mat& kinectMonoImage,
 				const cv::Mat& arcoreImageDbg,
-				const tf::Pose& phonePoseArcoreFrameConverted,
 				const ros::Time& timestamp,
 				const std::string fixedCameraFrameId)
 {
@@ -964,152 +960,6 @@ int CameraPoseEstimator::filterMatches(const std::vector<cv::DMatch>& matches, s
 }
 
 
-/**
- * Reads the input messages from an imagesCallback and extracts the data from them
- * @param  arcoreInputMsg                     The input message from the mobile camera
- * @param  kinectInputCameraMsg               Regular mono image message from the fixed camera
- * @param  kinectInputDepthMsg                Depth image message from the fixed camera
- * @param  kinectCameraInfo                   Camera info message for the fixed camera
- * @param  arcoreCameraMatrix[out]            The camera matrix for the mobile camera is returned here
- * @param  arcoreImg[out]                     The image from the mobile camera is returned here
- * @param  kinectCameraMatrix[out]            The camera matrix for the fixed camera is returned here
- * @param  kinectCameraImg[out]               The regular mono image from the fixed camera is returned here
- * @param  kinectDepthImg[out]                The depth image from the fixed camera is returned here
- * @param  phonePoseArcoreFrameConverted[out] The mobile camera pose in the mobile camera frame is returned here
- * @return                                    0 on success, negative in case of error
- */
-int CameraPoseEstimator::readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
-					const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
-					const sensor_msgs::CameraInfo& kinectCameraInfo,
-					cv::Mat& arcoreCameraMatrix,
-					cv::Mat& arcoreImg,
-					cv::Mat& kinectCameraMatrix,
-					cv::Mat& kinectCameraImg,
-					cv::Mat& kinectDepthImg,
-					tf::Pose& phonePoseArcoreFrameConverted)
-{
-	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
-
-	//convert the camera matrix in a cv::Mat
-	arcoreCameraMatrix = cv::Mat(3, 3, CV_64FC1);
-	arcoreCameraMatrix.at<double>(0,0) = arcoreInputMsg->focal_length_x_px;
-	arcoreCameraMatrix.at<double>(0,1) = 0;
-	arcoreCameraMatrix.at<double>(0,2) = arcoreInputMsg->principal_point_x_px;
-	arcoreCameraMatrix.at<double>(1,0) = 0;
-	arcoreCameraMatrix.at<double>(1,1) = arcoreInputMsg->focal_length_y_px;
-	arcoreCameraMatrix.at<double>(1,2) = arcoreInputMsg->principal_point_y_px;
-	arcoreCameraMatrix.at<double>(2,0) = 0;
-	arcoreCameraMatrix.at<double>(2,1) = 0;
-	arcoreCameraMatrix.at<double>(2,2) = 1;
-
-
-	kinectCameraMatrix = cv::Mat(3, 3, CV_64FC1);
-	kinectCameraMatrix.at<double>(0,0) = kinectCameraInfo.P[4*0+0];
-	kinectCameraMatrix.at<double>(0,1) = kinectCameraInfo.P[4*0+1];
-	kinectCameraMatrix.at<double>(0,2) = kinectCameraInfo.P[4*0+2];
-	kinectCameraMatrix.at<double>(1,0) = kinectCameraInfo.P[4*1+0];
-	kinectCameraMatrix.at<double>(1,1) = kinectCameraInfo.P[4*1+1];
-	kinectCameraMatrix.at<double>(1,2) = kinectCameraInfo.P[4*1+2];
-	kinectCameraMatrix.at<double>(2,0) = kinectCameraInfo.P[4*2+0];
-	kinectCameraMatrix.at<double>(2,1) = kinectCameraInfo.P[4*2+1];
-	kinectCameraMatrix.at<double>(2,2) = kinectCameraInfo.P[4*2+2];
-
-	//decode arcore image
-	cv::Mat rawImageData(cv::Mat(arcoreInputMsg->image.data));
-	if(rawImageData.empty())
-	{
-		ROS_ERROR("Invalid arcore image (it's empty!)");
-		return -1;
-	}
-
-	arcoreImg = cv::imdecode(rawImageData,1);//convert compressed image data to cv::Mat
-	if(!arcoreImg.data)
-	{
-		ROS_ERROR("couldn't decode arcore image");
-		return -2;
-	}
-	if(arcoreImg.channels()!=3)
-	{
-		ROS_ERROR("Color image expected from arcore device, received something different");
-		return -3;
-	}
-	//The image sent by the Android app is monochrome, but it is stored in a 3-channel PNG image as the red channel
-	//So we extract the red channel and use that.
-	//Also the image is flipped on the y axis
-	cv::Mat planes[3];
-	split(arcoreImg,planes);  // planes[2] is the red channel
-	arcoreImg = planes[2];
-	cv::Mat flippedArcoreImg;
-	cv::flip(arcoreImg,flippedArcoreImg,0);
-	arcoreImg=flippedArcoreImg;
-	//cv::xphoto::createSimpleWB()->balanceWhite(flippedArcoreImg,arcoreImg);
-	//cv::equalizeHist(arcoreImg,arcoreImg);
-    ROS_DEBUG("decoded arcore image");
-    //cv::imshow("Arcore", arcoreImg);
-
-    //decode kinect rgb image
-	kinectCameraImg = cv_bridge::toCvShare(kinectInputCameraMsg)->image;//convert compressed image data to cv::Mat
-	if(!kinectCameraImg.data)
-	{
-		ROS_ERROR("couldn't extract kinect camera opencv image");
-		return -4;
-	}
-    ROS_DEBUG("decoded kinect camera image");
-	//cv::equalizeHist(kinectCameraImg,kinectCameraImg);
-    //cv::imshow("Kinect", kinectCameraImg);
-
-
-    //decode kinect depth image
-	kinectDepthImg = cv_bridge::toCvShare(kinectInputDepthMsg)->image;//convert compressed image data to cv::Mat
-	if(!kinectDepthImg.data)
-	{
-		ROS_ERROR("couldn't extract kinect depth opencv image");
-		return -5;
-	}
-    ROS_DEBUG("decoded kinect depth image");
-  /*  cv::namedWindow("KinectDepth", cv::WINDOW_NORMAL);
-	cv::resizeWindow("KinectDepth",1280,720);
-    cv::imshow("KinectDepth", kinectDepthImg);
-*/
-
-
-
-
-
-
-	// Convert phone arcore pose
-	// ARCore on Unity uses Unity's coordinate systema, which is left-handed, normally in arcore for Android the arcore
-	// camera position is defined with x pointing right, y pointing up and -z pointing where the camera is facing.
-	// As provided from all ARCore APIs, Poses always describe the transformation from object's local coordinate space
-	// to the world coordinate space. This is the usual pose representation, same as ROS
-	tf::Pose phonePoseArcoreFrameUnity;
-	tf::poseMsgToTF(arcoreInputMsg->mobileFramePose,phonePoseArcoreFrameUnity);
-	tf::Pose phonePoseArcoreFrame = convertPoseUnityToRos(phonePoseArcoreFrameUnity);
-
-	//publishTransformAsTfFrame(phonePoseArcoreFrame,"phone_arcore","/world",arcoreInputMsg->header.stamp);
-	//publishTransformAsTfFrame(phonePoseArcoreFrameUnity,"phone_arcore_left","/world",arcoreInputMsg->header.stamp);
-
-	//from x to the right, y up, z back to x to the right, y down, z forward
-	tf::Transform cameraConventionTransform = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0), 3.1415926535897));//rotate 180 degrees around x axis
-	//assuming z is pointing foward:
-	tf::Transform portraitToLandscape = tf::Transform(tf::Quaternion(tf::Vector3(0,0,1), 3.1415926535897/2));//rotate +90 degrees around z axis
-	tf::Transform justRotation = tf::Transform(phonePoseArcoreFrame.getRotation()) * portraitToLandscape;
-	tf::Transform justTranslation = tf::Transform(tf::Quaternion(1,0,0,0),phonePoseArcoreFrame.getOrigin());
-
-	//tf::Pose phonePoseArcoreInverted = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0),0),phonePoseArcoreFrame.getOrigin()).inverse() * tf::Transform(phonePoseArcoreFrame.getRotation()).inverse();
-	phonePoseArcoreFrameConverted =  justTranslation *cameraConventionTransform*justRotation;
-	ROS_DEBUG_STREAM("phonePoseArcoreFrame = "<<poseToString(phonePoseArcoreFrame));
-	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,"phone_arcore_converted","/world",arcoreInputMsg->header.stamp);
-	//publishTransformAsTfFrame(phonePoseArcoreInverted,"phone_arcore_inv","/world",arcoreInputMsg->header.stamp);
-
-
-	std::chrono::steady_clock::time_point afterDecoding = std::chrono::steady_clock::now();
-	unsigned long decodingDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterDecoding - beginning).count();
-	ROS_DEBUG("Images decoding and initialization took %lu ms",decodingDuration);
-
-	return 0;
-}
 
 
 /**
@@ -1125,7 +975,6 @@ int CameraPoseEstimator::readReceivedImageMessages(const opt_msgs::ArcoreCameraI
  * @param  kinectCameraMatrix[out]            The camera matrix for the fixed camera is returned here
  * @param  kinectCameraImg[out]               The regular mono image from the fixed camera is returned here
  * @param  kinectDepthImg[out]                The depth image from the fixed camera is returned here
- * @param  phonePoseArcoreFrameConverted[out] The mobile camera pose in the mobile camera frame is returned here
  * @param  debugArcoreImage[out]              The debug image from the mobile amera is retuend here
  * @return                                    0 on success, a negative value on fail
  */
@@ -1140,7 +989,6 @@ int CameraPoseEstimator::readReceivedMessages_features(const opt_msgs::ArcoreCam
 					cv::Mat& kinectCameraMatrix,
 					cv::Mat& kinectCameraImg,
 					cv::Mat& kinectDepthImg,
-					tf::Pose& phonePoseArcoreFrameConverted,
 					cv::Mat& debugArcoreImage)
 {
 	std::chrono::steady_clock::time_point beginning = std::chrono::steady_clock::now();
@@ -1264,28 +1112,10 @@ int CameraPoseEstimator::readReceivedMessages_features(const opt_msgs::ArcoreCam
 
 
 
-	// Convert phone arcore pose
-	// ARCore on Unity uses Unity's coordinate systema, which is left-handed, normally in arcore for Android the arcore
-	// camera position is defined with x pointing right, y pointing up and -z pointing where the camera is facing.
-	// As provided from all ARCore APIs, Poses always describe the transformation from object's local coordinate space
-	// to the world coordinate space. This is the usual pose representation, same as ROS
-	tf::Pose phonePoseArcoreFrameUnity;
-	tf::poseMsgToTF(arcoreInputMsg->mobileFramePose,phonePoseArcoreFrameUnity);
-	tf::Pose phonePoseArcoreFrame = convertPoseUnityToRos(phonePoseArcoreFrameUnity);
 
 	//publishTransformAsTfFrame(phonePoseArcoreFrame,"phone_arcore","/world",arcoreInputMsg->header.stamp);
 	//publishTransformAsTfFrame(phonePoseArcoreFrameUnity,"phone_arcore_left","/world",arcoreInputMsg->header.stamp);
 
-	//from x to the right, y up, z back to x to the right, y down, z forward
-	tf::Transform cameraConventionTransform = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0), 3.1415926535897));//rotate 180 degrees around x axis
-	//assuming z is pointing foward:
-	tf::Transform portraitToLandscape = tf::Transform(tf::Quaternion(tf::Vector3(0,0,1), 3.1415926535897/2));//rotate +90 degrees around z axis
-	tf::Transform justRotation = tf::Transform(phonePoseArcoreFrame.getRotation()) * portraitToLandscape;
-	tf::Transform justTranslation = tf::Transform(tf::Quaternion(1,0,0,0),phonePoseArcoreFrame.getOrigin());
-
-	//tf::Pose phonePoseArcoreInverted = tf::Transform(tf::Quaternion(tf::Vector3(1,0,0),0),phonePoseArcoreFrame.getOrigin()).inverse() * tf::Transform(phonePoseArcoreFrame.getRotation()).inverse();
-	phonePoseArcoreFrameConverted =  justTranslation *cameraConventionTransform*justRotation;
-	ROS_DEBUG_STREAM("phonePoseArcoreFrame = "<<poseToString(phonePoseArcoreFrame));
 	//publishTransformAsTfFrame(phonePoseArcoreFrameConverted,"phone_arcore_converted","/world",arcoreInputMsg->header.stamp);
 	//publishTransformAsTfFrame(phonePoseArcoreInverted,"phone_arcore_inv","/world",arcoreInputMsg->header.stamp);
 

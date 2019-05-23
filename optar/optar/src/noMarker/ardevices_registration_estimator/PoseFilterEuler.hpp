@@ -23,7 +23,7 @@ private:
   Position3DKalmanFilter orientationFilter;
 
   tf::Pose lastPoseEstimate;
-  bool didEverComputeEstimate=false;
+  bool mDidEverComputeEstimate=false;
 
   double positionProcessVarianceFactor;
   double positionMeasurementVariance;
@@ -36,6 +36,11 @@ public:
   PoseFilterEuler();
   tf::Pose update(const tf::Pose& measurement, double timestep_sec, double positionMeasurementVariance, double orientationMeasurementVariance);
   tf::Pose update(const tf::Pose& measurement, double timestep_sec);
+
+	bool didEverComputeEstimate();
+	tf::Pose getLastPoseEstimate();
+
+
 };
 
 #endif

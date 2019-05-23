@@ -29,17 +29,19 @@ private:
 
 	double processNoiseVarianceFactor;
 
-	bool didEverComputeState = false;
+	bool mDidEverComputeState = false;
 
   cv::Mat processNoiseCovariance(double timestep);
 	cv::Mat transitionMatrix(double timestep);
-
+	tf::Vector3 lastStateEstimate;
 
 public:
   Position3DKalmanFilter();
 	void setupParameters( double measurementNoiseVariance, double processNoiseVarianceFactor);
 	cv::Mat update(const cv::Mat& measurement, double timestep_sec);
 	tf::Vector3 update(const tf::Vector3& measurement, double timestep_sec);
+	bool didEverComputeState();
+	tf::Vector3 getState();
 };
 
 #endif

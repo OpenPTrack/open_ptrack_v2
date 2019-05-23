@@ -44,6 +44,7 @@ private:
   bool didComputeEstimate = false;
   geometry_msgs::TransformStamped lastRegistrationEstimate;
   ros::Time lastFilteredPoseTime;
+  bool didEverFilterPose;
 
   ros::Timer oldMsgsProcessorCallerTimer;
 

@@ -122,7 +122,9 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
 tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasurement, const ros::Time& timestamp, bool isARCore)
 {
 
-  double timeDiff = (timestamp - lastFilteredPoseTime).toSec();
+  double timeDiff = 1;
+  if(didEverFilterPose)
+    timeDiff = (timestamp - lastFilteredPoseTime).toSec();
   ROS_INFO_STREAM("filtering with pose "<<poseToString(newPoseMeasurement));
 
   double positionVariance = positionMeasurementVariance;
@@ -138,6 +140,8 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
     orientationVariance *= pnpMeasurementVarianceFactor;
   }
 
+  
+
   tf::Pose filteredPose = poseFilter.update(newPoseMeasurement,
                           timeDiff,
                           positionVariance,
@@ -145,6 +149,7 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
   filteredPose.setRotation(newPoseMeasurement.getRotation());//bypass orientation filtering
   ROS_INFO_STREAM("Filtered, pose = "<<poseToString(filteredPose));
   lastFilteredPoseTime = timestamp;
+  didEverFilterPose=true;
   return filteredPose;
 }
 

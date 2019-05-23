@@ -136,7 +136,6 @@ public:
 				cv::Mat& kinectDepthImage,
 				const cv::Mat& kinectMonoImage,
 				const cv::Mat& arcoreImage,
-				const tf::Pose& phonePoseArcoreFrameConverted,
 				const ros::Time& timestamp,
 				const std::string fixedCameraFrameId);
 
@@ -167,16 +166,7 @@ private:
 		 								std::vector<cv::DMatch>& goodMatches,
 										const std::vector<cv::KeyPoint>& arcoreKeypoints,
 										const std::vector<cv::KeyPoint>& fixedKeypoints);
-	int readReceivedImageMessages(const opt_msgs::ArcoreCameraImageConstPtr& arcoreInputMsg,
-						const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
-						const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
-						const sensor_msgs::CameraInfo& kinectCameraInfo,
-						cv::Mat& arcoreCameraMatrix,
-						cv::Mat& arcoreImg,
-						cv::Mat& kinectCameraMatrix,
-						cv::Mat& kinectCameraImg,
-						cv::Mat& kinectDepthImg,
-						tf::Pose& phonePoseArcoreFrameConverted);
+
 	int readReceivedMessages_features(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 						const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,
 						const sensor_msgs::ImageConstPtr& kinectInputDepthMsg,
@@ -188,7 +178,6 @@ private:
 						cv::Mat& kinectCameraMatrix,
 						cv::Mat& kinectCameraImg,
 						cv::Mat& kinectDepthImg,
-						tf::Pose& phonePoseArcoreFrameConverted,
 						cv::Mat& debugArcoreImage);
 
 
