@@ -56,7 +56,9 @@ public:
 	/** Last time we received a message from the AR device */
 	std::chrono::steady_clock::time_point lastMessageTime;
 	/** The last message we received */
-	geometry_msgs::PoseStampedConstPtr lastMessage;
+	geometry_msgs::PoseStamped lastMessage;
+	/** If we ever received a message */
+	bool didReceivePose;
 
 	/**
 	 * Callback for receiving new pose messages from the AR device
@@ -67,7 +69,11 @@ public:
 		//ROS_INFO_STREAM(""<<deviceId<<": received ");
 		std::lock_guard<std::mutex> lock(*handlersMutex);
 		lastMessageTime = std::chrono::steady_clock::now();
-		lastMessage = poseMsg;
+		lastMessage = *poseMsg;
+
+		tf::Pose convertedPose_tf = convertCameraPoseArcoreToRos(poseMsg->pose);
+	  tf::poseTFToMsg(convertedPose_tf,lastMessage.pose);
+		didReceivePose = true;
 	}
 
 	/**
@@ -126,12 +132,12 @@ shared_ptr<opt_msgs::ARDevicePoseArray> update()
 		}
 		else
 		{
-			if(it->second->lastMessage)
+			if(it->second->didReceivePose)
 			{
 				opt_msgs::ARDevicePose devicePose;
 				//ROS_INFO_STREAM("will send "<<it->first);
-				devicePose.header = it->second->lastMessage->header;
-				devicePose.pose = it->second->lastMessage->pose;
+				devicePose.header = it->second->lastMessage.header;
+				devicePose.pose = it->second->lastMessage.pose;
 				devicePose.deviceId = it->first;
 				msg->poses.push_back(devicePose);
 

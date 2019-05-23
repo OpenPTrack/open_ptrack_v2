@@ -4,7 +4,7 @@
 
 Header header
 
-# The pose of the AR device
+# The pose of the AR device, with ROS conventions
 geometry_msgs/Pose pose
 
 # Unique identifier of the AR device
