@@ -127,7 +127,8 @@ private:
 	unsigned int minimumMatchesNumber = 4;
 	/** See CameraPoseEstimator#setupParameters() */
 	bool enableFeaturesMemory = false;
-
+	/** Maximum delay accepted for an input message */
+	double maxMsgDelay_sec = 5;
 public:
 	ARDevicePoseEstimatorSingleCamera(std::string ARDeviceId,
 					 std::string fixedCameraMonoTopicName,

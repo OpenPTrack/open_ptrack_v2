@@ -499,7 +499,8 @@ cv::Point2i findLowestNonZeroInRing(const cv::Mat& image, int x, int y, double m
 	int besty=y+maxRadius+1;
 	int bestValue = INT_MAX;
 
-
+	//function that checks if the pixel is in the required area and is the best one
+	//if it is, it sets the bextx, bety, bestValue variables accordingly
 	auto checkPixel = [&](int xToCheck, int yToCheck)
 	{
 		//ROS_INFO("checking %d;%d",xToCheck,yToCheck);

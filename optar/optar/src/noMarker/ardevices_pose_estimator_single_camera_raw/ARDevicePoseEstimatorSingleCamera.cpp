@@ -55,7 +55,15 @@ void ARDevicePoseEstimatorSingleCamera::featuresCallback(const opt_msgs::ArcoreC
 		return;
 	}
 
+
 	lastTimeReceivedMessage = std::chrono::steady_clock::now();
+
+	ros::Duration msgDelay =  ros::Time::now() - arcoreInputMsg->header.stamp;
+	if(msgDelay.toSec() > maxMsgDelay_sec)
+	{
+		ROS_WARN_STREAM("Received Message is too old, skipping. Delay = "<<msgDelay.toSec()<<"s (max="<<maxMsgDelay_sec<<"s)");
+		return;
+	}
 
 	int r = estimator->featuresCallback(arcoreInputMsg,kinectInputCameraMsg,kinectInputDepthMsg,cameraInfo);
 	if(r<0)
@@ -272,7 +280,7 @@ int ARDevicePoseEstimatorSingleCamera::start(std::shared_ptr<ros::NodeHandle> no
 	//set up the input topics listeners
 
 
-	int policyQueueSize = 300;//???
+	int policyQueueSize = 300;// If to low it stops everything
 	//instantiate and set up the policy
 	FeaturesApproximateSynchronizationPolicy featuresPolicy = FeaturesApproximateSynchronizationPolicy(policyQueueSize);//instatiate setting up the queue size
 	//We set a lower bound of half the period of the slower publisher, this should mek the algorithm behave better (according to the authors)
@@ -281,8 +289,8 @@ int ARDevicePoseEstimatorSingleCamera::start(std::shared_ptr<ros::NodeHandle> no
 	featuresPolicy.setInterMessageLowerBound(2,ros::Duration(0,15000000));// about 30 fps but sometimes more
 	featuresPolicy.setMaxIntervalDuration(ros::Duration(5,0));// 5 seconds
 
-	int imagesSubQueueSize = 1000;
-	int arcoreSubQueueSize = 100;
+	int imagesSubQueueSize = 1000;//30fps => accepts up to ~30 sec delay
+	int arcoreSubQueueSize = 2;//2fps => generates max 1sec delay
 	featuresTpc_arcore_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>>(*nodeHandle, arDeviceFeaturesMsgTopicName, arcoreSubQueueSize);
 	featuresTpc_kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraMonoTopicName, imagesSubQueueSize);
 	featuresTpc_kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraDepthTopicName, imagesSubQueueSize);

@@ -1136,9 +1136,18 @@ int CameraPoseEstimator::readReceivedMessages_features(const opt_msgs::ArcoreCam
 }
 
 /**
- * Checks the provided matches to ensure they have valid depth info. If the depth is not available in the depth image
- * this function will try to fix the image by getting the closest depth value. If the closest valid pixel is too far
- * the match will be dropped.
+ * Fixes the matches' depth by doing this for every match:
+ *
+ * fixes the depth of the provided point to be equal to the lowest depth present
+ * in its surroundings. This is useful if you want to get the depthof a foreground
+ * object knowing a point close to it.
+ *
+ * The new depth will be written in the actual provided image. TODO: change this,
+ * it's ugly, very ugly.
+ *
+ * more specifically the function first searches for the closest non-zero pixel,
+ * then it searches for the lowest-value pixel in a 10px ring with an inner radius
+ * equal to the distance if the previously found pixel
  *
  * @param  inputMatches   Matches to check
  * @param  fixedKeypoints Keypoints on the fixed camera
@@ -1154,15 +1163,15 @@ int CameraPoseEstimator::fixMatchesDepthOrDrop(const std::vector<cv::DMatch>& in
 		//QueryIdx is for arcore descriptors, TrainIdx is for kinect. This is because of how we passed the arguments to BFMatcher::match
 		cv::Point2f imgPos = fixedKeypoints.at(inputMatches.at(i).trainIdx).pt;
 		//try to find the depth using the closest pixel
-		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
-		{
+		//if(kinectDepthImg.at<uint16_t>(imgPos)==0)
+		//{
 			Point2i nnz = findNearestNonZeroPixel(kinectDepthImg,imgPos.x,imgPos.y,100);
 			double nnzDist = hypot(nnz.x-imgPos.x,nnz.y-imgPos.y);
 			nnz = findLowestNonZeroInRing(kinectDepthImg,imgPos.x,imgPos.y, nnzDist+10, nnzDist);
 
 			//ROS_INFO("Got closest non-zero pixel, %d;%d",nnz.x,nnz.y);
 			kinectDepthImg.at<uint16_t>(imgPos)=kinectDepthImg.at<uint16_t>(nnz);
-		}
+		//}
 
 		if(kinectDepthImg.at<uint16_t>(imgPos)==0)
 		{
