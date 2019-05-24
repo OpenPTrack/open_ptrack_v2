@@ -89,9 +89,9 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
   while(arcorePosesQueue.size() > 0 && arcorePosesQueue.front().pose.header.stamp < time)
   {
     geometry_msgs::PoseStamped pose_arcore = arcorePosesQueue.front().pose;
-    ROS_INFO_STREAM("Got front #"<<c);
+    //ROS_INFO_STREAM("Got front #"<<c);
     arcorePosesQueue.pop_front();
-    ROS_INFO("Removed front");
+    //ROS_INFO("Removed front");
     if(didComputeEstimate)
     {
       geometry_msgs::PoseStamped pose_world;
@@ -122,10 +122,16 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
 tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasurement, const ros::Time& timestamp, bool isARCore)
 {
 
+  ROS_INFO_STREAM("filtering with pose "<<poseToString(newPoseMeasurement));
   double timeDiff = 1;
   if(didEverFilterPose)
     timeDiff = (timestamp - lastFilteredPoseTime).toSec();
-  ROS_INFO_STREAM("filtering with pose "<<poseToString(newPoseMeasurement));
+
+  if(timeDiff<0)
+  {
+    ROS_WARN_STREAM("Received out of order measurement, skipping. ("<<(isARCore?"ARCore":"PnP")<<", timeDiff="<<timeDiff<<")");
+    return poseFilter.getLastPoseEstimate();
+  }
 
   double positionVariance = positionMeasurementVariance;
   double orientationVariance = orientationMeasurementVariance;
@@ -140,7 +146,7 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
     orientationVariance *= pnpMeasurementVarianceFactor;
   }
 
-  
+
 
   tf::Pose filteredPose = poseFilter.update(newPoseMeasurement,
                           timeDiff,
@@ -156,7 +162,7 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
 void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimate& poseEstimate)
 {
   //update the filter with the arcor estimates up to now
-  processArcoreQueueMsgsSentBeforeTime(poseEstimate.header.stamp);
+  processArcoreQueueMsgsSentBeforeTime(poseEstimate.cameraPose.header.stamp);
 
 
   tf::Pose pose_world_tf;

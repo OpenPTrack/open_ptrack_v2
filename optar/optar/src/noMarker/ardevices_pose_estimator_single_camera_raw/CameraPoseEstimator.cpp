@@ -144,7 +144,7 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
             "pnp confidence = "<<pnpConfidence<<endl<<
             "pnp reporjection error = "<<pnpReprojectionError<<endl<<
             "matching threshold ="<<matchingThreshold<<endl<<
-			"reporjection discard threshold =" <<reprojectionErrorDiscardThreshold<<endl<<
+			"reprojection discard threshold =" <<reprojectionErrorDiscardThreshold<<endl<<
 			"orb max points = "<<orbMaxPoints<<endl<<
 			"orb scale factor = "<<orbScaleFactor<<endl<<
 			"orb levels number = "<<orbLevelsNumber<<endl<<
@@ -200,7 +200,7 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
 
 
 
-
+	std::chrono::steady_clock::time_point beforeOrbComputation = std::chrono::steady_clock::now();
 	//find matches
 	std::vector<cv::KeyPoint>  fixedKeypoints;
 	cv::Mat kinectDescriptors;
@@ -210,6 +210,7 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
 		ROS_ERROR("error computing camera features");
 		return -2;
 	}
+	std::chrono::steady_clock::time_point afterOrbCoputation = std::chrono::steady_clock::now();
 
 	if(enableFeaturesMemory)
 	{
@@ -238,6 +239,7 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
 
 
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	ROS_INFO_STREAM("ros side ORB computation="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterOrbCoputation - beforeOrbComputation).count()<<"ms");
 	unsigned long totalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(end - beginning).count();
 	ROS_INFO("total duration is %lu ms",totalDuration);
 
@@ -302,7 +304,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 		featuresMemory->removeNonBackgroundFeatures(kinectDepthImage);
 
 	std::chrono::steady_clock::time_point beforeMatching = std::chrono::steady_clock::now();
-	unsigned long featureMemoryNonBackgroundRemovalDuration = std::chrono::duration_cast<std::chrono::milliseconds>(beforeMatching - beforeFeatureMemoryNonBackgroundRemoval).count();
+
 
 
 
@@ -344,8 +346,6 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 
 	std::chrono::steady_clock::time_point afterMatchesComputation = std::chrono::steady_clock::now();
-	unsigned long matchesComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesComputation - beforeMatching).count();
-	//ROS_DEBUG("Matches computation took %lu ms",matchesComputationDuration);
 
 
 
@@ -376,8 +376,6 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
   		return -4;
 	}
 	std::chrono::steady_clock::time_point after3dpositionsComputation = std::chrono::steady_clock::now();
-	unsigned long _3dPositionsComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(after3dpositionsComputation - afterMatchesComputation).count();
-	//ROS_DEBUG("3D positions computation took %lu ms",_3dPositionsComputationDuration);
 
 
 	//send markers to rviz and publish matches image
@@ -399,7 +397,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	//If we have less than 4 matches we cannot procede, pnp wouldn't be able to estimate the phone position
 	if(goodMatches.size()<4 || goodMatches.size()<minimumMatchesNumber)
 	{
-		ROS_WARN("not enough matches to determine position");
+		ROS_WARN("not enough good matches to determine position");
 		return 1;
 	}
 
@@ -433,6 +431,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 
 
+	std::chrono::steady_clock::time_point beforePnPComputation = std::chrono::steady_clock::now();
 
 
 	ROS_DEBUG_STREAM("arcoreCameraMatrix = \n"<<arcoreCameraMatrix);
@@ -448,6 +447,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	}
 	std::vector<int> inliers;
 	ROS_DEBUG_STREAM("Running pnpRansac with iterations="<<pnpIterations<<" pnpReprojectionError="<<pnpReprojectionError<<" pnpConfidence="<<pnpConfidence);
+
 	bool rb = cv::solvePnPRansac(	goodMatches3dPos,goodMatchesImgPos,
 						arcoreCameraMatrix,cv::noArray(),
 						rvec,tvec,
@@ -459,6 +459,13 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	if(!rb)
 		r = -1;
 	ROS_DEBUG_STREAM("solvePnPRansac used "<<inliers.size()<<" inliers and says:\t tvec = "<<tvec.t()<<"\t rvec = "<<rvec.t());
+	if(inliers.size()<4 || inliers.size()<minimumMatchesNumber)
+	{
+		ROS_WARN_STREAM("Not enough match inliers ("<<inliers.size()<<"<"<<minimumMatchesNumber<<"). Skipping frame");
+		return 2;
+	}
+
+	std::chrono::steady_clock::time_point afterPnPComputation = std::chrono::steady_clock::now();
 
 	//std::chrono::steady_clock::time_point afterPnpComputation = std::chrono::steady_clock::now();
 	//unsigned long pnpComputationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(afterPnpComputation - after3dpositionsComputation).count();
@@ -490,7 +497,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	opencvPoseToEigenPose(rvec,tvec,position,rotation);
 	geometry_msgs::Pose cameraPose_fixedCameraFrame = invertPose(buildRosPose(position,rotation));
 
-	ROS_INFO_STREAM("inliers reprojection error = "<<reprojectionError);
+	ROS_INFO_STREAM("inliers (#="<<inliers.size()<<") reprojection error = "<<reprojectionError);
 
 
 
@@ -519,13 +526,14 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	if(reprojectionError>reprojectionErrorDiscardThreshold)
 	{
 		ROS_WARN("Reprojection error beyond threshold, aborting estimation");
-		return 2;
+		return 3;
 	}
 
 	//transform to world frame
 	geometry_msgs::PoseStamped phonePose_world;
 	tf2::doTransform(poseToPoseStamped(cameraPose_fixedCameraFrame,"kinect01_rgb_optical_frame", timestamp),phonePose_world,transformFixedCameraToWorld);
 	phonePose_world.header.frame_id = "/world";
+	phonePose_world.header.stamp = timestamp;
 	//pose_raw_pub.publish(phonePose_world);
 	ROS_DEBUG_STREAM("estimated pose is                "<<phonePose_world.pose.position.x<<" "<<phonePose_world.pose.position.y<<" "<<phonePose_world.pose.position.z<<" ; "<<phonePose_world.pose.orientation.x<<" "<<phonePose_world.pose.orientation.y<<" "<<phonePose_world.pose.orientation.z<<" "<<phonePose_world.pose.orientation.w);
 
@@ -538,7 +546,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	if(phoneToCameraRotationAngle>phoneOrientationDifferenceThreshold_deg)
 	{
 		ROS_WARN_STREAM("Orientation difference between phone and camera is too high, discarding estimation ("<<phoneToCameraRotationAngle<<")");
-		return 3;
+		return 4;
 	}
 
 
@@ -556,13 +564,13 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 
 
-	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<featureMemoryNonBackgroundRemovalDuration);
-	ROS_DEBUG_STREAM("matchesComputationDuration="<<matchesComputationDuration);
-	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<_3dPositionsComputationDuration);
-//	ROS_DEBUG_STREAM("pnpComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterPnPComputation - beforePnPComputation).count());
-//	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count());
-	ROS_DEBUG_STREAM("drawMatchesDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesImage - beforeMatchesimage).count());
-	ROS_DEBUG_STREAM("drawReprojection="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawingReproj - beforeDrawingReproj).count());
+	ROS_DEBUG_STREAM("featureMemoryNonBackgroundRemovalDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(beforeMatching - beforeFeatureMemoryNonBackgroundRemoval).count()<<"ms");
+	ROS_DEBUG_STREAM("matchesComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesComputation - beforeMatching).count()<<"ms");
+	ROS_DEBUG_STREAM("_3dPositionsComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(after3dpositionsComputation - afterMatchesComputation).count()<<"ms");
+//	ROS_DEBUG_STREAM("reprojectionComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterReprojection - beforeReprojection).count()<<"ms");
+	ROS_DEBUG_STREAM("drawMatchesDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterMatchesImage - beforeMatchesimage).count()<<"ms");
+	ROS_DEBUG_STREAM("drawReprojection="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterDrawingReproj - beforeDrawingReproj).count()<<"ms");
+	ROS_INFO_STREAM("pnpComputationDuration="<<std::chrono::duration_cast<std::chrono::milliseconds>(afterPnPComputation - beforePnPComputation).count()<<"ms");
 
 
 	return 0;

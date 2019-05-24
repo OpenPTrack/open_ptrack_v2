@@ -174,7 +174,6 @@ ARDevicePoseEstimatorSingleCamera::~ARDevicePoseEstimatorSingleCamera()
 	if(!stopped)
 	{
 		//ROS_INFO_STREAM("Stopping listener for "<<ARDeviceId);
-		synchronizer.reset();
 		featuresTpc_synchronizer.reset();
 		//ROS_INFO_STREAM("Stopped listener for "<<ARDeviceId);
 	}
@@ -273,7 +272,7 @@ int ARDevicePoseEstimatorSingleCamera::start(std::shared_ptr<ros::NodeHandle> no
 	//set up the input topics listeners
 
 
-	int policyQueueSize = 1000;
+	int policyQueueSize = 300;//???
 	//instantiate and set up the policy
 	FeaturesApproximateSynchronizationPolicy featuresPolicy = FeaturesApproximateSynchronizationPolicy(policyQueueSize);//instatiate setting up the queue size
 	//We set a lower bound of half the period of the slower publisher, this should mek the algorithm behave better (according to the authors)
@@ -282,10 +281,11 @@ int ARDevicePoseEstimatorSingleCamera::start(std::shared_ptr<ros::NodeHandle> no
 	featuresPolicy.setInterMessageLowerBound(2,ros::Duration(0,15000000));// about 30 fps but sometimes more
 	featuresPolicy.setMaxIntervalDuration(ros::Duration(5,0));// 5 seconds
 
-	int subQueueSize = 1000;
-	featuresTpc_arcore_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>>(*nodeHandle, arDeviceFeaturesMsgTopicName, subQueueSize);
-	featuresTpc_kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraMonoTopicName, subQueueSize);
-	featuresTpc_kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraDepthTopicName, subQueueSize);
+	int imagesSubQueueSize = 1000;
+	int arcoreSubQueueSize = 100;
+	featuresTpc_arcore_sub = make_shared<message_filters::Subscriber<opt_msgs::ArcoreCameraFeatures>>(*nodeHandle, arDeviceFeaturesMsgTopicName, arcoreSubQueueSize);
+	featuresTpc_kinect_img_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraMonoTopicName, imagesSubQueueSize);
+	featuresTpc_kinect_depth_sub = make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*nodeHandle, fixedCameraDepthTopicName, imagesSubQueueSize);
 
 	//Instantiate a Synchronizer with our policy.
 	featuresTpc_synchronizer = std::make_shared<message_filters::Synchronizer<FeaturesApproximateSynchronizationPolicy>>(FeaturesApproximateSynchronizationPolicy(featuresPolicy), *featuresTpc_arcore_sub, *featuresTpc_kinect_img_sub, *featuresTpc_kinect_depth_sub);
@@ -322,7 +322,6 @@ int ARDevicePoseEstimatorSingleCamera::stop()
 	if(stopped)
 		return 0;
 	//ROS_INFO_STREAM("Stopping listener for "<<ARDeviceId);
-	synchronizer.reset();
 	featuresTpc_synchronizer.reset();
 	//ROS_INFO_STREAM("Stopped listener for "<<ARDeviceId);
 	return 0;

@@ -72,18 +72,6 @@ private:
 	sensor_msgs::CameraInfo cameraInfo;
 
 
-	/** Synchronization policy for receiving the image message from the ar device
-	    and also images from the fixed camera. It chooses the two messages by minimizing
-			the time difference between them */
-	typedef message_filters::sync_policies::ApproximateTime<opt_msgs::ArcoreCameraImage, sensor_msgs::Image, sensor_msgs::Image> MyApproximateSynchronizationPolicy;
-	std::shared_ptr<message_filters::Synchronizer<MyApproximateSynchronizationPolicy>> synchronizer;
-	/** subscriber for receiving images, camera info and pose from the AR device */
-	std::shared_ptr<message_filters::Subscriber<opt_msgs::ArcoreCameraImage>> arcoreCamera_sub;
-	/** subscriber for receiving regular images from the fixed camera */
-	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> kinect_img_sub;
-	/** subscriber for receiving depth images form the fixed camera */
-	std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>> kinect_depth_sub;
-
 
 	/** Synchronization policy for receiving the feature message from the ar device
 	    and also images from the fixed camera. It chooses the two messages by minimizing
