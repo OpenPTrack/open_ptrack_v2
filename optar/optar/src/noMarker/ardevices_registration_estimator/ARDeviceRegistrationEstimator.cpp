@@ -152,7 +152,7 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
                           timeDiff,
                           positionVariance,
                           orientationVariance);
-  filteredPose.setRotation(newPoseMeasurement.getRotation());//bypass orientation filtering
+  //filteredPose.setRotation(newPoseMeasurement.getRotation());//bypass orientation filtering
   ROS_INFO_STREAM("Filtered, pose = "<<poseToString(filteredPose));
   lastFilteredPoseTime = timestamp;
   lastPoseEstimate = filteredPose;

@@ -31,11 +31,15 @@ tf::Pose PoseFilterEuler::update(const tf::Pose& measurement, double timestep_se
   //ROS_INFO("Updating position filter");
   tf::Vector3 positionState = positionFilter.update(positionMeasurement,timestep_sec);
   //ROS_INFO("Updating orientation filter");
-  tf::Vector3 orientationStateYPR = orientationFilter.update(orientationYPR,timestep_sec);
+  //orientationYPR = orientationFilter.update(orientationYPR,timestep_sec);
   //ROS_INFO("Filter updated");
 
   tf::Quaternion orientationQuaternionState;
-  orientationQuaternionState.setEuler(orientationStateYPR.x(),orientationStateYPR.y(), orientationStateYPR.z());
+  mat.setIdentity();
+  mat.setEulerYPR(orientationYPR.x(),orientationYPR.y(), orientationYPR.z());
+  mat.getRotation(orientationQuaternionState);
+  //ROS_INFO_STREAM("orientation0 = "<<measurement.getRotation().x()<<", "<<measurement.getRotation().y()<<", "<<measurement.getRotation().z()<<", "<<measurement.getRotation().w());
+  //ROS_INFO_STREAM("orientation1 = "<<orientationQuaternionState.x()<<", "<<orientationQuaternionState.y()<<", "<<orientationQuaternionState.z()<<", "<<orientationQuaternionState.w());
   tf::Pose poseState(orientationQuaternionState, positionState);
   lastPoseEstimate = poseState;
   mDidEverComputeEstimate = true;
