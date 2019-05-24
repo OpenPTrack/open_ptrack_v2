@@ -130,7 +130,7 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
   if(timeDiff<0)
   {
     ROS_WARN_STREAM("Received out of order measurement, skipping. ("<<(isARCore?"ARCore":"PnP")<<", timeDiff="<<timeDiff<<")");
-    return poseFilter.getLastPoseEstimate();
+    return lastPoseEstimate;
   }
 
   double positionVariance = positionMeasurementVariance;
@@ -155,6 +155,7 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
   filteredPose.setRotation(newPoseMeasurement.getRotation());//bypass orientation filtering
   ROS_INFO_STREAM("Filtered, pose = "<<poseToString(filteredPose));
   lastFilteredPoseTime = timestamp;
+  lastPoseEstimate = filteredPose;
   didEverFilterPose=true;
   return filteredPose;
 }

@@ -117,7 +117,7 @@ int main(int argc, char** argv)
 	ros::Subscriber pnpPosesReceiver = nodeHandle->subscribe(inputRawPnPPoseTopic, 100, onPnPPoseReceived);
 	ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(inputRawPnPPoseTopic));
 
-	ARDevicesManager devicesManager(true, ros::Duration(5));
+	ARDevicesManager devicesManager(true, ros::Duration(15));
 	devicesManager.setOnPoseReceivedCallback(onPoseReceived);
 	devicesManager.setOnDeviceConnected(onArDeviceConnected);
 	devicesManager.setOnDeviceDisconnected(onArDeviceDisconnected);
