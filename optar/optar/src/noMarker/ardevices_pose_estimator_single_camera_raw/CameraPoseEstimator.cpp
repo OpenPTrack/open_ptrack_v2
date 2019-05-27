@@ -531,7 +531,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 	//transform to world frame
 	geometry_msgs::PoseStamped phonePose_world;
-	tf2::doTransform(poseToPoseStamped(cameraPose_fixedCameraFrame,"kinect01_rgb_optical_frame", timestamp),phonePose_world,transformFixedCameraToWorld);
+	tf2::doTransform(poseToPoseStamped(cameraPose_fixedCameraFrame,fixed_sensor_name+"_rgb_optical_frame", timestamp),phonePose_world,transformFixedCameraToWorld);
 	phonePose_world.header.frame_id = "/world";
 	phonePose_world.header.stamp = timestamp;
 	//pose_raw_pub.publish(phonePose_world);

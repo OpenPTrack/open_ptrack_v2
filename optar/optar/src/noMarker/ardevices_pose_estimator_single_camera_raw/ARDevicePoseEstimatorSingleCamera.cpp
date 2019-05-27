@@ -233,7 +233,7 @@ int ARDevicePoseEstimatorSingleCamera::start(std::shared_ptr<ros::NodeHandle> no
 	bool retry=true;
 	int count=0;
 	ROS_INFO_STREAM("getting transform from "<<inputFrame<<" to "<<targetFrame);
-	std::this_thread::sleep_for (std::chrono::seconds(2));//sleep two second to let tf start
+	//std::this_thread::sleep_for (std::chrono::seconds(2));//sleep two second to let tf start
 	do
 	{
 		std::string failReason;
