@@ -70,7 +70,7 @@ void ARDeviceRegistrationEstimator::computeAndPublishRegistration(const tf::Pose
 
   lastRegistrationEstimate = geomTransf;
   didComputeEstimate = true;
-  ROS_INFO_STREAM("Published filtered transform "<<poseToString(arcoreWorld));
+  //ROS_INFO_STREAM("Published filtered transform "<<poseToString(arcoreWorld));
 }
 
 
@@ -106,7 +106,7 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
       tf::Pose pose_arcore_tf;
       poseMsgToTF(pose_arcore.pose,pose_arcore_tf);
       computeAndPublishRegistration(pose_arcore_tf,filtered_pose_world_tf,pose_arcore.header.stamp);
-      ROS_INFO("Published");
+      //ROS_INFO("Published");
     }
     c++;
   }
@@ -122,7 +122,7 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
 tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasurement, const ros::Time& timestamp, bool isARCore)
 {
 
-  ROS_INFO_STREAM("filtering with pose "<<poseToString(newPoseMeasurement));
+  //ROS_INFO_STREAM("filtering with pose "<<poseToString(newPoseMeasurement));
   double timeDiff = 1;
   if(didEverFilterPose)
     timeDiff = (timestamp - lastFilteredPoseTime).toSec();
@@ -153,7 +153,7 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
                           positionVariance,
                           orientationVariance);
   //filteredPose.setRotation(newPoseMeasurement.getRotation());//bypass orientation filtering
-  ROS_INFO_STREAM("Filtered, pose = "<<poseToString(filteredPose));
+  //ROS_INFO_STREAM("Filtered, pose = "<<poseToString(filteredPose));
   lastFilteredPoseTime = timestamp;
   lastPoseEstimate = filteredPose;
   didEverFilterPose=true;

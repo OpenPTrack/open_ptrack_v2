@@ -735,7 +735,7 @@ geometry_msgs::Pose buildRosPose(const Eigen::Vector3d& position, const Eigen::Q
  */
 std::string poseToString(tf::Pose pose)
 {
-	return ""+to_string(pose.getOrigin().getX())+";"+to_string(pose.getOrigin().getY())+";"+to_string(pose.getOrigin().getZ())+"      "+to_string(pose.getRotation().getX())+";"+to_string(pose.getRotation().getY())+";"+to_string(pose.getRotation().getZ())+";"+to_string(pose.getRotation().getW());
+	return ""+to_string(pose.getOrigin().getX())+";"+to_string(pose.getOrigin().getY())+";"+to_string(pose.getOrigin().getZ())+";"+to_string(pose.getRotation().getX())+";"+to_string(pose.getRotation().getY())+";"+to_string(pose.getRotation().getZ())+";"+to_string(pose.getRotation().getW());
 }
 
 

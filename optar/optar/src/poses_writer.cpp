@@ -18,9 +18,9 @@
 using namespace std;
 
 /** ROS node name */
-const string NODE_NAME 								= "ardevices_poses_republisher";
+const string NODE_NAME 								= "poses_writer";
 
-const string ardevice_poses_input_topic			= "ardevices_poses_input";
+const string ardevice_poses_input_topic			= "optar/device_poses";
 const string tagDetections_topic = "tag_detections";
 
 ofstream devicePoseFileStream;
@@ -37,10 +37,11 @@ ros::Timer tfCallbackTimer;
 geometry_msgs::TransformStamped transformKinect01ToWorld;
 geometry_msgs::TransformStamped transformKinect02ToWorld;
 
-void devicePoseCallback(const opt_msgs::ARDevicePoseArrayConstPtr poses)
+void devicePoseCallback(const opt_msgs::ARDevicePoseArrayConstPtr& poses)
 {
   for(auto p : poses->poses)
   {
+    ROS_INFO("Got phone pose");
     tf::StampedTransform transform;
     try{
       listener->lookupTransform(p.deviceId+"_world_filtered", "/world",
@@ -74,6 +75,9 @@ void tagDetectionsKinect1Callback(const apriltag_ros::AprilTagDetectionArrayCons
 
   for(apriltag_ros::AprilTagDetection atd : detections->detections)
   {
+    if(atd.id.size()<=0)
+      continue;
+    ROS_INFO_STREAM("Got tag "<<atd.id[0]);
     if(atd.id[0]!=0 && atd.id[0]!=1)
     {
       ROS_WARN("Unknown tag %i, skipping",atd.id[0]);
@@ -101,31 +105,11 @@ void tagDetectionsKinect1Callback(const apriltag_ros::AprilTagDetectionArrayCons
     *outStream << atd.pose.header.stamp << ";" << poseToString(tagPose_world.pose);
     for(float c : atd.pose.pose.covariance)
       *outStream << ";" << c;
+    *outStream<<endl;
     if(isKinect01)
       ROS_INFO("Wrote tag %i pose from kinect01",atd.id[0]);
     else
       ROS_INFO("Wrote tag %i pose from kinect02",atd.id[0]);
-  }
-}
-
-
-void tagDetectionsKinect2Callback(const apriltag_ros::AprilTagDetectionArrayConstPtr& detections)
-{
-  for(apriltag_ros::AprilTagDetection atd : detections->detections)
-  {
-    ofstream& outStream = (atd.id[0]==0)? tfTag0Kinect02FileStream : tfTag1Kinect02FileStream;
-    /*if(atd.id[0]==0)
-      outStream = tfTag0Kinect01FileStream;
-    else
-      outStream = tfTag1Kinect01FileStream;*/
-
-    geometry_msgs::PoseStamped tagPose_world;
-    tf2::doTransform(poseToPoseStamped(atd.pose.pose.pose,"/world", atd.pose.header.stamp),tagPose_world,transformKinect02ToWorld);
-
-    outStream << atd.pose.header.stamp << ";" << poseToString(tagPose_world.pose);
-    for(float c : atd.pose.pose.covariance)
-      outStream << ";" << c;
-    ROS_INFO("Wrote tag %i pose from kinect02",atd.id[0]);
   }
 }
 
@@ -181,11 +165,11 @@ int main(int argc, char** argv)
   ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(tagDetections_topic));
 
   string time = to_string(ros::Time::now().sec);
-  string outputPoseFile = "poses"+time;
-  string tfTag0Kinect01File = "tfTag0Kinect01"+time;
-  string tfTag1Kinect01File = "tfTag1Kinect01"+time;
-  string tfTag0kinect02File = "tfTag0Kinect02"+time;
-  string tfTag1Kinect02File = "tfTag1Kinect02"+time;
+  string outputPoseFile = time+"poses";
+  string tfTag0Kinect01File = time+"tfTag0Kinect01";
+  string tfTag1Kinect01File = time+"tfTag1Kinect01";
+  string tfTag0kinect02File = time+"tfTag0Kinect02";
+  string tfTag1Kinect02File = time+"tfTag1Kinect02";
 
   devicePoseFileStream.open (outputPoseFile);
   tfTag0Kinect01FileStream.open(tfTag0Kinect01File);

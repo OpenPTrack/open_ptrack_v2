@@ -45,7 +45,7 @@ void onPoseReceived(const std::string& deviceName, const geometry_msgs::PoseStam
 		return;
 	}
 
-	ROS_INFO_STREAM("Received ARCore pose  t="<<poseMsg->header.stamp);
+	//ROS_INFO_STREAM("Received ARCore pose  t="<<poseMsg->header.stamp);
 	it->second->onArcorePoseReceived(*poseMsg);
 }
 
@@ -81,8 +81,8 @@ void onArDeviceConnected(const string& deviceName)
 
 	ROS_INFO_STREAM("New device connected with id = "<<deviceName);
 	shared_ptr<ARDeviceRegistrationEstimator> newEstimator = make_shared<ARDeviceRegistrationEstimator>(deviceName, ros::Duration(15));
-	newEstimator->setupParameters( 0.00001, 	1,
-						                     0.001, 1,
+	newEstimator->setupParameters( 0.00001, 	10,
+						                     0.001, 10,
 						                     5, 	10);
 	estimators.insert(std::map<string, shared_ptr<ARDeviceRegistrationEstimator>>::value_type(deviceName,newEstimator));
 	newEstimator->start(nodeHandle);
