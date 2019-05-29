@@ -105,7 +105,7 @@ void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const r
 
       tf::Pose pose_arcore_tf;
       poseMsgToTF(pose_arcore.pose,pose_arcore_tf);
-      computeAndPublishRegistration(pose_arcore_tf,filtered_pose_world_tf,pose_arcore.header.stamp);
+      //computeAndPublishRegistration(pose_arcore_tf,filtered_pose_world_tf,pose_arcore.header.stamp);
       //ROS_INFO("Published");
     }
     c++;

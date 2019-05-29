@@ -30,6 +30,7 @@ Position3DKalmanFilter::Position3DKalmanFilter()
  */
 void Position3DKalmanFilter::setupParameters( double measurementNoiseVariance, double processNoiseVarianceFactor)
 {
+  ROS_INFO_STREAM("Setting parameters(mNoise="<<measurementNoiseVariance<<", pNoise="<<processNoiseVarianceFactor<<")");
   this->processNoiseVarianceFactor = processNoiseVarianceFactor;
   double var = measurementNoiseVariance;
   kalmanFilter.measurementNoiseCov = (Mat_<double>(3,3) <<  var, 0,   0,
@@ -86,6 +87,7 @@ cv::Mat Position3DKalmanFilter::processNoiseCovariance(double timestep)
  */
 cv::Mat Position3DKalmanFilter::update(const cv::Mat& measurement, double timestep_sec)
 {
+  //ROS_INFO_STREAM("update with timespetp ="<<timestep_sec);
   kalmanFilter.transitionMatrix = transitionMatrix(timestep_sec);
   kalmanFilter.processNoiseCov  = processNoiseCovariance(timestep_sec);
   if(mDidEverComputeState)
@@ -96,6 +98,8 @@ cv::Mat Position3DKalmanFilter::update(const cv::Mat& measurement, double timest
     //ROS_INFO_STREAM("temp1.size()="<<kalmanFilter.temp1.size().height<<";"<<kalmanFilter.temp1.size().width);
     //ROS_INFO_STREAM("transitionMatrix.size()="<<kalmanFilter.transitionMatrix.size().height<<";"<<kalmanFilter.transitionMatrix.size().width);
     //ROS_INFO_STREAM("processNoiseCov.size()="<<kalmanFilter.processNoiseCov.size().height<<";"<<kalmanFilter.processNoiseCov.size().width);
+    //ROS_INFO_STREAM("processNoiseCov = "<<endl<<kalmanFilter.processNoiseCov);
+    //ROS_INFO_STREAM("measurementNoiseCov = "<<endl<<kalmanFilter.measurementNoiseCov);
     kalmanFilter.predict();
     //ROS_INFO("Correcting");
     return kalmanFilter.correct( measurement);

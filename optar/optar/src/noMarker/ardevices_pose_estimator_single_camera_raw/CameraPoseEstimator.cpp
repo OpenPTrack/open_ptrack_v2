@@ -379,10 +379,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 
 
 	//send markers to rviz and publish matches image
-	visualization_msgs::MarkerArray markerArray;
-	for(unsigned int i=0; i<goodMatches3dPos.size(); i++)//build the rviz markers
-		markerArray.markers.push_back( buildMarker(	goodMatches3dPos.at(i),"match"+std::to_string(i),0,0,1,1, 0.2, fixedCameraFrameId));//matches are blue
-	debug_markers_pub.publish(markerArray);
+
 	sensor_msgs::ImagePtr matchesDebugImg;
 	std::chrono::steady_clock::time_point beforeMatchesimage = std::chrono::steady_clock::now();
 	if(showImages)
@@ -500,7 +497,10 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	ROS_INFO_STREAM("inliers (#="<<inliers.size()<<") reprojection error = "<<reprojectionError);
 
 
-
+	visualization_msgs::MarkerArray markerArray;
+	for(unsigned int i=0; i<inliers.size(); i++)//build the rviz markers
+		markerArray.markers.push_back( buildMarker(	goodMatches3dPos.at(inliers.at(i)),"match"+std::to_string(i),0,0,1,1, 0.2, fixedCameraFrameId));//matches are blue
+	debug_markers_pub.publish(markerArray);
 
 
 

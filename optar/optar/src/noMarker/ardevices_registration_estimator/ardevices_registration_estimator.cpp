@@ -83,7 +83,7 @@ void onArDeviceConnected(const string& deviceName)
 	shared_ptr<ARDeviceRegistrationEstimator> newEstimator = make_shared<ARDeviceRegistrationEstimator>(deviceName, ros::Duration(15));
 	newEstimator->setupParameters( 0.00001, 	10,
 						                     0.001, 10,
-						                     5, 	10);
+						                     1, 	20);
 	estimators.insert(std::map<string, shared_ptr<ARDeviceRegistrationEstimator>>::value_type(deviceName,newEstimator));
 	newEstimator->start(nodeHandle);
 	ROS_INFO_STREAM("Built estimator for device "<<deviceName);

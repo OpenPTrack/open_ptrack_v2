@@ -16,8 +16,8 @@ void PoseFilterEuler::setupParameters(double positionProcessVarianceFactor, doub
   this->orientationProcessVarianceFactor = orientationProcessVarianceFactor;
   this->orientationMeasurementVariance = orientationMeasurementVariance;
 
-  positionFilter.setupParameters(positionProcessVarianceFactor, positionMeasurementVariance);
-  orientationFilter.setupParameters(orientationProcessVarianceFactor, orientationMeasurementVariance);
+  positionFilter.setupParameters(positionMeasurementVariance, positionProcessVarianceFactor);
+  orientationFilter.setupParameters(orientationMeasurementVariance, orientationProcessVarianceFactor);
 }
 
 tf::Pose PoseFilterEuler::update(const tf::Pose& measurement, double timestep_sec)
