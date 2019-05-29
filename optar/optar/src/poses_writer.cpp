@@ -119,7 +119,6 @@ geometry_msgs::TransformStamped getTransform(const string& inputFrame, const str
 
   	//get camera to world transform
   	ros::Time targetTime;
-  	tf::TransformListener listener;
   	ros::Duration timeout = ros::Duration(10.0);
   	bool retry=true;
   	int count=0;
@@ -128,7 +127,7 @@ geometry_msgs::TransformStamped getTransform(const string& inputFrame, const str
   	{
   		std::string failReason;
   		targetTime = ros::Time(0);//the latest available
-  		bool r = listener.waitForTransform( targetFrame,inputFrame, targetTime, timeout, ros::Duration(0.01),&failReason);
+  		bool r = listener->waitForTransform( targetFrame,inputFrame, targetTime, timeout, ros::Duration(0.01),&failReason);
   		if(!r)
   		{
   			ROS_INFO_STREAM("can't transform because: "<<failReason);
@@ -141,7 +140,7 @@ geometry_msgs::TransformStamped getTransform(const string& inputFrame, const str
   		count++;
   	}while(retry);
   	tf::StampedTransform transformKinectToWorldNotMsg = tf::StampedTransform();
-  	listener.lookupTransform(targetFrame, inputFrame, targetTime, transformKinectToWorldNotMsg);
+  	listener->lookupTransform(targetFrame, inputFrame, targetTime, transformKinectToWorldNotMsg);
     geometry_msgs::TransformStamped transformToWorld;
   	tf::transformStampedTFToMsg(transformKinectToWorldNotMsg,transformToWorld);
   	ROS_INFO("Got transform from %s to %s ",inputFrame.c_str(), targetFrame.c_str());
@@ -158,6 +157,8 @@ int main(int argc, char** argv)
   std::this_thread::sleep_for (std::chrono::seconds(2));//sleep two second to let tf start
   transformKinect01ToWorld = getTransform("kinect01","/world");
   transformKinect02ToWorld = getTransform("kinect02","/world");
+
+  listener = make_shared<tf::TransformListener>();
 
   ros::Subscriber subPoses = nodeHandle.subscribe(ardevice_poses_input_topic, 10, devicePoseCallback);
 	ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(ardevice_poses_input_topic));

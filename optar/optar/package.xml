@@ -73,6 +73,7 @@
   <depend>message_filters</depend>
   <depend>eigen_conversions</depend>
   <depend>dynamic_reconfigure</depend>
+  <!--<depend>apriltag_ros</depend>-->
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
