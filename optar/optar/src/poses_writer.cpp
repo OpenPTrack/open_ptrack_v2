@@ -24,6 +24,7 @@ const string ardevice_poses_input_topic			= "optar/device_poses";
 const string tagDetections_topic = "tag_detections";
 
 ofstream devicePoseFileStream;
+ofstream deviceTransformedPoseFileStream;
 
 ofstream tfTag0Kinect01FileStream;
 ofstream tfTag1Kinect01FileStream;
@@ -44,7 +45,7 @@ void devicePoseCallback(const opt_msgs::ARDevicePoseArrayConstPtr& poses)
     ROS_INFO("Got phone pose");
     tf::StampedTransform transform;
     try{
-      listener->lookupTransform(p.deviceId+"_world_filtered", "/world",
+      listener->lookupTransform("/world", p.deviceId+"_world_filtered",
                                ros::Time(0), transform);
     }
     catch (tf::TransformException ex){
@@ -57,7 +58,32 @@ void devicePoseCallback(const opt_msgs::ARDevicePoseArrayConstPtr& poses)
     geometry_msgs::TransformStamped transform_geom;
     tf::transformStampedTFToMsg(transform,transform_geom);
     tf2::doTransform(poseToPoseStamped(p.pose,"/world", p.header.stamp),phonePose_world,transform_geom);
-    devicePoseFileStream << p.deviceId<<";"<<phonePose_world.header.stamp << ";" << poseToString(phonePose_world.pose)<<endl;
+    devicePoseFileStream << p.deviceId<<";"<<p.header.stamp << ";" << poseToString(phonePose_world.pose)<<endl;
+
+    tf::Pose phonePose_world_tf;
+    poseMsgToTF(phonePose_world.pose,phonePose_world_tf);
+    publishTransformAsTfFrame(phonePose_world_tf,"phonepose", "/world", ros::Time::now());
+
+    tf::Quaternion apriltagRot;
+    //apriltagRot.setRPY(3.14159, 0, -3.14159/2);
+    apriltagRot.setRPY(0, 0, 0);
+    tf::Pose apriltag_phoneFrame(apriltagRot, tf::Vector3(0.106,0.169,0.001));
+    //publishTransformAsTfFrame(apriltag_phoneFrame,"apriltag_raw", "/dev1173c94d00ff958945dbd88a7c5a926a_estimate_kinect01", ros::Time::now());
+
+
+
+
+
+    //tf::Pose apriltag_world0 = phonePose_world_tf.inverse() * apriltag_phoneFrame.inverse();
+    //publishTransformAsTfFrame(apriltag_world0,"apriltag0", "/world", ros::Time::now());
+    tf::Pose apriltag_world1 = phonePose_world_tf * apriltag_phoneFrame;
+    publishTransformAsTfFrame(apriltag_world1,"apriltag1", "/world", ros::Time::now());
+    //tf::Pose apriltag_world2 = apriltag_phoneFrame * phonePose_world_tf.inverse();
+  //  publishTransformAsTfFrame(apriltag_world2,"apriltag2", "/world", ros::Time::now());
+    //tf::Pose apriltag_world3 = apriltag_phoneFrame * phonePose_world_tf;
+    //publishTransformAsTfFrame(apriltag_world3,"apriltag3", "/world", ros::Time::now());
+    deviceTransformedPoseFileStream << p.deviceId<<";"<<p.header.stamp << ";" << poseToString(apriltag_world1)<<endl;
+
     ROS_INFO("Wrote phone pose");
   }
 
@@ -154,11 +180,12 @@ int main(int argc, char** argv)
 	ros::NodeHandle nodeHandle;
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
 
+  listener = make_shared<tf::TransformListener>();
+
   std::this_thread::sleep_for (std::chrono::seconds(2));//sleep two second to let tf start
   transformKinect01ToWorld = getTransform("kinect01","/world");
   transformKinect02ToWorld = getTransform("kinect02","/world");
 
-  listener = make_shared<tf::TransformListener>();
 
   ros::Subscriber subPoses = nodeHandle.subscribe(ardevice_poses_input_topic, 10, devicePoseCallback);
 	ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(ardevice_poses_input_topic));
@@ -171,12 +198,14 @@ int main(int argc, char** argv)
   string tfTag1Kinect01File = time+"tfTag1Kinect01";
   string tfTag0kinect02File = time+"tfTag0Kinect02";
   string tfTag1Kinect02File = time+"tfTag1Kinect02";
+  string outputTransformedPoseFile = time+"transformedPoses";
 
   devicePoseFileStream.open (outputPoseFile);
   tfTag0Kinect01FileStream.open(tfTag0Kinect01File);
   tfTag1Kinect01FileStream.open(tfTag1Kinect01File);
   tfTag0Kinect02FileStream.open(tfTag0kinect02File);
   tfTag1Kinect02FileStream.open(tfTag1Kinect02File);
+  deviceTransformedPoseFileStream.open (outputTransformedPoseFile);
 
 	ros::spin();
 
@@ -185,5 +214,7 @@ int main(int argc, char** argv)
   tfTag1Kinect01FileStream.close();
   tfTag0Kinect02FileStream.close();
   tfTag1Kinect02FileStream.close();
+  deviceTransformedPoseFileStream.close();
+
 	return 0;
 }
