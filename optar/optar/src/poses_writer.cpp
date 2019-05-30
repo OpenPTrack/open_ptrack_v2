@@ -126,7 +126,10 @@ void tagDetectionsKinect1Callback(const apriltag_ros::AprilTagDetectionArrayCons
     }
 
     geometry_msgs::PoseStamped tagPose_world;
-    tf2::doTransform(poseToPoseStamped(atd.pose.pose.pose,"/world", atd.pose.header.stamp),tagPose_world,transformKinect01ToWorld);
+    if(isKinect01)
+      tf2::doTransform(poseToPoseStamped(atd.pose.pose.pose,"/world", atd.pose.header.stamp),tagPose_world,transformKinect01ToWorld);
+    else
+      tf2::doTransform(poseToPoseStamped(atd.pose.pose.pose,"/world", atd.pose.header.stamp),tagPose_world,transformKinect02ToWorld);
 
     *outStream << atd.pose.header.stamp << ";" << poseToString(tagPose_world.pose);
     for(float c : atd.pose.pose.covariance)
