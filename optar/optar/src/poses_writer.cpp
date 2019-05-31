@@ -64,9 +64,7 @@ void devicePoseCallback(const opt_msgs::ARDevicePoseArrayConstPtr& poses)
     poseMsgToTF(phonePose_world.pose,phonePose_world_tf);
     publishTransformAsTfFrame(phonePose_world_tf,"phonepose", "/world", ros::Time::now());
 
-    tf::Quaternion apriltagRot;
-    //apriltagRot.setRPY(3.14159, 0, -3.14159/2);
-    apriltagRot.setRPY(0, 0, 0);
+    tf::Quaternion apriltagRot(0,0,0.707106781,0.707106781);
     tf::Pose apriltag_phoneFrame(apriltagRot, tf::Vector3(0.106,0.169,0.001));
     //publishTransformAsTfFrame(apriltag_phoneFrame,"apriltag_raw", "/dev1173c94d00ff958945dbd88a7c5a926a_estimate_kinect01", ros::Time::now());
 
@@ -77,7 +75,7 @@ void devicePoseCallback(const opt_msgs::ARDevicePoseArrayConstPtr& poses)
     //tf::Pose apriltag_world0 = phonePose_world_tf.inverse() * apriltag_phoneFrame.inverse();
     //publishTransformAsTfFrame(apriltag_world0,"apriltag0", "/world", ros::Time::now());
     tf::Pose apriltag_world1 = phonePose_world_tf * apriltag_phoneFrame;
-    publishTransformAsTfFrame(apriltag_world1,"apriltag1", "/world", ros::Time::now());
+    publishTransformAsTfFrame(apriltag_world1,"tag1FromPhone", "/world", ros::Time::now());
     //tf::Pose apriltag_world2 = apriltag_phoneFrame * phonePose_world_tf.inverse();
   //  publishTransformAsTfFrame(apriltag_world2,"apriltag2", "/world", ros::Time::now());
     //tf::Pose apriltag_world3 = apriltag_phoneFrame * phonePose_world_tf;
@@ -92,18 +90,20 @@ void devicePoseCallback(const opt_msgs::ARDevicePoseArrayConstPtr& poses)
 void tagDetectionsKinect1Callback(const apriltag_ros::AprilTagDetectionArrayConstPtr& detections)
 {
   bool isKinect01 = false;
-  if(detections->header.frame_id.compare("kinect01_rgb_optical_frame"))
+  if(detections->header.frame_id.compare("kinect01_rgb_optical_frame")==0)
     isKinect01=true;
-  else if(detections->header.frame_id.compare("kinect02_rgb_optical_frame"))
+  else if(detections->header.frame_id.compare("kinect02_rgb_optical_frame")==0)
     isKinect01=false;
   else
     throw runtime_error("invalid frame in tag detectionsArray.header");
-
+  //ROS_INFO_STREAM("received detections from "<<detections->header.frame_id);
+  //ROS_INFO_STREAM("isKinect01=="<<isKinect01);
   for(apriltag_ros::AprilTagDetection atd : detections->detections)
   {
     if(atd.id.size()<=0)
       continue;
-    ROS_INFO_STREAM("Got tag "<<atd.id[0]);
+    ROS_INFO_STREAM("Got tag "<<atd.id[0]<<" from "<<detections->header.frame_id);
+    //ROS_INFO_STREAM("isKinect01=="<<isKinect01);
     if(atd.id[0]!=0 && atd.id[0]!=1)
     {
       ROS_WARN("Unknown tag %i, skipping",atd.id[0]);
@@ -127,18 +127,19 @@ void tagDetectionsKinect1Callback(const apriltag_ros::AprilTagDetectionArrayCons
 
     geometry_msgs::PoseStamped tagPose_world;
     if(isKinect01)
-      tf2::doTransform(poseToPoseStamped(atd.pose.pose.pose,"/world", atd.pose.header.stamp),tagPose_world,transformKinect01ToWorld);
+      tf2::doTransform(poseToPoseStamped(atd.pose.pose.pose,detections->header.frame_id, atd.pose.header.stamp),tagPose_world,transformKinect01ToWorld);
     else
-      tf2::doTransform(poseToPoseStamped(atd.pose.pose.pose,"/world", atd.pose.header.stamp),tagPose_world,transformKinect02ToWorld);
+      tf2::doTransform(poseToPoseStamped(atd.pose.pose.pose,detections->header.frame_id, atd.pose.header.stamp),tagPose_world,transformKinect02ToWorld);
 
     *outStream << atd.pose.header.stamp << ";" << poseToString(tagPose_world.pose);
+    publishPoseAsTfFrame(tagPose_world,"savedTag");
     for(float c : atd.pose.pose.covariance)
       *outStream << ";" << c;
     *outStream<<endl;
-    if(isKinect01)
-      ROS_INFO("Wrote tag %i pose from kinect01",atd.id[0]);
-    else
-      ROS_INFO("Wrote tag %i pose from kinect02",atd.id[0]);
+    //if(isKinect01)
+    //  ROS_INFO("Wrote tag %i pose from kinect01",atd.id[0]);
+    //else
+    //  ROS_INFO("Wrote tag %i pose from kinect02",atd.id[0]);
   }
 }
 
@@ -173,6 +174,7 @@ geometry_msgs::TransformStamped getTransform(const string& inputFrame, const str
     geometry_msgs::TransformStamped transformToWorld;
   	tf::transformStampedTFToMsg(transformKinectToWorldNotMsg,transformToWorld);
   	ROS_INFO("Got transform from %s to %s ",inputFrame.c_str(), targetFrame.c_str());
+    //ROS_INFO_STREAM("transform = "<<poseToString(transformKinectToWorldNotMsg));
     return transformToWorld;
 }
 
@@ -186,8 +188,8 @@ int main(int argc, char** argv)
   listener = make_shared<tf::TransformListener>();
 
   std::this_thread::sleep_for (std::chrono::seconds(2));//sleep two second to let tf start
-  transformKinect01ToWorld = getTransform("kinect01","/world");
-  transformKinect02ToWorld = getTransform("kinect02","/world");
+  transformKinect01ToWorld = getTransform("kinect01_rgb_optical_frame","/world");
+  transformKinect02ToWorld = getTransform("kinect02_rgb_optical_frame","/world");
 
 
   ros::Subscriber subPoses = nodeHandle.subscribe(ardevice_poses_input_topic, 10, devicePoseCallback);
