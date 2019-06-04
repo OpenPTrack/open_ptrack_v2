@@ -14,7 +14,7 @@
 				<remap from="debug_images_topic" 			to="optar/$(arg sensor_name)/debug_images" />
 				<remap from="heartbeats_topic" 				to="optar/heartbeats" />
 				<remap from="fixed_sensor_name" 			to="$(arg sensor_name)" />
-				<remap from="output_raw_pose_estimate_topic" 		to="optar/raw_pose_estimations" />
+				<remap from="output_raw_pose_estimate_topic" 		to="optar/raw_pose_estimates" />
 	</node>
 
 </launch>
