@@ -217,6 +217,6 @@ add_dependencies(integrate_calibration_refinement ${${PROJECT_NAME}_EXPORTED_TAR
 
 
 
-add_executable(poses_writer src/poses_writer.cpp )
-target_link_libraries(poses_writer optarUtils ${catkin_LIBRARIES})
-add_dependencies(poses_writer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+#add_executable(poses_writer src/poses_writer.cpp )
+#target_link_libraries(poses_writer optarUtils ${catkin_LIBRARIES})
+#add_dependencies(poses_writer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)

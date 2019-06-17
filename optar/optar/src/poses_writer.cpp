@@ -197,7 +197,13 @@ int main(int argc, char** argv)
   ros::Subscriber subTagk1 = nodeHandle.subscribe(tagDetections_topic, 10, tagDetectionsKinect1Callback);
   ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(tagDetections_topic));
 
-  string time = to_string(ros::Time::now().sec);
+  string time;
+  int r = nodeHandle.getParam("testing_start_time",time);
+  if(!r)
+  {
+    ROS_ERROR("Couldn't get start_time parameter");
+    return -1;
+  }
   string outputPoseFile = time+"poses";
   string tfTag0Kinect01File = time+"tfTag0Kinect01";
   string tfTag1Kinect01File = time+"tfTag1Kinect01";
