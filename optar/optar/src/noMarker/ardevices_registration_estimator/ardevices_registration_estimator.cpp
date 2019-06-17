@@ -15,6 +15,9 @@
 #include "ARDeviceRegistrationEstimator.hpp"
 #include <mutex>
 
+#include <dynamic_reconfigure/server.h>
+#include <optar/OptarRegistrationEstimatorParametersConfig.h>
+
 using namespace std;
 
 /** ROS node name */
@@ -28,6 +31,26 @@ shared_ptr<ros::NodeHandle> nodeHandle;
 map<string,shared_ptr<ARDeviceRegistrationEstimator>> estimators;
 /** mutex for the estimators map */
 std::timed_mutex estimatorsMutex;
+
+
+double positionProcessVariance = 0.000001;
+double positionMeasurementVariance = 10;
+double orientationProcessVariance = 0.001;
+double orientationMeasurementVariance = 10;
+double pnpMeasurementVarianceFactor = 1;
+double arcoreMeasurementVarianceFactor = 20;
+
+
+
+void dynamicParametersCallback(optar::OptarRegistrationEstimatorParametersConfig &config, uint32_t level)
+{
+	positionProcessVariance = config.positionProcessVariance;
+	positionMeasurementVariance = config.positionMeasurementVariance;
+	orientationProcessVariance = config.orientationProcessVariance;
+	orientationMeasurementVariance = config.orientationMeasurementVariance;
+	pnpMeasurementVarianceFactor = config.pnpMeasurementVarianceFactor;
+	arcoreMeasurementVarianceFactor = config.arcoreMeasurementVarianceFactor;
+}
 
 void onPoseReceived(const std::string& deviceName, const geometry_msgs::PoseStampedConstPtr& poseMsg)
 {
@@ -81,9 +104,13 @@ void onArDeviceConnected(const string& deviceName)
 
 	ROS_INFO_STREAM("New device connected with id = "<<deviceName);
 	shared_ptr<ARDeviceRegistrationEstimator> newEstimator = make_shared<ARDeviceRegistrationEstimator>(deviceName, ros::Duration(15));
-	newEstimator->setupParameters( 0.000001, 	10,
-						                     0.001, 10,
-						                     1, 	20);
+	newEstimator->setupParameters( positionProcessVariance,
+																 positionMeasurementVariance,
+																 orientationProcessVariance,
+																 orientationMeasurementVariance,
+																 pnpMeasurementVarianceFactor,
+																 arcoreMeasurementVarianceFactor);
+
 	estimators.insert(std::map<string, shared_ptr<ARDeviceRegistrationEstimator>>::value_type(deviceName,newEstimator));
 	newEstimator->start(nodeHandle);
 	ROS_INFO_STREAM("Built estimator for device "<<deviceName);
@@ -113,6 +140,12 @@ int main(int argc, char** argv)
 	ros::init(argc, argv, NODE_NAME);
 	nodeHandle = make_shared<ros::NodeHandle>();
 	ROS_INFO_STREAM("starting "<<NODE_NAME);
+
+
+	dynamic_reconfigure::Server<optar::OptarRegistrationEstimatorParametersConfig> server;
+	dynamic_reconfigure::Server<optar::OptarRegistrationEstimatorParametersConfig>::CallbackType bindedDynamicParametersCallback;
+	bindedDynamicParametersCallback = boost::bind(&dynamicParametersCallback, _1, _2);
+	server.setCallback(bindedDynamicParametersCallback);
 
 	ros::Subscriber pnpPosesReceiver = nodeHandle->subscribe(inputRawPnPPoseTopic, 100, onPnPPoseReceived);
 	ROS_INFO_STREAM("Subscribed to "<<ros::names::remap(inputRawPnPPoseTopic));

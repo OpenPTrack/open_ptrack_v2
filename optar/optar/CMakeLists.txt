@@ -94,6 +94,7 @@ generate_messages(
 generate_dynamic_reconfigure_options(
   cfg/OptarSingleCameraParameters.cfg
   cfg/OptarAggregatorParameters.cfg
+  cfg/OptarRegistrationEstimatorParameters.cfg
 )
 
 ###################################
@@ -207,6 +208,7 @@ add_dependencies(ardevices_registration_estimator optarUtils ${${PROJECT_NAME}_E
 
 # make sure configure headers are built before any node using them
 add_dependencies(ardevices_pose_estimator_single_camera_raw ${PROJECT_NAME}_gencfg)
+add_dependencies(ardevices_registration_estimator ${PROJECT_NAME}_gencfg)
 
 
 add_executable(integrate_calibration_refinement src/noMarker/integrate_calibration_refinement.cpp )
