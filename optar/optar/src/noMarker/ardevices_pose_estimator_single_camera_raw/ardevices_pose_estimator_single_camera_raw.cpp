@@ -95,6 +95,9 @@ static unsigned int minimumMatchesNumber = 4;
 /** TODO: add parameter to dynamic_reconfigure. Timeout after which a device a device with no eartbeat is removed */
 static int handler_no_msg_timeout = 5000;
 
+static double maxPoseHeight = 2.5;
+static double minPoseHeight = 0;
+
 /** Number of threads that are used. Must be at least 2 to allow for message waiting in
     the callbacks. Estimations for different phones can be performed simultaneously */
 const unsigned int threadsNumber = 8;
@@ -152,6 +155,9 @@ void dynamicParametersCallback(optar::OptarSingleCameraParametersConfig &config,
 	showImages								= config.show_images;
 	enableFeaturesMemory								= config.enable_features_memory;
 
+	maxPoseHeight = config.max_pose_height;
+	minPoseHeight = config.min_pose_height;
+
 	//set the parameters for all the device handlers
 	for(auto const& keyValuePair: handlers)
 	{
@@ -166,7 +172,9 @@ void dynamicParametersCallback(optar::OptarSingleCameraParametersConfig &config,
 						phoneOrientationDifferenceThreshold_deg,
 						showImages,
 						minimumMatchesNumber,
-						enableFeaturesMemory);
+						enableFeaturesMemory,
+					  maxPoseHeight,
+					  minPoseHeight);
 
 	}
 }
@@ -210,7 +218,9 @@ void deviceHeartbeatsCallback(const std_msgs::StringConstPtr& msg)
 									phoneOrientationDifferenceThreshold_deg,
 									showImages,
 									minimumMatchesNumber,
-									enableFeaturesMemory);
+									enableFeaturesMemory,
+								  maxPoseHeight,
+									minPoseHeight);
 		if(r<0)
 		{
 			ROS_ERROR_STREAM("Couldn't setup device handler parameters, error "<<r<<". Will not handle device "<<deviceName);

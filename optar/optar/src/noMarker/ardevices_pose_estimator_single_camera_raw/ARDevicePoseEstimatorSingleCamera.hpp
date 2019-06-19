@@ -129,6 +129,9 @@ private:
 	bool enableFeaturesMemory = false;
 	/** Maximum delay accepted for an input message */
 	double maxMsgDelay_sec = 5;
+
+	double maxPoseHeight = 2.5;
+	double minPoseHeight = 0;
 public:
 	ARDevicePoseEstimatorSingleCamera(std::string ARDeviceId,
 					 std::string fixedCameraMonoTopicName,
@@ -153,7 +156,9 @@ public:
 						double phoneOrientationDifferenceThreshold_deg,
 						bool showImages,
 						unsigned int minimumMatchesNumber,
-						bool enableFeaturesMemory);
+						bool enableFeaturesMemory,
+					  double maxPoseHeight,
+					  double minPoseHeight);
 
 	std::string getARDeviceId();
 

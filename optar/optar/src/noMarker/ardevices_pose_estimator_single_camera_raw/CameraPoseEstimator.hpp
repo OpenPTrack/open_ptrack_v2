@@ -97,6 +97,9 @@ private:
 	bool enableFeaturesMemory = false;
 
 	float keypointMinDistThreshold = 5;
+
+	double maxPoseHeight = 2.5;
+	double minPoseHeight = 0;
 public:
 
 	CameraPoseEstimator(	std::string ARDeviceId,
@@ -118,7 +121,9 @@ public:
 						double phoneOrientationDifferenceThreshold_deg,
 						bool showImages,
 						unsigned int minimumMatchesNumber,
-						bool enableFeaturesMemory);
+						bool enableFeaturesMemory,
+					  double maxPoseHeight,
+					  double minPoseHeight);
 
 	int featuresCallback(const opt_msgs::ArcoreCameraFeaturesConstPtr& arcoreInputMsg,
 					const sensor_msgs::ImageConstPtr& kinectInputCameraMsg,

@@ -1,8 +1,10 @@
+#!/usr/bin/env python
+
 import rospy
 from dynamic_reconfigure import Client
 import time
 
-def getNodeConf(nodeName)
+def getNodeConf(nodeName):
     print("getting config for ",nodeName,"...")
     dynConfClient = dynamic_reconfigure.Client(nodeName,3)
     if dynConfClient == None:

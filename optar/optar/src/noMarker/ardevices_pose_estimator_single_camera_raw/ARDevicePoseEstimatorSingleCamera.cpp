@@ -274,7 +274,9 @@ int ARDevicePoseEstimatorSingleCamera::start(std::shared_ptr<ros::NodeHandle> no
 								phoneOrientationDifferenceThreshold_deg,
 								showImages,
 								minimumMatchesNumber,
-								enableFeaturesMemory);
+								enableFeaturesMemory,
+								maxPoseHeight,
+								minPoseHeight);
 
 
 	//set up the input topics listeners
@@ -362,7 +364,9 @@ int ARDevicePoseEstimatorSingleCamera::setupParameters(double pnpReprojectionErr
 					double phoneOrientationDifferenceThreshold_deg,
 					bool showImages,
 					unsigned int minimumMatchesNumber,
-					bool enableFeaturesMemory)
+					bool enableFeaturesMemory,
+					double maxPoseHeight,
+					double minPoseHeight)
 {
 	std::unique_lock<std::timed_mutex> lock(objectMutex, std::chrono::milliseconds(5000));
 	if(!lock.owns_lock())
@@ -382,6 +386,8 @@ int ARDevicePoseEstimatorSingleCamera::setupParameters(double pnpReprojectionErr
 	this->showImages = showImages;
 	this->minimumMatchesNumber = minimumMatchesNumber;
 	this->enableFeaturesMemory = enableFeaturesMemory;
+	this->maxPoseHeight = maxPoseHeight;
+	this->minPoseHeight = minPoseHeight;
 
 	if(estimator)
 	{
@@ -396,7 +402,9 @@ int ARDevicePoseEstimatorSingleCamera::setupParameters(double pnpReprojectionErr
 					phoneOrientationDifferenceThreshold_deg,
 					showImages,
 					minimumMatchesNumber,
-					enableFeaturesMemory);
+					enableFeaturesMemory,
+					maxPoseHeight,
+					minPoseHeight);
 	}
 	return 0;
 }

@@ -103,7 +103,9 @@ void CameraPoseEstimator::setupParameters(double pnpReprojectionError,
 					double phoneOrientationDifferenceThreshold_deg,
 					bool showImages,
 					unsigned int minimumMatchesNumber,
-					bool enableFeaturesMemory)
+					bool enableFeaturesMemory,
+					double maxPoseHeight,
+					double minPoseHeight)
 {
 	this->pnpReprojectionError=pnpReprojectionError;
 	this->pnpConfidence=pnpConfidence;
@@ -117,6 +119,8 @@ void CameraPoseEstimator::setupParameters(double pnpReprojectionError,
 	this->showImages = showImages;
 	this->minimumMatchesNumber = minimumMatchesNumber;
 	this->enableFeaturesMemory = enableFeaturesMemory;
+	this->maxPoseHeight = maxPoseHeight;
+	this->minPoseHeight = minPoseHeight;
 
 }
 
@@ -538,6 +542,16 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	ROS_DEBUG_STREAM("estimated pose is                "<<phonePose_world.pose.position.x<<" "<<phonePose_world.pose.position.y<<" "<<phonePose_world.pose.position.z<<" ; "<<phonePose_world.pose.orientation.x<<" "<<phonePose_world.pose.orientation.y<<" "<<phonePose_world.pose.orientation.z<<" "<<phonePose_world.pose.orientation.w);
 
 
+	if(phonePose_world.pose.position.z > maxPoseHeight)
+	{
+		ROS_WARN_STREAM("Pose height above max threshold. discarding");
+		return 4;
+	}
+	if(phonePose_world.pose.position.z < minPoseHeight)
+	{
+		ROS_WARN_STREAM("Pose height below min threshold. discarding");
+		return 5;
+	}
 	//TODO: this check should not be done if we use the features memory, which should
 	// ideally be always.
 	//compute orientation difference with respect to the fixed camera
@@ -546,7 +560,7 @@ int CameraPoseEstimator::update(	const std::vector<cv::KeyPoint>& arcoreKeypoint
 	if(phoneToCameraRotationAngle>phoneOrientationDifferenceThreshold_deg)
 	{
 		ROS_WARN_STREAM("Orientation difference between phone and camera is too high, discarding estimation ("<<phoneToCameraRotationAngle<<")");
-		return 4;
+		return 6;
 	}
 
 
