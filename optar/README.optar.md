@@ -25,12 +25,12 @@ to use a camera called 'kinect01', you may run:
     roslaunch optar registration_single_camera_raw.launch sensor_name:=kinect01
 
 
-To launch the central aggregator node you can instead use the 'registration_aggregator.launch'
-launch file. This launch file will launch also a node that provides a simple ntp-like
+To launch the central aggregator node you can instead use the 'registration_estimator.launch'
+launch file. This launch file will also launch a node that provides a simple ntp-like
 server to synchronize the AR devices and a node that publishes the ARDevices poses.
 You don't need to specify any parameter.
 
-    roslaunch optar registration_aggregator.launch
+    roslaunch optar registration_estimator.launch
 
 
 If you want to tune the parameters you can use the dynamic_reconfigure package and
@@ -54,7 +54,7 @@ Run, preferably on the computer connected directly to kinect02:
 
 Run, on any computer:
 
-    roslaunch optar registration_aggregator.launch
+    roslaunch optar registration_estimator.launch
 
 You can then tune the parameters running rqt
 
@@ -67,12 +67,13 @@ the CameraPoseEstimator::setupParameters() method. You can find a description
 for each parameter in the method documentation.
 
 #### Aggregator node
-In the ardevices_registration_aggregator node the handler_no_msg_timeout_secs parameter
+In the ardevices_registration_estimator node the handler_no_msg_timeout_secs parameter
 controls the length of time after which an AR device that isn't publishing anything
 is forgotten.
 
-The other parameters are those of the TransformFilterKalman::setupParameters() method.
+The other parameters are those of the ARDeviceRegistrationEstimator::setupParameters() method.
 You can find a description for each parameter in the method documentation.
+It is important to note that changing the ARDeviceRegistrationEstimator::setupParameters() parameters will not affect devices that are already running, but only new devices.
 
 ## Authors
 * **Carlo Rizzardo** - *no-marker OPTAR, documentation* - [c-rizz](https://github.com/c-rizz)
