@@ -82,7 +82,7 @@ cv::Mat Position3DKalmanFilter::processNoiseCovariance(double timestep)
 /**
  * Updates the state by predictiong and correcting
  * @param  measurement   The new measurement
- * @param  timestep      The time since the last update, in seconds
+ * @param  timestep_sec  The time since the last update, in seconds
  * @return               The updated state
  */
 cv::Mat Position3DKalmanFilter::update(const cv::Mat& measurement, double timestep_sec)
@@ -124,7 +124,7 @@ cv::Mat Position3DKalmanFilter::update(const cv::Mat& measurement, double timest
 /**
  * Updates the state by predictiong and correcting
  * @param  measurement   The new measurement
- * @param  timestep      The time since the last update, in seconds
+ * @param  timestep_sec  The time since the last update, in seconds
  * @return               The updated state
  */
 tf::Vector3 Position3DKalmanFilter::update(const tf::Vector3& measurement, double timestep_sec)
@@ -143,6 +143,11 @@ bool Position3DKalmanFilter::didEverComputeState()
   return mDidEverComputeState;
 }
 
+/**
+ * Returns the current stateestimate
+ * @return Current state estimate
+ * @throws logic_error if didEverComputeState()==false
+ */
 tf::Vector3 Position3DKalmanFilter::getState()
 {
   if(!didEverComputeState())

@@ -113,7 +113,7 @@ void dynamicParametersCallback(optar::OptarAggregatorParametersConfig &config, u
 /**
  * Callback for receiving the raw estimations from the ardevices_pose_estimator_single_camera_raw
  * nodes
- * @param inputRegistration Raw estimation from a single camera node
+ * @param inputPoseMsg Raw estimation from a single camera node
  */
 void onRawPoseReceived(const opt_msgs::ARDevicePoseEstimatePtr& inputPoseMsg)
 {

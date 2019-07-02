@@ -5,6 +5,11 @@
 
 using namespace std;
 
+/**
+ * Constructes the estimator
+ * @param arDeviceId     unique id for the AR device
+ * @param queueMaxMsgAge Max age for msgs in the queue
+ */
 ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(const std::string& arDeviceId,
                                                              const ros::Duration& queueMaxMsgAge)
 {
@@ -14,11 +19,24 @@ ARDeviceRegistrationEstimator::ARDeviceRegistrationEstimator(const std::string& 
   poseFilter.setupParameters(1,1,1,1);
 }
 
+/**
+ * [ARDeviceRegistrationEstimator::getARDeviceId description]
+ * @return the id
+ */
 string ARDeviceRegistrationEstimator::getARDeviceId()
 {
   return arDeviceId;
 }
 
+/**
+ * Sets up the parameters
+ * @param positionProcessVariance         See member variable documentation
+ * @param positionMeasurementVariance     See member variable documentation
+ * @param orientationProcessVariance      See member variable documentation
+ * @param orientationMeasurementVariance  See member variable documentation
+ * @param pnpMeasurementVarianceFactor    See member variable documentation
+ * @param arcoreMeasurementVarianceFactor See member variable documentation
+ */
 void ARDeviceRegistrationEstimator::setupParameters(double positionProcessVariance, double positionMeasurementVariance,
                      double orientationProcessVariance, double orientationMeasurementVariance,
                      double pnpMeasurementVarianceFactor, double arcoreMeasurementVarianceFactor)
@@ -37,7 +55,12 @@ void ARDeviceRegistrationEstimator::setupParameters(double positionProcessVarian
 }
 
 
-
+/**
+ * Computes the registration and publishes it using the two corresponding ARCore-ROS poses
+ * @param arcorePose The ARCore pose
+ * @param rosPose    The ROS pose
+ * @param timestamp  The timestamp for the estimate
+ */
 void ARDeviceRegistrationEstimator::computeAndPublishRegistration(const tf::Pose& arcorePose, const tf::Pose& rosPose, const ros::Time& timestamp)
 {
   //You don't belive me? Dim:
@@ -73,7 +96,11 @@ void ARDeviceRegistrationEstimator::computeAndPublishRegistration(const tf::Pose
   //ROS_INFO_STREAM("Published filtered transform "<<poseToString(arcoreWorld));
 }
 
-
+/**
+ * Processes the messages in the queue that are older than the specified time.
+ * The messages are used to update the Pose estimate, but not the registration estimate
+ * @param time The threshold time
+ */
 void ARDeviceRegistrationEstimator::processArcoreQueueMsgsSentBeforeTime(const ros::Time& time)
 {
 
@@ -160,6 +187,11 @@ tf::Pose ARDeviceRegistrationEstimator::filterPose(const tf::Pose& newPoseMeasur
   return filteredPose;
 }
 
+/**
+ * Called when a new PnP pose estimate is received. It processes the ARCore poses that are older than
+ * this one and then computes the registration estimate.
+ * @param poseEstimate The new PnP pose estimate
+ */
 void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimate& poseEstimate)
 {
   //update the filter with the arcor estimates up to now
@@ -188,6 +220,10 @@ void ARDeviceRegistrationEstimator::onPnPPoseReceived(const opt_msgs::ARDevicePo
   computeAndPublishRegistration(pose_arcore_tf, pose_world_tf_filtered, poseEstimate.cameraPose.header.stamp);
 }
 
+/**
+ * Called when a new ARCore pose estimate is received. The new pose is stored in the queue to be processed later
+ * @param pose the newly receive pose estimate
+ */
 void ARDeviceRegistrationEstimator::onArcorePoseReceived(const geometry_msgs::PoseStamped& pose)
 {
 
@@ -218,11 +254,21 @@ void ARDeviceRegistrationEstimator::onArcorePoseReceived(const geometry_msgs::Po
   arcorePosesQueue.push_back(sap);
 }
 
+/**
+ * Periodic update method.
+ * It processes the ARCore poses that are too old to be useful as matches to PnP estimates
+ * @param [name] [description]
+ */
 void ARDeviceRegistrationEstimator::processOldArcoreMsgs(const ros::TimerEvent&)
 {
   processArcoreQueueMsgsSentBeforeTime(ros::Time::now()-queueMaxMsgAge);
 }
 
+/**
+ * Starts up the estimator.
+ * Starts up the periodic update method.
+ * @param nodeHandle Current ROS node handle
+ */
 void ARDeviceRegistrationEstimator::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 {
   oldMsgsProcessorCallerTimer = nodeHandle->createTimer(queueMaxMsgAge*0.5,

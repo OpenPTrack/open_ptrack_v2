@@ -143,7 +143,7 @@ void ARDevicePoseEstimatorSingleCamera::featuresCallback(const opt_msgs::ArcoreC
  * @param fixedCameraDepthTopicName     Topic for receiving the depth images from the fixed camera
  * @param cameraInfoTopicName           Topic for receiving the camera info for the fixed camera
  * @param fixed_sensor_name             Sensor name of the fixed camera
- * @param outputRawEstimationTopic      Topic on which to output the registration estimation
+ * @param poseEstimateTopicName         Topic on which to output the registration estimation
  * @param featuresMemory                FeatureMemory object to remember and share useful features
  */
 ARDevicePoseEstimatorSingleCamera::ARDevicePoseEstimatorSingleCamera(	std::string ARDeviceId,
@@ -351,6 +351,8 @@ int ARDevicePoseEstimatorSingleCamera::stop()
  * @param  showImages                              See CameraPoseEstimator#setupParameters()
  * @param  minimumMatchesNumber                    See CameraPoseEstimator#setupParameters()
  * @param  enableFeaturesMemory                    See CameraPoseEstimator#setupParameters()
+ * @param  maxPoseHeight                           See CameraPoseEstimator#setupParameters()
+ * @param  minPoseHeight                           See CameraPoseEstimator#setupParameters()
  * @return                                         0 on success, a negative value on fail
  */
 int ARDevicePoseEstimatorSingleCamera::setupParameters(double pnpReprojectionError,

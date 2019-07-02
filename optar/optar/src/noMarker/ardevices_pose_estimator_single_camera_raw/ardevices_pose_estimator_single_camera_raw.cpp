@@ -95,7 +95,9 @@ static unsigned int minimumMatchesNumber = 4;
 /** TODO: add parameter to dynamic_reconfigure. Timeout after which a device a device with no eartbeat is removed */
 static int handler_no_msg_timeout = 5000;
 
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static double maxPoseHeight = 2.5;
+/** parameter controlled by dynamic_reconfigure, see  optar/cfg/OptarSingleCameraParameters.cfg */
 static double minPoseHeight = 0;
 
 /** Number of threads that are used. Must be at least 2 to allow for message waiting in

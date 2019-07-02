@@ -1,16 +1,29 @@
 #include "ARDevicesManager.hpp"
 
+/**
+ * Constructs the device manager
+ * @param listenToPoses      Set to true if you want to listen to the ARCore poses
+ * @param deviceAliveTimeout Timeout after which inactive devices are forgotten
+ */
 ARDevicesManager::ARDevicesManager(bool listenToPoses, const ros::Duration& deviceAliveTimeout)
 {
   this->listenToPoses = listenToPoses;
   setupParameters(deviceAliveTimeout);
 }
 
+/**
+ * Update the parameteres of the device manager
+ * @param deviceAliveTimeout Timeout after which inactive devices are forgotten
+ */
 void ARDevicesManager::setupParameters(const ros::Duration& deviceAliveTimeout)
 {
   this->deviceAliveTimeout = deviceAliveTimeout;
 }
 
+/**
+ * Starts the device manager, starts listening for active devices
+ * @param nodeHandle NodeHandle for the current ROS node
+ */
 void ARDevicesManager::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
 {
   heartbeatsSubscriber = nodeHandle->subscribe(devices_heartbeats_topicName, 10,
@@ -22,6 +35,9 @@ void ARDevicesManager::start(std::shared_ptr<ros::NodeHandle> nodeHandle)
   updateCallerTimer = nodeHandle->createTimer(ros::Duration(1), &ARDevicesManager::updateCallback, this);
 }
 
+/**
+ * Signals that the device is active, updating the deviceInfo accordingly
+ */
 void ARDevicesManager::signalDeviceAlive(std::string arDeviceId)
 {
   std::unique_lock<std::timed_mutex> lock(aliveDevicesMutex, std::chrono::milliseconds(5000));
@@ -47,13 +63,20 @@ void ARDevicesManager::signalDeviceAlive(std::string arDeviceId)
   aliveDevices.find(arDeviceId)->second->signalDeviceAlive();
 }
 
+/**
+ * Calaback that receoves the devices heartbeats, with which the active devices are monitored
+ * @param msg The received heartbeat message
+ */
 void ARDevicesManager::heartbeatCallback(const std_msgs::StringConstPtr& msg)
 {
   string deviceName = msg->data;
   signalDeviceAlive(deviceName);
 }
 
-
+/**
+ * Cleans up the manager memory from inactive devices, stopping the handlers
+ * for the inactive devices
+ */
 void ARDevicesManager::cleanupDeadDevices()
 {
   //ROS_INFO_STREAM("starting cleanupDeadDevices()");
@@ -89,14 +112,20 @@ void ARDevicesManager::cleanupDeadDevices()
 
 
 
-
+/**
+ * Update method called periodically
+ */
 void ARDevicesManager::updateCallback(const ros::TimerEvent&)
 {
   cleanupDeadDevices();
 }
 
 
-
+/**
+ * Checks if the device with the provided id is active
+ * @param  arDeviceId ID of the device
+ * @return            True if it is active
+ */
 bool ARDevicesManager::isDeviceAlive(std::string arDeviceId)
 {
   std::unique_lock<std::timed_mutex> lock(aliveDevicesMutex, std::chrono::milliseconds(5000));
@@ -113,7 +142,9 @@ bool ARDevicesManager::isDeviceAlive(std::string arDeviceId)
 }
 
 
-
+/**
+ * Returns the device information for all the active devices
+ */
 std::vector<ARDevicesManager::Device::DeviceInfo> ARDevicesManager::getAliveDevicesInfo()
 {
   std::vector<Device::DeviceInfo> ret;
@@ -133,19 +164,30 @@ std::vector<ARDevicesManager::Device::DeviceInfo> ARDevicesManager::getAliveDevi
 }
 
 
-
+/**
+ * Sets the callback for listening to the newly connected devices
+ * @param callback method that will be called
+ */
 void ARDevicesManager::setOnDeviceConnected(std::function<void(const std::string&)> callback)
 {
   onDeviceConnected = callback;
 }
 
 
+/**
+ * Sets the callback for listening to the evice disconnections
+ * @param callback method that will be called
+ */
 void ARDevicesManager::setOnDeviceDisconnected(std::function<void(const std::string&)> callback)
 {
   onDeviceDisconnected = callback;
 }
 
 
+/**
+ * Sets the callback for listening to the newly received device  ARCore poses
+ * @param callback method that will be called
+ */
 void ARDevicesManager::setOnPoseReceivedCallback(std::function<void(const std::string&, const geometry_msgs::PoseStampedConstPtr&)> callback)
 {
   onPoseReceivedCallback = callback;
@@ -156,7 +198,13 @@ void ARDevicesManager::setOnPoseReceivedCallback(std::function<void(const std::s
 
 
 
-
+/**
+ * Constructs the object with the provided details
+ * @param arDeviceId     unique ID of the device
+ * @param nodeHandle     ROS node handle for the current ROS node
+ * @param listenToPoses  true to enable the pose listener
+ * @param devicesManager the ARDevicesManager that is handling the device
+ */
 ARDevicesManager::Device::Device(std::string arDeviceId,
                                  shared_ptr<ros::NodeHandle> nodeHandle,
                                  bool listenToPoses,
@@ -175,6 +223,9 @@ ARDevicesManager::Device::Device(std::string arDeviceId,
 
 
 
+/** Callback executed when a new ARCore pose message is received
+ * @param poseMsg The message that was received
+ */
 void ARDevicesManager::Device::poseMsgCallback(const geometry_msgs::PoseStampedConstPtr poseMsg)
 {
   signalDeviceAlive();
@@ -183,18 +234,24 @@ void ARDevicesManager::Device::poseMsgCallback(const geometry_msgs::PoseStampedC
   devicesManager->onPoseReceivedCallback(deviceInfo.arDeviceId, poseMsg);
 }
 
-
+/**
+ * Destructor for the device object. It stops the interanl subscribers
+ */
 ARDevicesManager::Device::~Device()
 {
   posesSubscriber.shutdown();
 }
 
-
+/**
+ * Noted that the device is alive by updating the Device::DeviceInfo::lastSeenAlive member
+ */
 void ARDevicesManager::Device::signalDeviceAlive()
 {
   deviceInfo.lastSeenAlive = ros::Time::now();
 }
 
+/** Returns the unique id of the device
+*/
 std::string ARDevicesManager::Device::getARDeviceId()
 {
   return deviceInfo.arDeviceId;

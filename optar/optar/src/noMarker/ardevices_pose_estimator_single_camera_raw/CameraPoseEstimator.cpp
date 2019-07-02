@@ -91,6 +91,8 @@ CameraPoseEstimator::CameraPoseEstimator(	string ARDeviceId,
  *                                                To compute the mobile camera position at least 4 mathces are needed, so if you set this below
  *                                                4 it will be as if it was 4.
  * @param enableFeaturesMemory                    Controls if the feature memory is used
+ * @param maxPoseHeight                           Maximum allowed height for a pose estimate, estimates exceeding this thresghold are discarded
+ * @param minPoseHeight                           Minimum allowed height for a pose estimate, estimates exceeding this thresghold are discarded
  */
 void CameraPoseEstimator::setupParameters(double pnpReprojectionError,
 					double pnpConfidence,
@@ -271,7 +273,6 @@ int CameraPoseEstimator::featuresCallback(const opt_msgs::ArcoreCameraFeaturesCo
  *                                            purpouses.You can pass a null Mat if you want. The idea
  *                                            is to pass here a super-low resolution image to display
  *                                            in the matches_img
- * @param[in]  phonePoseArcoreFrameConverted  The AR device pose in the AR coordinate frame
  * @param[in]  timestamp                      The timestamp of the images. The images should be all
  *                                            roughly from the same instant
  * @param[in]  fixedCameraFrameId             The fixed camera tf frame_id

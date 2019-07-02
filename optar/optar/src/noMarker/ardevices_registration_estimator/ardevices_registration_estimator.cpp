@@ -32,16 +32,25 @@ map<string,shared_ptr<ARDeviceRegistrationEstimator>> estimators;
 /** mutex for the estimators map */
 std::timed_mutex estimatorsMutex;
 
-
+/** parameter for the poses filtering, see cfg/OptarRegistrationEstimatorParameters.cfg */
 double positionProcessVariance = 0.000001;
+/** parameter for the poses filtering, see cfg/OptarRegistrationEstimatorParameters.cfg */
 double positionMeasurementVariance = 10;
+/** parameter for the poses filtering, see cfg/OptarRegistrationEstimatorParameters.cfg */
 double orientationProcessVariance = 0.001;
+/** parameter for the poses filtering, see cfg/OptarRegistrationEstimatorParameters.cfg */
 double orientationMeasurementVariance = 10;
+/** parameter for the poses filtering, see cfg/OptarRegistrationEstimatorParameters.cfg */
 double pnpMeasurementVarianceFactor = 1;
+/** parameter for the poses filtering, see cfg/OptarRegistrationEstimatorParameters.cfg */
 double arcoreMeasurementVarianceFactor = 20;
 
 
-
+/**
+ * Callback for the dynamic parameters onfiguration
+ * @param config New parameters to be used
+ * @param level  [description]
+ */
 void dynamicParametersCallback(optar::OptarRegistrationEstimatorParametersConfig &config, uint32_t level)
 {
 	positionProcessVariance = config.positionProcessVariance;
@@ -52,6 +61,11 @@ void dynamicParametersCallback(optar::OptarRegistrationEstimatorParametersConfig
 	arcoreMeasurementVarianceFactor = config.arcoreMeasurementVarianceFactor;
 }
 
+/**
+ * Called by the devicesManager when a new pose is received from an AR device
+ * @param deviceName Id of the device
+ * @param poseMsg    The pose
+ */
 void onPoseReceived(const std::string& deviceName, const geometry_msgs::PoseStampedConstPtr& poseMsg)
 {
 
@@ -72,6 +86,10 @@ void onPoseReceived(const std::string& deviceName, const geometry_msgs::PoseStam
 	it->second->onArcorePoseReceived(*poseMsg);
 }
 
+/**
+ * Callback for receiving PnP pose esitmates for the AR devices
+ * @param inputPoseMsg The new Pose estimate
+ */
 void onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimatePtr& inputPoseMsg)
 {
 	ROS_INFO_STREAM("Received raw PnP pose estimate, t="<<inputPoseMsg->cameraPose.header.stamp);
@@ -92,6 +110,10 @@ void onPnPPoseReceived(const opt_msgs::ARDevicePoseEstimatePtr& inputPoseMsg)
 	it->second->onPnPPoseReceived(*inputPoseMsg);
 }
 
+/**
+ * Called by the devicesManager when a new AR device is detected
+ * @param deviceName ID of the device
+ */
 void onArDeviceConnected(const string& deviceName)
 {
 
@@ -116,6 +138,10 @@ void onArDeviceConnected(const string& deviceName)
 	ROS_INFO_STREAM("Built estimator for device "<<deviceName);
 }
 
+/**
+ * Called by the devicesManager when an AR device disconnects
+ * @param deviceName ID of the device
+ */
 void onArDeviceDisconnected(const string& deviceName)
 {
 

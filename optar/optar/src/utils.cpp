@@ -739,6 +739,11 @@ std::string poseToString(tf::Pose pose)
 }
 
 
+/**
+ * Provides a human-readable string representation of a pose
+ *
+ * @return The string
+ */
 std::string poseToString(geometry_msgs::Pose pose)
 {
 	tf::Pose poseTf;
@@ -832,7 +837,7 @@ bool isPoseValid(const tf::Pose& pose)
  * @param  timestamp The timestamp for the pose
  * @return           The resolution stamped pose
  */
-geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, string frame_id, ros::Time timestamp)
+geometry_msgs::PoseStamped poseToPoseStamped(const geometry_msgs::Pose& pose, std::string frame_id, ros::Time timestamp)
 {
 	geometry_msgs::PoseStamped poseStamped;
 	poseStamped.pose = pose;
@@ -905,7 +910,11 @@ tf::Pose convertCameraPoseArcoreToRos(const tf::Pose& cameraPoseArcore)
 
 
 
-
+/**
+ * Inverts a pose
+ * @param  pose Input pose to be inverted
+ * @return      The inverted pose
+ */
 geometry_msgs::Pose invertPose(const geometry_msgs::Pose& pose)
 {
 	tf::Pose poseTf;

@@ -43,13 +43,18 @@
 
 using namespace std;
 
+/** name of the ROS node */
 const string node_name = "integrate_calibration_refinement";
-const string inputRefinementFileName_parameterName = "refinement_file_name";
-const string sensorName_parameterName = "sensor_name";
+/** name of the output calibration file */
 const string outputCalibrationFileName_parameterName = "calibration_file_name";
+/** default name fo r the output calibration file */
 string defaultOutputCalibrationFile;
-const string autoParamName = "auto";
 
+/**
+ * Gets the names of the sensprs from rosparam
+ * @param  nodeHandle NodeHandle for this node
+ * @return            The list of the sensors names
+ */
 vector<string> readSensorNamesFromParameterNetwork(const ros::NodeHandle& nodeHandle)
 {
   //The structure is the one in camera_network.yaml
@@ -82,15 +87,32 @@ vector<string> readSensorNamesFromParameterNetwork(const ros::NodeHandle& nodeHa
   return sensorNames;
 }
 
+/**
+ * Struct containing a pose and its inverse, reflecting the opt_calibration files
+ * @param pose        [description]
+ * @param inversePose [description]
+ */
 struct PoseAndInverse
 {
-    tf::Pose pose;
-    tf::Pose inversePose;
+  /** the pose */
+  tf::Pose pose;
+  /** the inverse of #pose */
+  tf::Pose inversePose;
 
-    PoseAndInverse(const tf::Pose& pose, const tf::Pose& inversePose) : pose(pose), inversePose(inversePose)
-    {}
+  /**
+   * Constructor
+   * @param pose        [description]
+   * @param inversePose [description]
+   */
+  PoseAndInverse(const tf::Pose& pose, const tf::Pose& inversePose) : pose(pose), inversePose(inversePose)
+  {}
 };
 
+/**
+ * Read the current calibration poses from rosparam
+ * @param nodeHandle  Current nodeHandle
+ * @param sensorNames Names of the sensors to search the poses of
+ */
 map<string,PoseAndInverse> readPosesFromParameterServer(const ros::NodeHandle& nodeHandle, const vector<string>& sensorNames)
 {
   map<string,PoseAndInverse> poses;
@@ -143,7 +165,12 @@ map<string,PoseAndInverse> readPosesFromParameterServer(const ros::NodeHandle& n
 }
 
 
-
+/**
+ * Writes the porvided sensor sposes to file in the opt_calibration format
+ * @param  outputFileName name of the output file
+ * @param  sensors        The sensors to write
+ * @return                zero if successfull
+ */
 int writeSensorPoses(const string& outputFileName, const map<string,PoseAndInverse>& sensors)
 {
   // Save tfs between sensors and world coordinate system (last checherboard) to file
@@ -205,6 +232,11 @@ int writeSensorPoses(const string& outputFileName, const map<string,PoseAndInver
   return 0;
 }
 
+/**
+ * Read a matrix from a text file
+ * @param  filename the file's name
+ * @return          The matrix
+ */
 Eigen::Affine3d readMatrixFromFile (std::string filename)
 {
   Eigen::Affine3d matrix;
@@ -247,7 +279,12 @@ Eigen::Affine3d readMatrixFromFile (std::string filename)
 
 
 
-
+/**
+ * Transform the pose of a sensor according to a calibration refinement file
+ * @param  sensor             The sensor pose (this will be modified)
+ * @param  refinementFileName The refinement file to use
+ * @return                    The distance fo the new pose form the original one
+ */
 double transformSensor(PoseAndInverse& sensor, const string& refinementFileName)
 {
   Eigen::Affine3d refinementMatrix = readMatrixFromFile(refinementFileName);
@@ -262,6 +299,11 @@ double transformSensor(PoseAndInverse& sensor, const string& refinementFileName)
   return dist;
 }
 
+/**
+ * Copy a file
+ * @param origin      source file name
+ * @param destination destination file name
+ */
 void copyFile(const string& origin, const string& destination)
 {
   std::ifstream  src(origin,        std::ios::binary);
@@ -269,6 +311,12 @@ void copyFile(const string& origin, const string& destination)
   dst << src.rdbuf();
 }
 
+
+/**
+ * Move a file
+ * @param origin      source file name
+ * @param destination destination file name
+ */
 void moveFile(const string& origin, const string& destination)
 {
   {
@@ -279,6 +327,12 @@ void moveFile(const string& origin, const string& destination)
   remove(origin.c_str());
 }
 
+/**
+ * Mainf fuinction for the node
+ * @param  argc
+ * @param  argv
+ * @return      
+ */
 int main (int argc, char** argv)
 {
   ros::init(argc, argv, node_name);

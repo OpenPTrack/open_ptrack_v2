@@ -3,11 +3,21 @@
 using namespace std;
 using namespace cv;
 
+/**
+ * Constructs the filter
+ */
 PoseFilterEuler::PoseFilterEuler()
 {
   //nothing to do
 }
 
+/**
+ * Sets up the filter parameters
+ * @param positionProcessVarianceFactor    Multiplicative factor for the position process noise covariance
+ * @param positionMeasurementVariance      Measurement variance of the single position measurement components
+ * @param orientationProcessVarianceFactor Multiplicative factor for the orientation process noise covariance
+ * @param orientationMeasurementVariance   Measurement variance of the single orientation measurement components
+ */
 void PoseFilterEuler::setupParameters(double positionProcessVarianceFactor, double positionMeasurementVariance,
                      double orientationProcessVarianceFactor, double orientationMeasurementVariance)
 {
@@ -20,6 +30,12 @@ void PoseFilterEuler::setupParameters(double positionProcessVarianceFactor, doub
   orientationFilter.setupParameters(orientationMeasurementVariance, orientationProcessVarianceFactor);
 }
 
+/**
+ * Updates the filter by predictiong and correcting
+ * @param  measurement  The new pose measurement
+ * @param  timestep_sec Time since the last update in seconds
+ * @return              The new filtered pose estimate
+ */
 tf::Pose PoseFilterEuler::update(const tf::Pose& measurement, double timestep_sec)
 {
   tf::Vector3 positionMeasurement = measurement.getOrigin();
@@ -46,18 +62,34 @@ tf::Pose PoseFilterEuler::update(const tf::Pose& measurement, double timestep_se
   return lastPoseEstimate;
 }
 
+/**
+ * Updates the filter by predictiong and correcting
+ * @param  measurement                    The new pose measurement
+ * @param  timestep_sec                   Time since the last update in seconds
+ * @param  positionMeasurementVariance    variance of the position measurement
+ * @param  orientationMeasurementVariance variance of the orientation measurement
+ * @return                                The new filtered pose estimate
+ */
 tf::Pose PoseFilterEuler::update(const tf::Pose& measurement, double timestep_sec, double positionMeasurementVariance, double orientationMeasurementVariance)
 {
   setupParameters(positionProcessVarianceFactor, positionMeasurementVariance,orientationProcessVarianceFactor, orientationMeasurementVariance);
   return update(measurement, timestep_sec);
 }
 
-
+/**
+ * Checks if a filtered pose estimate was ever computed
+ * @return True if a filtered pose estimate was ever computed
+ */
 bool PoseFilterEuler::didEverComputeEstimate()
 {
   return mDidEverComputeEstimate;
 }
 
+/**
+ * Returns the last computed filtered pose estimate
+ * @return The posee estimate
+ * @throws logic_error if no estimate was ever computed
+ */
 tf::Pose PoseFilterEuler::getLastPoseEstimate()
 {
   if(!didEverComputeEstimate())

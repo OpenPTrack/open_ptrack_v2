@@ -14,7 +14,9 @@
 #include <opencv2/video/tracking.hpp>
 
 
-
+/**
+ * Class implementing a kalman filter for a 3D position. It models the position along with its first and second derivative
+ */
 class Position3DKalmanFilter
 {
 private:
