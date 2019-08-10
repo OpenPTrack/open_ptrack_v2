@@ -507,17 +507,26 @@ detection_cb(const rtpose_wrapper::SkeletonArrayMsg::ConstPtr& msg)
   // Read message header information:
   std::string frame_id = msg->header.frame_id;
   ros::Time frame_time = msg->header.stamp;
-
+  int temp = 0;
   std::string frame_id_tmp = frame_id;
   int pos = frame_id_tmp.find("_rgb_optical_frame");
   if (pos != std::string::npos)
+  {
     frame_id_tmp.replace(pos, std::string("_rgb_optical_frame").size(), "");
+    temp = pos;
+  }
   pos = frame_id_tmp.find("_ir_optical_frame");
   if (pos != std::string::npos)
+  {
     frame_id_tmp.replace(pos, std::string("_ir_optical_frame").size(), "");
+    temp = pos;
+  }
   pos = frame_id_tmp.find("_depth_optical_frame");
   if (pos != std::string::npos)
+  {
     frame_id_tmp.replace(pos, std::string("_depth_optical_frame").size(), "");
+    temp = pos;
+  }
   last_received_detection_[frame_id_tmp] = frame_time;
 
   // Compute delay of detection message, if any:
@@ -541,10 +550,12 @@ detection_cb(const rtpose_wrapper::SkeletonArrayMsg::ConstPtr& msg)
     // Read transforms between camera frame and world frame:
     if (!extrinsic_calibration)
     {
+      std::string frame_id_copy = frame_id;
+      std::string new_frame_id = frame_id_tmp + frame_id_copy.erase(0,temp);
       static tf::TransformBroadcaster world_to_camera_tf_publisher;
       world_to_camera_tf_publisher.sendTransform
           (tf::StampedTransform(world_to_camera_frame_transform,
-                                ros::Time::now(), frame_id_tmp + "_ir_optical_frame", world_frame_id));
+                                ros::Time::now(), new_frame_id , world_frame_id));
     }
 
     //Calculate direct and inverse transforms between camera and world frame:
