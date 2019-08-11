@@ -101,7 +101,7 @@ class DetectionInitializer :
         elif self.sensor_map[pc][sensor]['type'] == 'zed':
           file.write('  <node pkg="tf" type="static_transform_publisher" ')
           file.write('name="' + sensor +'_broadcaster_2"\n')
-          file.write('        args="0 0 0 0 0 0 ')
+          file.write('        args="0 0 0 1.57 -1.57 0 ')
           file.write('/' + sensor + ' /map />\n')
         file.write('\n')
           
