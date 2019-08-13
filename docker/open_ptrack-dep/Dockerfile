@@ -119,9 +119,7 @@ RUN  cd     \
     && cd .. \
     && mkdir build \ 
     && cd build     \ 
-    && /bin/bash -c "source /opt/ros/melodic/setup.bash    \ 
-    && export NVCUDASAMPLES_ROOT='/root/workspace/NVIDIA_CUDA-8.0_Samples' \
-    && cmake .. -DENABLE_CXX11=ON -DCUDA_PROPAGATE_HOST_FLAGS=off   \ 
+    && /bin/bash -c "cmake .. -DENABLE_CXX11=ON -DCUDA_PROPAGATE_HOST_FLAGS=off   \ 
     && make     \
     && make install"     \
     && echo '# ATTR{product}=="Kinect2" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02c4", MODE="0666" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02d8", MODE="0666" SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02d9", MODE="0666"' > ~/90-kinect2.rules     \ 
