@@ -105,8 +105,9 @@ RUN  /bin/bash -c "source /root/.bashrc    \
     && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
     && cd rtpose_wrapper     \ 
     && git checkout integration-1604     \ 
-    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev"
-#    && make all -j8"
+    && sed -i -e 's/CUDNN_CROSS_CORRELATION/CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT/g' include/caffe/util/cudnn.hpp   \
+    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev    \
+    && make all -j8"
 
 RUN  cd     \ 
     && cd workspace     \ 
