@@ -102,7 +102,7 @@ class DetectionInitializer :
           file.write('  <node pkg="tf" type="static_transform_publisher" ')
           file.write('name="' + sensor +'_broadcaster_2"\n')
           file.write('        args="0 0 0 1.57 -1.57 0 ')
-          file.write('/' + sensor + ' /map />\n')
+          file.write('/' + sensor + ' /map 100 />\n')
         file.write('\n')
         file.write('\n')
           

@@ -384,7 +384,7 @@ class Listener :
       if request.serial != '':
         file.write(' <arg name="camera_model"         value="0" /> \n')
       file.write('   <arg name="frame_rate"           value="100" />\n')
-      file.write('   <arg name="resolution"           value="3" />\n')
+      file.write('   <arg name="resolution"           value="2" />\n')
       file.write('  </include>\n\n')
       file.write('  <include file="$(find detection)/launch/zed_frames.launch">\n')
       file.write('  </group>\n\n')
