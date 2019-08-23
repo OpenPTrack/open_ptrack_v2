@@ -1,0 +1,45 @@
+<launch>
+
+  <arg name="enable_people_tracking" default="true" />
+  <arg name="enable_pose" default="true" />
+  <arg name="enable_object" default="true" />
+  <arg name="sensor_name" default="kinect1_head" />
+  <!-- Load calibration results -->
+  <!--include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/-->
+
+  <!-- Start Kinect1 Driver-->
+  <include file="$(find detection)/launch/detector_depth_kinect1.launch">
+    <arg name="camera_name" value="$(arg sensor_name)" />
+  </include>
+
+  <group if="$(arg enable_people_tracking)">
+    <!-- People tracking -->
+    <include file="$(find tracking)/launch/tracker_single.launch"/>
+  </group>
+
+  <group if="$(arg enable_pose)">
+    <!-- Skeleton tracking -->
+    <include file="$(find detection)/launch/skeleton_detector_kinect1.launch">
+      <arg name="sensor_name" value="$(arg sensor_name)" />
+    </include>
+    <include file="$(find tracking)/launch/skeleton_tracker_single.launch">
+      <arg name="input_topic" value="/detector/skeletons" />
+    </include>
+    <!-- Pose recognition -->
+    <include file="$(find pose_recognition)/launch/pose_recognition.launch" />
+  </group>
+
+  <!-- Object Tracking -->
+  <group if="$(arg enable_object)">
+    <include file="$(find yolo_detector)/launch/detector_yolo_kinect1.launch">
+      <arg name="sensor_name"             value="$(arg sensor_name)" />
+    </include>
+    <include file="$(find tracking)/launch/object_tracker_single.launch" />
+  </group>
+
+  <!-- UDP messaging -->
+  <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
+
+  <!-- Visualization -->
+  <include file="$(find opt_utils)/launch/multicamera_visualization.launch"/>
+</launch>
