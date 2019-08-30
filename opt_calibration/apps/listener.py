@@ -394,6 +394,15 @@ class Listener :
       else:
         file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
 
+      file.write('  <!-- Launch sensor -->\n')
+      file.write('  <include file="$(find zed_wrapper)/launch/zed.launch">\n')
+      file.write('    <arg name="camera_model"         value="0" />\n')
+      file.write('    <arg name="frame_rate"         value="30" />\n')
+      file.write('    <arg name="resolution"         value="3" />\n')
+      file.write('  </include>\n\n')
+
+
+
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
       if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:

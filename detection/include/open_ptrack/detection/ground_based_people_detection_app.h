@@ -79,6 +79,11 @@ namespace open_ptrack
         typedef boost::shared_ptr<PointCloud> PointCloudPtr;
         typedef boost::shared_ptr<const PointCloud> PointCloudConstPtr;
 
+
+        /** \brief Point_cloud_visulizer. */
+        void 
+        Point_cloud_visulizer(PointCloudPtr& cloud, Eigen::VectorXf& ground_coeffs_, pcl::visualization::PCLVisualizer& viewer, std::vector<pcl::people::PersonCluster<PointT> >& clusters);
+
         /** \brief Constructor. */
         GroundBasedPeopleDetectionApp ();
 
