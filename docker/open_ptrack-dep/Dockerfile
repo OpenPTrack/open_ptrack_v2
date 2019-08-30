@@ -132,14 +132,14 @@ RUN  cd ~/workspace/ros/src     \
     && git checkout 1607       
 
 
-#RUN  /bin/bash -c "git clone https://github.com/torch/distro.git ~/torch --recursive \ 
-#    && cd ~/torch \ 
-#    && bash install-deps \ 
-#    && ./install.sh -b \ 
-#    && source ~/.bashrc \ 
-#    && cd install/bin \ 
-#    && ./luarocks install dpnn \ 
-#    && ./luarocks install csvigo"
+RUN  /bin/bash -c "git clone https://github.com/nagadomi/distro.git ~/torch --recursive \ 
+    && cd ~/torch \ 
+    && bash install-deps \ 
+    && ./install.sh -b \ 
+    && source ~/.bashrc \ 
+    && cd install/bin \ 
+    && ./luarocks install dpnn \ 
+    && ./luarocks install csvigo"
 
 RUN /bin/bash -c "cd /tmp \
     && git clone https://github.com/cmusatyalab/openface.git \
