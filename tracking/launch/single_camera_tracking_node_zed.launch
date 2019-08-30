@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<!-- SESSION ID: 1500506803 -->
+<launch>
+    <arg name="enable_people_tracking" default="true" />
+    <arg name="enable_pose" default="true" />
+    <arg name="enable_object" default="false" />
+    <arg name="sensor_name" default="zed_head" />
+
+    <group ns="$(arg sensor_name)">
+        <include file="$(find zed_wrapper)/launch/zed.launch">
+            <arg name="camera_model" value="0" />
+            <arg name="frame_rate" value="100" />
+            <arg name="resolution" value="3" />
+        </include>
+    </group>
+
+    <group if="$(arg enable_people_tracking)">
+        <!-- People tracking -->
+        <include file="$(find detection)/launch/detector_depth_zed.launch">
+            <arg name="sensor_name" value="$(arg sensor_name)" />
+        </include>
+        <include file="$(find tracking)/launch/tracker_single.launch" />
+    </group>
+
+    <!-- Skeleton tracking -->
+    <!-- <group if="$(arg enable_pose)">
+  <include file="$(find detection)/launch/skeleton_detector.launch">
+    <arg name="sensor_name" value="$(arg sensor_name)" />
+  </include>
+  <include file="$(find tracking)/launch/skeleton_tracker_single.launch">
+     <arg name="input_topic" value="/detector/skeletons" />
+  </include>
+  <include file="$(find pose_recognition)/launch/pose_recognition.launch" />
+  </group> -->
+
+    <!-- Object Tracking -->
+    <!-- <group if="$(arg enable_object)">
+    <include file="$(find yolo_detector)/launch/detect_yolo_object_kinect_network.launch">
+      <arg name="sensor_name"             value="$(arg sensor_name)" />
+    </include>
+    <node pkg="detection" type="multiple_objects_detection_node" name="multiple_objects_detection" output="screen" required="true">
+     <rosparam command="load"                        file="$(find detection)/conf/multiple_objects_detection.yaml" />
+     <param name="set_object_names" value="true" />
+    </node>
+    <include file="$(find tracking)/launch/object_tracker_single.launch" />
+  </group> -->
+
+    <!-- UDP messaging -->
+    <include file="$(find opt_utils)/launch/ros2udp_converter.launch" />
+
+    <!-- Visualization -->
+    <include file="$(find opt_utils)/launch/singlecamera_visualization.launch" />
+</launch>

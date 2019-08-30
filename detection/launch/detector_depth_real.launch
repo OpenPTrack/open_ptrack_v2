@@ -1,0 +1,19 @@
+<launch>
+  <arg name="camera_name"             default="realsense_head" />
+
+  <!-- Start the Kinect -->
+  <!--include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch"/--> 
+
+   <!-- Launch ground based people detection node -->
+   <node pkg="detection" type="ground_based_people_detector" name="ground_based_people_detector" output="screen" required="true">
+    <rosparam command="load" file="$(find detection)/conf/ground_based_people_detector_realsense.yaml" />
+    <param name="classifier_file" value="$(find detection)/data/HogSvmPCL.yaml"/>
+    <!--param name="camera_info_topic" value="/$(arg camera_name)/depth_lowres/camera_info"/-->
+    <param name="camera_info_topic" value="/$(arg camera_name)/color/camera_info"/>
+    <param name="output_topic" value="/detector/detections"/>
+    <!--param name="pointcloud_topic" value="/$(arg camera_name)/depth_lowres/points"/-->
+    <param name="pointcloud_topic" value="/$(arg camera_name)/depth_registered/points"/>
+    <param name="rate" value="60.0"/>  
+  </node>
+
+</launch>
