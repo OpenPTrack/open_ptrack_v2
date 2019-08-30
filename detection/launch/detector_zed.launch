@@ -2,19 +2,14 @@
 <launch>
 
   <!-- Camera parameters -->
-  <arg name="sensor_id"               default="0" />
+  <arg name="sensor_id"               default="" />
   <arg name="sensor_name"             default="zed" />
+  <arg name="rgb_camera_info_url"     default="" />
   <arg name="intermediate_topic"      default="/detector/detections" />
   <arg name="ground_from_calibration" default="false" />
-
-  <!-- Launch sensor -->
-  <include file="$(find zed_wrapper)/launch/zed.launch">
-   	<arg name="zed_id"           value="$(arg sensor_id)" />
-    <arg name="sensor_name"         value="$(arg sensor_name)" />
-  </include> 
   
   <!-- Launch ground based people detection node -->
-  <node pkg="detection" type="ground_based_people_detector_zed"
+  <node pkg="detection" type="ground_based_people_detector"
         name="ground_based_people_detector_$(arg sensor_name)" output="screen" respawn="true">
         
     <rosparam command="load"                        file="$(find detection)/conf/ground_based_people_detector_zed.yaml" /> 
@@ -28,5 +23,4 @@
     <param name="ground_from_extrinsic_calibration" value="$(arg ground_from_calibration)"/>  
     
   </node>
-
 </launch>

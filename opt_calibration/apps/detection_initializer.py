@@ -104,6 +104,7 @@ class DetectionInitializer :
           file.write('        args="0 0 0 1.57 -1.57 0 ')
           file.write('/' + sensor + ' /map />\n')
         file.write('\n')
+        file.write('\n')
           
     file.write('</launch>\n')
     

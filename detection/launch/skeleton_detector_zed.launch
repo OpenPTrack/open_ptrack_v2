@@ -11,9 +11,6 @@
   <arg name="use_coco"                default="true" />
   <!-- Launch ground based people detection node -->
   <group if="$(arg skeletons_enabled)" >
-
-  <node name="republish" type="republish" pkg="image_transport" output="screen" args="compressedDepth in:=/$(arg sensor_name)/zed/depth/depth_registered raw out:=/$(arg sensor_name)/zed/depth_uncompressed" />
-
   <node pkg="rtpose_wrapper" type="rtpose"
         name="rtpose_$(arg sensor_name)" output="screen" respawn="true">
 

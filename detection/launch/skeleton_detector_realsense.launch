@@ -2,7 +2,7 @@
 <launch>
 
   <!-- Camera parameters -->
-  <arg name="sensor_id"               default="" />
+  <arg name="serial_no"               default="" />
   <arg name="sensor_name"             default="camera" />
   <arg name="rgb_camera_info_url"     default="" />
   <arg name="intermediate_topic"      default="/detector/skeletons" />

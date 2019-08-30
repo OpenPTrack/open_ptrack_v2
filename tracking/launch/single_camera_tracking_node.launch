@@ -1,55 +1,17 @@
 <?xml version="1.0"?>
 <!-- SESSION ID: 1500506803 -->
 <launch>
+    <arg name="enable_people_tracking" default="true" />
+    <arg name="enable_pose" default="true" />
+    <arg name="enable_object" default="true" />
+    <arg name="sensor_type" default="kinect2" />
+    <arg name="sensor_name" default="$(arg sensor_type)_head" />
 
-  <arg name="enable_people_tracking" default="true" />
-  <arg name="enable_pose" default="true" />
-  <arg name="enable_object" default="true" />
-  <arg name="sensor_name" default="kinect2_head" />
-  <!-- Load calibration results -->
-  <!--include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/-->
-
-  <!-- <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">
-    <arg name="publish_frame" value="true" />
-    <arg name="sensor_name" value="$(arg sensor_name)" />
-  </include> -->
-
-  <node pkg="rosbag" type="play" name="player" output="screen" args="--clock -q /root/zed/kinect_point_cloud_sd.bag"/>
-
-  <group if="$(arg enable_people_tracking)">
-  <!-- People tracking -->
-  <include file="$(find detection)/launch/detector_depth_kinect2.launch"/>
-  <include file="$(find tracking)/launch/tracker_single.launch"/>
-  </group>
-
-  <group if="$(arg enable_pose)">
-  <!-- Skeleton tracking -->
-  <include file="$(find detection)/launch/skeleton_detector.launch">
-    <arg name="sensor_name" value="$(arg sensor_name)" />
-  </include>
-  <include file="$(find tracking)/launch/skeleton_tracker_single.launch">
-     <arg name="input_topic" value="/detector/skeletons" />
-  </include>
-  <!-- Pose recognition -->
-  <include file="$(find pose_recognition)/launch/pose_recognition.launch" />
-  </group>
-
-  <group if="$(arg enable_object)">
-  <!-- Object Tracking -->
-    <include file="$(find yolo_detector)/launch/detect_yolo_object_kinect_network.launch">
-      <arg name="sensor_name"             value="$(arg sensor_name)" />
+    <!-- launch single camera tracking -->
+    <include file="$(find tracking)/launch/single_camera_tracking_node_$(arg sensor_type).launch">
+        <arg name="sensor_name"             value="$(arg sensor_name)" />
+        <arg name="enable_people_tracking"  value="$(arg enable_people_tracking)" />
+        <arg name="enable_pose"             value="$(arg enable_pose)" />
+        <arg name="enable_object"           value="$(arg enable_object)" />
     </include>
-    <node pkg="detection" type="multiple_objects_detection_node" name="multiple_objects_detection" output="screen" required="true">
-     <rosparam command="load"                        file="$(find detection)/conf/multiple_objects_detection.yaml" />
-     <param name="set_object_names" value="true" />
-    </node>
-    <include file="$(find tracking)/launch/object_tracker_single.launch" />
-
-  </group>
-
-  <!-- UDP messaging -->
-  <include file="$(find opt_utils)/launch/ros2udp_converter.launch"/>
-
-  <!-- Visualization -->
-  <include file="$(find opt_utils)/launch/multicamera_visualization.launch"/>
 </launch>
