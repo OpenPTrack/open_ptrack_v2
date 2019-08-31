@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="sensor_name" default="kinect2_head" />
+  <arg name="standalone" default="true" />
+
+  <group if="$(arg standalone)" >
+    <!-- Start the Kinect -->
+    <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
+      <param name="sensor_name" value="$(arg sensor_name)" />
+    </include>
+  </group>  
+  
+  <!-- Launch ground based people detection node -->
+  <node pkg="yolo_detector" type="open_ptrack_yolo_detector_node"
+        name="$(arg sensor_name)_yolo_detector_node" output="screen" respawn="false">
+        
+    <param name="depth_image_topic"                   value="/$(arg sensor_name)/depth_lowres/image"/>
+    <param name="rgb_image_topic"                  value="/$(arg sensor_name)/rgb_lowres/image"/>
+    <param name="output_topic"                      value="/detector/detections"/>
+    <param name="camera_info_topic"                 value="/$(arg sensor_name)/rgb_lowres/camera_info"/>
+    <param name="thresh"                              value="0.25"/>  
+    <param name="heir_thresh"                     value="0.5"/>  
+    <param name="data_cfg"                   value="$(find yolo_detector)/darknet_opt/cfg/coco.data"/>
+    <param name="yolo_cfg"                  value="$(find yolo_detector)/darknet_opt/cfg/yolo.cfg"/>
+    <param name="weight_file"                      value="$(find yolo_detector)/darknet_opt/yolo.weights"/>
+    <param name="encoding_type"                      value="32FC1"/>
+    <param name="in_mm"                      value="1"/>
+    
+    <param name="root"                      value="$(find yolo_detector)"/>
+
+  </node>
+
+</launch>
