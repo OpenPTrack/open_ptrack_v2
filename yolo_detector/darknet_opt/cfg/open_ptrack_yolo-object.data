@@ -1,0 +1,8 @@
+classes= 22
+train  = /home/pjreddie/data/coco/trainvalno5k.txt
+#valid  = coco_testdev
+#valid = data/coco_val_5k.list
+names = data/open_ptrack_object.names
+backup = /home/pjreddie/backup/
+#eval=coco
+

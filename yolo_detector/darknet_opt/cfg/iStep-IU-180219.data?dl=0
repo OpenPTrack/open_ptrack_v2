@@ -1,0 +1,5 @@
+classes = 10
+train  = data/UI_Training/train.txt
+valid  = data/UI_Training/test.txt
+names = cfg/iStep-IU180219.names
+backup = backup/
