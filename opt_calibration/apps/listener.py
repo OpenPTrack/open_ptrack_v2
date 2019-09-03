@@ -198,6 +198,7 @@ class Listener :
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
       file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('    <arg name="publish_frame"       value="false" />\n')
+      file.write('    <arg name="sensor"              value="$(arg sensor_id)" />\n')
       file.write('  </include>\n\n')
 
       file.write('  <!-- Publish a further transform -->\n')
@@ -328,6 +329,7 @@ class Listener :
         file.write('  <arg name="sensor_id"           value="$(arg sensor_id)" />\n')
       file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('    <arg name="publish_frame"       value="true" />\n')
+      file.write('    <arg name="sensor"              value="$(arg sensor_id)" />\n')
       file.write('  </include>\n\n')
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
@@ -384,7 +386,7 @@ class Listener :
       if request.serial != '':
         file.write(' <arg name="camera_model"         value="0" /> \n')
       file.write('   <arg name="frame_rate"           value="100" />\n')
-      file.write('   <arg name="resolution"           value="3" />\n')
+      file.write('   <arg name="resolution"           value="2" />\n')
       file.write('  </include>\n\n')
       file.write('  <include file="$(find detection)/launch/zed_frames.launch">\n')
       file.write('  </group>\n\n')
