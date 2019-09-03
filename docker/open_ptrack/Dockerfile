@@ -1,25 +1,41 @@
-FROM openptrack/open_ptrack-dep
+FROM openptrack/open_ptrack-dep:1804
 LABEL maintainer "Samir Tabriz"
 
-ARG branch=master
+ARG branch=1804
+
+RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections && \
+    apt-get update && apt-get install -y apt-transport-https apt-utils less lsb-release udev wget && \
+    mkdir -p /etc/udev/rules.d/ && \
+    cd /tmp/ && \
+    wget -O ZED_SDK_Linux_Ubuntu18_2_8.run https://download.stereolabs.com/zedsdk/2.8/ubuntu18 && \
+    chmod +x ./ZED_SDK_Linux_Ubuntu18_*.run && \
+    ./ZED_SDK_Linux_Ubuntu18_*.run --noexec --keep --target temp_zed && \
+    rm -f ZED_SDK_Linux_Ubuntu18_*.run && \
+    cd temp_zed/ && \
+    ./linux_install_release.sh silent && \
+    #rm -rf /var/lib/apt/lists/* && \
+    cd / && \
+    rm -rf /tmp/temp_zed
+
+RUN git clone --branch v2.8.x https://github.com/stereolabs/zed-ros-wrapper.git ~/workspace/ros/src/zed-ros-wrapper
 
 RUN apt-key adv --keyserver keys.gnupg.net --recv-key C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C8B3A55A6F3EFCDE \
-    && add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo xenial main" -u \
+    && add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo bionic main" -u \
     && rm -f /etc/apt/sources.list.d/realsense-public.list \
     && apt-get update \
     && apt-get install -y librealsense2-dkms librealsense2-utils librealsense2-dev librealsense2-dbg \
-    && apt-get install ros-kinetic-ddynamic-reconfigure
+    && apt-get install ros-melodic-ddynamic-reconfigure
 
-RUN /bin/bash -c "source /opt/ros/kinetic/setup.bash \
+RUN /bin/bash -c "source /opt/ros/melodic/setup.bash \
 	&& git clone https://github.com/intel-ros/realsense.git ~/workspace/ros/src/realsense\
-    && apt-get install ros-kinetic-rgbd-launch"
+    && apt-get install ros-melodic-rgbd-launch"
 
-RUN /bin/bash -c "source /opt/ros/kinetic/setup.bash \
+RUN /bin/bash -c "source /opt/ros/melodic/setup.bash \
     && git clone https://github.com/openptrack/open_ptrack_v2 ~/workspace/ros/src/open_ptrack \
     && cd ~/workspace/ros/src/open_ptrack \
     && git checkout $branch \
     && cd ../..  \
-    && export LD_LIBRARY_PATH=/root/workspace/ros/devel/lib:/opt/ros/kinetic/lib:/opt/ros/kinetic/lib/x86_64-linux-gnu:/usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu:/usr/local/cuda/lib64:/usr/local/opencv3/lib \
+    && export LD_LIBRARY_PATH=/root/workspace/ros/devel/lib:/opt/ros/melodic/lib:/opt/ros/melodic/lib/x86_64-linux-gnu:/usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu:/usr/local/cuda/lib64:/usr/local/opencv3/lib \
     && catkin_make"
 
 RUN /bin/bash -c "source /root/workspace/ros/devel/setup.bash \
