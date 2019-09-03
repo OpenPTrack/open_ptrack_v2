@@ -1,7 +1,21 @@
 FROM openptrack/open_ptrack-dep
 LABEL maintainer "Samir Tabriz"
 
-ARG branch=master
+ARG branch=1804
+
+RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections && \
+    apt-get update && apt-get install -y apt-transport-https apt-utils less lsb-release udev wget && \
+    mkdir -p /etc/udev/rules.d/ && \
+    cd /tmp/ && \
+    wget -O ZED_SDK_Linux_Ubuntu18_2_8.run https://download.stereolabs.com/zedsdk/2.8/ubuntu18 && \
+    chmod +x ./ZED_SDK_Linux_Ubuntu18_*.run && \
+    ./ZED_SDK_Linux_Ubuntu18_*.run --noexec --keep --target temp_zed && \
+    rm -f ZED_SDK_Linux_Ubuntu18_*.run && \
+    cd temp_zed/ && \
+    ./linux_install_release.sh silent && \
+    #rm -rf /var/lib/apt/lists/* && \
+    cd / && \
+    rm -rf /tmp/temp_zed
 
 RUN apt-key adv --keyserver keys.gnupg.net --recv-key C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C8B3A55A6F3EFCDE \
     && add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo xenial main" -u \
