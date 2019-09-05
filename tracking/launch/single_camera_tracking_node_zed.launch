@@ -5,6 +5,7 @@
     <arg name="enable_pose" default="true" />
     <arg name="enable_object" default="false" />
     <arg name="sensor_name" default="zed_head" />
+    <arg name="sensor_type" default="zed" />
 
     <group ns="$(arg sensor_name)">
         <include file="$(find zed_wrapper)/launch/zed.launch">
@@ -18,6 +19,7 @@
         <!-- People tracking -->
         <include file="$(find detection)/launch/detector_depth_zed.launch">
             <arg name="sensor_name" value="$(arg sensor_name)" />
+            <arg name="sensor_type" value="$(arg sensor_type)" />
         </include>
         <include file="$(find tracking)/launch/tracker_single.launch" />
     </group>
