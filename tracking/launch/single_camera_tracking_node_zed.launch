@@ -8,9 +8,9 @@
 
     <group ns="$(arg sensor_name)">
         <include file="$(find zed_wrapper)/launch/zed.launch">
-            <arg name="camera_model" value="0" />
-            <arg name="frame_rate" value="100" />
-            <arg name="resolution" value="3" />
+            <arg name="camera_model" value="zed" />
+            <!-- <arg name="frame_rate" value="100" /> -->
+            <!-- <arg name="resolution" value="3" /> -->
         </include>
     </group>
 
@@ -24,7 +24,7 @@
 
     <!-- Skeleton tracking -->
     <!-- <group if="$(arg enable_pose)">
-  <include file="$(find detection)/launch/skeleton_detector.launch">
+  <include file="$(find detection)/launch/skeleton_detector_zed.launch">
     <arg name="sensor_name" value="$(arg sensor_name)" />
   </include>
   <include file="$(find tracking)/launch/skeleton_tracker_single.launch">
@@ -34,17 +34,17 @@
   </group> -->
 
     <!-- Object Tracking -->
-    <!-- <group if="$(arg enable_object)">
-    <include file="$(find yolo_detector)/launch/detect_yolo_object_kinect_network.launch">
+    <group if="$(arg enable_object)">
+    <include file="/root/open_ptrack/yolo_detector/launch/detector_yolo_zed.launch">
       <arg name="sensor_name"             value="$(arg sensor_name)" />
     </include>
-    <node pkg="detection" type="multiple_objects_detection_node" name="multiple_objects_detection" output="screen" required="true">
+    <!-- <node pkg="detection" type="multiple_objects_detection_node" name="multiple_objects_detection" output="screen" required="true">
      <rosparam command="load"                        file="$(find detection)/conf/multiple_objects_detection.yaml" />
      <param name="set_object_names" value="true" />
-    </node>
+    </node> -->
     <include file="$(find tracking)/launch/object_tracker_single.launch" />
-  </group> -->
-
+  </group>
+     
     <!-- UDP messaging -->
     <include file="$(find opt_utils)/launch/ros2udp_converter.launch" />
 
