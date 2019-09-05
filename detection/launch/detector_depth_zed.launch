@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
    <arg name="sensor_name" default="zed_head" />
+   <arg name="sensor_type" default="zed" />
    <!-- Start the Kinect -->
    <!--include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch"/-->
    <!-- Launch ground based people detection node -->
