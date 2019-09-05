@@ -265,6 +265,11 @@ main (int argc, char** argv)
   boost::recursive_mutex config_mutex_;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
 
+  std::string sensor_type;
+  nh.param("sensor_type", sensor_type, std::string());
+  if (sensor_type == "zed")
+    people_detector.initializeZed();
+
   // Read some parameters from launch file:
   int ground_estimation_mode;
   nh.param("ground_estimation_mode", ground_estimation_mode, 0);
