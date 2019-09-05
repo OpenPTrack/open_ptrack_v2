@@ -5,6 +5,7 @@
     <arg name="enable_pose" default="true" />
     <arg name="enable_object" default="true" />
     <arg name="sensor_name" default="realsense_head" />
+    <arg name="sensor_type" default="realsense" />
 
     <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
         <arg name="camera" value="$(arg sensor_name)" />

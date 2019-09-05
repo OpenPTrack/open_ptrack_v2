@@ -6,6 +6,7 @@
   <arg name="enable_pose" default="true" />
   <arg name="enable_object" default="true" />
   <arg name="sensor_name" default="kinect2_head" />
+  <arg name="sensor_type" default="kinect2" />
   <!-- Load calibration results -->
   <!--include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/-->
 
