@@ -61,9 +61,9 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeople
   max_distance_ = 50.0;
   vertical_ = false;
   head_centroid_ = true;
-  min_height_ = 1.2;
-  max_height_ = 2.2;
-  min_points_ = 50;     // this value is adapted to the voxel size in method "compute"
+  min_height_ = 1.3;
+  max_height_ = 2.3;
+  min_points_ = 30;     // this value is adapted to the voxel size in method "compute"
   max_points_ = 5000;   // this value is adapted to the voxel size in method "compute"
   dimension_limits_set_ = false;
   heads_minimum_distance_ = 0.3;
@@ -76,6 +76,19 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeople
   sqrt_ground_coeffs_ = std::numeric_limits<float>::quiet_NaN();
   person_classifier_set_flag_ = false;
   frame_counter_ = 0;
+
+  isZed_ = false;
+}
+
+template <typename PointT> void
+open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::initializeZed()
+{
+  // Set default values for Zed.
+  min_height_ = 1.2;
+  max_height_ = 2.2;
+  min_points_ = 50;     // this value is adapted to the voxel size in method "compute"
+
+  isZed_ = true;
 }
 
 template <typename PointT> void
@@ -386,7 +399,10 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::preprocessCloud (
   }
   voxel_grid_filter_object.setLeafSize (voxel_size_, voxel_size_, voxel_size_);
   voxel_grid_filter_object.setFilterFieldName("z");
-  voxel_grid_filter_object.setFilterLimits(-1 * max_distance_, max_distance_);
+  if (isZed_)
+    voxel_grid_filter_object.setFilterLimits(-1 * max_distance_, max_distance_);
+  else
+    voxel_grid_filter_object.setFilterLimits(0.0, max_distance_);
   voxel_grid_filter_object.filter (*cloud_filtered);
 
   return cloud_filtered;
@@ -466,14 +482,28 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
   // Ground removal and update:
   pcl::IndicesPtr inliers(new std::vector<int>);
   boost::shared_ptr<pcl::SampleConsensusModelPlane<PointT> > ground_model(new pcl::SampleConsensusModelPlane<PointT>(cloud_filtered));
-  ground_model->selectWithinDistance(ground_coeffs_, 0.2, *inliers);
+  if (isZed_)
+    ground_model->selectWithinDistance(ground_coeffs_, 0.2, *inliers);
+  else
+    ground_model->selectWithinDistance(ground_coeffs_, voxel_size_, *inliers);
   no_ground_cloud_ = PointCloudPtr (new PointCloud);
   pcl::ExtractIndices<PointT> extract;
   extract.setInputCloud(cloud_filtered);
   extract.setIndices(inliers);
   extract.setNegative(true);
   extract.filter(*no_ground_cloud_);
-  if (inliers->size () >= (300 * 0.06 / 0.02 / std::pow (static_cast<double> (sampling_factor_), 2)))
+
+  bool sizeCheck = false;
+  if (isZed_) {
+    if (inliers->size () >= (300 * 0.06 / 0.02 / std::pow (static_cast<double> (sampling_factor_), 2)))
+      sizeCheck = true;
+  }
+  else {
+    if (inliers->size () >= (300 * 0.06 / voxel_size_ / std::pow (static_cast<double> (sampling_factor_), 2)))
+      sizeCheck = true;
+  }
+
+  if (sizeCheck)
     ground_model->optimizeModelCoefficients (*inliers, ground_coeffs_, ground_coeffs_);
   else
   {
@@ -577,28 +607,39 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
       {
 
         //Evaluate confidence for the current PersonCluster:
+        if (isZed_) {
+          // translate rotation for zed camera
+          Eigen::Vector3f trans_centroid = anti_transform_ * it->getTCenter();
+          Eigen::Vector3f trans_top = anti_transform_ * it->getTTop();
+          Eigen::Vector3f trans_bottom = anti_transform_ * it->getTBottom();
 
-        // translate rotation for zed camera
-        Eigen::Vector3f trans_centroid = anti_transform_ * it->getTCenter();
-        Eigen::Vector3f trans_top = anti_transform_ * it->getTTop();
-        Eigen::Vector3f trans_bottom = anti_transform_ * it->getTBottom();
+          Eigen::Vector3f inverted_centroid = Eigen::Vector3f( -1 * trans_centroid(1), -1 * trans_centroid(2),trans_centroid(0));
+          Eigen::Vector3f inverted_top = Eigen::Vector3f( -1 * trans_top(1), -1 * trans_top(2),trans_top(0));
+          Eigen::Vector3f inverted_bottom = Eigen::Vector3f( -1 * trans_bottom(1), -1 * trans_bottom(2),trans_bottom(0));
 
-        Eigen::Vector3f inverted_centroid = Eigen::Vector3f( -1 * trans_centroid(1), -1 * trans_centroid(2),trans_centroid(0));
-        Eigen::Vector3f inverted_top = Eigen::Vector3f( -1 * trans_top(1), -1 * trans_top(2),trans_top(0));
-        Eigen::Vector3f inverted_bottom = Eigen::Vector3f( -1 * trans_bottom(1), -1 * trans_bottom(2),trans_bottom(0));
+          Eigen::Vector3f centroid = intrinsics_matrix_ * inverted_centroid;
+          centroid /= centroid(2);
+          Eigen::Vector3f top = intrinsics_matrix_ *  inverted_top;
+          top /= top(2);
+          Eigen::Vector3f bottom = intrinsics_matrix_ * inverted_bottom;
+          bottom /= bottom(2);
 
-        Eigen::Vector3f centroid = intrinsics_matrix_ * inverted_centroid;
-        centroid /= centroid(2);
-        Eigen::Vector3f top = intrinsics_matrix_ *  inverted_top;
-        top /= top(2);
-        Eigen::Vector3f bottom = intrinsics_matrix_ * inverted_bottom;
-        bottom /= bottom(2);
+          // if(i == 0){
 
-        // if(i == 0){
+          it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
 
-        it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
+          // }
+        }
+        else {
+          Eigen::Vector3f centroid = intrinsics_matrix_ * (anti_transform_ * it->getTCenter());
+          centroid /= centroid(2);
+          Eigen::Vector3f top = intrinsics_matrix_ * (anti_transform_ * it->getTTop());
+          top /= top(2);
+          Eigen::Vector3f bottom = intrinsics_matrix_ * (anti_transform_ * it->getTBottom());
+          bottom /= bottom(2);
 
-        // }
+          it->setPersonConfidence(person_classifier_.evaluate(rgb_image_, bottom, top, centroid, vertical_));
+        }
 
       }
     }
@@ -610,10 +651,11 @@ open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::compute (std::vec
       }
     }
 
-    cloud_ = rotateCloud(no_ground_cloud_, transform_);
+    if (isZed_) {
+      cloud_ = rotateCloud(no_ground_cloud_, transform_);
 
-    // Point_cloud_visulizer(cloud_ ,  ground_coeffs_new , viewer, clusters);
-
+      // Point_cloud_visulizer(cloud_ ,  ground_coeffs_new , viewer, clusters);
+    }
   }
 
   return (true);
