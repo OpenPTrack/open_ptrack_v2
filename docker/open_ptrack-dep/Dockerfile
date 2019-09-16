@@ -83,23 +83,6 @@ RUN  apt-get install cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev li
     && git fetch origin --tags     \ 
     && git checkout tags/v0.2         
 
-RUN cd     \ 
-    && cd workspace     \ 
-    && apt-get update     \ 
-    && git clone https://github.com/opencv/opencv     \ 
-    && cd opencv     \ 
-    && git checkout 3.4.7     \ 
-    && mkdir release     \ 
-    && cd release     \ 
-    && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local/opencv3 -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D WITH_V4L=ON -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_OPENGL=ON -D ENABLE_FAST_MATH=1 -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 -D WITH_IPP=ON -D CMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -D ENABLE_PRECOMPILED_HEADERS=OFF ..     \ 
-    && make -j8 -l8     \ 
-    && make install     \ 
-    && printf '#OpenCV\nPKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/opencv3/lib/pkgconfig\nexport PKG_CONFIG_PATH\n' >> /root/.bashrc     \ 
-    && printf 'PATH=$PATH:/usr/local/opencv3/bin\nexport PATH\n' >> /root/.bashrc      \ 
-    && printf 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/opencv3/lib\nexport LD_LIBRARY_PATH\n' >> /root/.bashrc       \ 
-    && /bin/bash -c "source /root/.bashrc"     \ 
-    && ln -s /usr/local/opencv3/share/OpenCV/3rdparty/lib/libippicv.a /usr/local/lib/libippicv.a  
-
 RUN  /bin/bash -c "source /root/.bashrc    \ 
     && cd ~/workspace/ros/src      \ 
     && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
@@ -115,6 +98,7 @@ RUN  cd     \
     && cd libfreenect2     \ 
     && git checkout 1606     \ 
     && cd depends/     \ 
+    && apt-get update     \ 
     && apt-get install -y git cmake cmake-curses-gui libxmu-dev libxi-dev libgl1-mesa-dev xorg-dev libglu1-mesa-dev libtool automake libudev-dev libgtk2.0-dev pkg-config libjpeg-turbo8-dev libturbojpeg libglewmx-dev libturbojpeg0-dev     \ 
     && ln -f -s /usr/lib/x86_64-linux-gnu/libturbojpeg.so.0.1.0 /usr/lib/x86_64-linux-gnu/libturbojpeg.so     \ 
     && cd .. \
