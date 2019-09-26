@@ -346,8 +346,8 @@ class Listener :
       file.write('      </group>\n')
       file.write('      <group unless="$(arg munaro_detection_enabled)" >\n')
       file.write('  	    <include file="$(find yolo_detector)/launch/detector_yolo_kinect.launch">\n')
-      if request.id_num != '':
-        file.write('    	<arg name="sensor_id"               value="$(arg sensor_id)" />\n')
+      # if request.id_num != '':
+      #   file.write('    	<arg name="sensor_id"               value="$(arg sensor_id)" />\n')
       file.write('    	        <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
       file.write('    	        <arg name="standalone"              value="false" />\n')
       file.write('  	    </include>\n')
