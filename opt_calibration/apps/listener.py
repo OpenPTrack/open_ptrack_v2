@@ -376,34 +376,23 @@ class Listener :
     elif request.type == OPTSensorRequest.TYPE_ZED:
       if request.id_num != '':
         file.write('  <arg name="sensor_id" default="' + request.id_num + '" />\n')
-      file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n\n')
+      file.write('  <arg name="sensor_name"     default="' + request.id + '" />\n')
+      file.write('  <arg name="sensor_type"     default="zed" />\n')
       file.write('  <!-- true  = Munaro Based OPT Detection -->\n')
       file.write('  <!-- false = YOLO Based Detection (Must Have YOLO installed to use)-->\n')
-
-      file.write(' <group ns="$(arg sensor_name)"> \n')
-      file.write('  <!-- Launch the sensor -->\n')
-      file.write('  <include file="$(find zed_wrapper)/launch/zed.launch">\n')
-      if request.serial != '':
-        file.write(' <arg name="camera_model"         value="0" /> \n')
-      file.write('   <arg name="frame_rate"           value="100" />\n')
-      file.write('   <arg name="resolution"           value="2" />\n')
-      file.write('  </include>\n\n')
-      file.write('  <include file="$(find detection)/launch/zed_frames.launch">\n')
-      file.write('  </group>\n\n')
 
       if request.people_detector_type == OPTSensorRequest.PEOPLE_DETECTOR_YOLO_BASED:
         file.write('  <arg name="munaro_detection_enabled"         default="false" />\n\n')
       else:
         file.write('  <arg name="munaro_detection_enabled"         default="true" />\n\n')
 
+      file.write(' <group ns="$(arg sensor_name)"> \n')
       file.write('  <!-- Launch sensor -->\n')
       file.write('  <include file="$(find zed_wrapper)/launch/zed.launch">\n')
-      file.write('    <arg name="camera_model"         value="0" />\n')
-      file.write('    <arg name="frame_rate"         value="30" />\n')
-      file.write('    <arg name="resolution"         value="3" />\n')
+      file.write('    <arg name="camera_model"         value="zed" />\n')
       file.write('  </include>\n\n')
-
-
+      file.write('  <include file="$(find detection)/launch/zed_frames.launch" />\n')
+      file.write('  </group>\n\n')
 
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
@@ -414,11 +403,11 @@ class Listener :
         file.write('                    <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
         file.write('        </include>\n')
       else:
-        file.write('          <include file="$(find detection)/launch/detector_zed.launch">\n')
+        file.write('          <include file="$(find detection)/launch/detector_depth_zed.launch">\n')
         if request.id_num != '':
           file.write('          <arg name="sensor_id"               value="$(arg sensor_id)" />\n')
         file.write('                  <arg name="sensor_name"             value="$(arg sensor_name)" />\n')
-        file.write('                  <arg name="ground_from_calibration" value="true" />\n')
+        file.write('                  <arg name="sensor_type" value="$(arg sensor_type)" />\n')
         file.write('    </include>\n')
       file.write('  </group>\n\n')
 
