@@ -150,8 +150,8 @@ class CalibrationInitializer :
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/left/camera_info" />\n\n')
       elif sensor['type'] == 'zed':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_rect_color" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/zed/zed_node/rgb/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/zed/zed_node/rgb/camera_info" />\n\n')
       elif sensor['type'] == 'realsense':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/color/image_rect_color" />\n')
@@ -219,8 +219,8 @@ class CalibrationInitializer :
         file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/left/camera_info" />\n\n')
       elif sensor['type'] == 'zed':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/rgb/image_rect_color" />\n')
-        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/rgb/camera_info" />\n\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/zed/zed_node/rgb/image_rect_color" />\n')
+        file.write('    <remap from="~sensor_' + str(index) + '/camera_info" to="/$(arg sensor_' + str(index) + '_name)/zed/zed_node/rgb/camera_info" />\n\n')
       elif sensor['type'] == 'realsense':
         file.write('    <param name="sensor_' + str(index) + '/type"         value="pinhole_rgb" />\n')
         file.write('    <remap from="~sensor_' + str(index) + '/image"       to="/$(arg sensor_' + str(index) + '_name)/color/image_rect_color" />\n')
