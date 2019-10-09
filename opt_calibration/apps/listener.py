@@ -192,13 +192,12 @@ class Listener :
       file.write('  <!-- Launch sensor -->\n')
       file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">\n')
       if request.serial != '':
-        file.write('    <arg name="sensor_id"           value="$(arg sensor_id)" />\n')
+        file.write('    <arg name="sensor"           value="$(arg sensor_id)" />\n')
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_serial).yaml" />\n')
       #else:
       #  file.write('    <arg name="rgb_camera_info_url" value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_id).yaml" />\n')
       file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('    <arg name="publish_frame"       value="false" />\n')
-      file.write('    <arg name="sensor"              value="$(arg sensor_id)" />\n')
       file.write('  </include>\n\n')
 
       file.write('  <!-- Publish a further transform -->\n')
@@ -326,10 +325,9 @@ class Listener :
       file.write('  <!-- Launch the sensor -->\n')
       file.write('  <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">\n')
       if request.serial != '':
-        file.write('  <arg name="sensor_id"           value="$(arg sensor_id)" />\n')
+        file.write('  <arg name="sensor"           value="$(arg sensor_id)" />\n')
       file.write('    <arg name="sensor_name"         value="$(arg sensor_name)" />\n')
       file.write('    <arg name="publish_frame"       value="true" />\n')
-      file.write('    <arg name="sensor"              value="$(arg sensor_id)" />\n')
       file.write('  </include>\n\n')
       file.write('  <!-- Detection node -->\n')
       file.write('  <group if="$(arg enable_people_tracking)" >\n')
