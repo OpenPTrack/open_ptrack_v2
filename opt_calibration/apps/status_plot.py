@@ -43,26 +43,28 @@ from opt_msgs.msg import CalibrationStatus
 import matplotlib.pyplot as plot
 import numpy
 import thread
+print('wassup')
 
 class CalibrationStatusPlotter :
 
-  def __init__(self) :
+  def __init__(self):
     rospy.Subscriber("~calibration_status", CalibrationStatus, self.callback)
     self.initialized = False
     self.has_mgs = False
     self.lock = thread.allocate_lock()
   #####################
     
-  def callback(self, msg) :
+  def callback(self, msg):
     self.lock.acquire()
     self.msg = msg
     self.has_mgs = True
     self.lock.release()
   #####################
     
-  def spinOnce(self) :
+  def spinOnce(self):
     self.lock.acquire()
-    if not self.initialized :
+    if not self.initialized:
+      print('not initialized')
       y = numpy.arange(len(self.msg.sensor_ids))
 
       width = self.msg.images_acquired
@@ -70,9 +72,8 @@ class CalibrationStatusPlotter :
       threshold_yellow = width_max / 2.
       threshold_red = width_max / 4.
       colors = map(lambda x: '#ff0000' if x < threshold_red else '#ffff00' if x < threshold_yellow else '#00ff00', width)
-      
-      plot.ion()
-      (self.fig, self.axis) = plot.subplots()
+      self.fig = plot.figure()
+      self.axis = self.fig.add_subplot(111)
       plot.subplots_adjust(left = 0.25)
       self.fig.canvas.set_window_title('Calibration Status') 
       
@@ -85,7 +86,10 @@ class CalibrationStatusPlotter :
       self.bar_plot = self.axis.barh(y, width, color = colors, linewidth = 0)
       
       self.initialized = True
-    else :
+
+      self.fig.canvas.draw()
+      plot.show(block=False)
+    else:
       width = self.msg.images_acquired
       width_max = max(width)
       threshold_yellow = width_max / 2.
@@ -100,18 +104,18 @@ class CalibrationStatusPlotter :
     self.has_mgs = False;
     self.lock.release()
     
-    plot.draw()
+    self.fig.canvas.draw()
   #####################
 
-  def spin(self) :
+  def spin(self):
     rate = rospy.Rate(10)
-    while not rospy.is_shutdown() :
-      if self.has_mgs :
+    while not rospy.is_shutdown():
+      if self.has_mgs:
         self.spinOnce()
       rate.sleep()
   #####################
            
-if __name__ == '__main__' :
+if __name__ == '__main__':
   rospy.init_node('opt_calibration_status_plot')
   plotter = CalibrationStatusPlotter()
   plotter.spin()
