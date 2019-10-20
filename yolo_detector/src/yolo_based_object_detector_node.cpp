@@ -222,8 +222,18 @@ void callback(const Image::ConstPtr& rgb_image,
 		detection_array_msg->image_type = std::string("rgb");
 		
 		int i;
+		ros::NodeHandle nh("~");
 		for(i = 0; i < boxes->num; i++)
 		{
+			
+			bool yolo_based_person_detection;
+    			nh.param("yolo_based_person_detection", yolo_based_person_detection, false);
+			std::string object_name(names[boxes->boxes[i].classID]);
+			if (yolo_based_person_detection && object_name != "person")
+			{
+				std::cout << "classID is " << object_name << " rejecting" << std::endl;
+				continue;
+			}
 			int medianX = boxes->boxes[i].x + (boxes->boxes[i].w / 2);
 			int medianY = boxes->boxes[i].y + (boxes->boxes[i].h / 2);
 			// If the detect box coordinat is near edge of image, it will return a error 'Out of im.size().'
@@ -244,8 +254,7 @@ void callback(const Image::ConstPtr& rgb_image,
 				continue;
 			}			
 //float medianDepth = _depth_image.at<float>(medianY, medianX) / 1000.0f;
-			
-			std::string object_name(names[boxes->boxes[i].classID]);  
+			 
 				    
 			std::stringstream ss;
 			ss << object_name << ":" << medianDepth; //  << " " << mm_factor;
