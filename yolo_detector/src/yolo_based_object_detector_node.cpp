@@ -231,7 +231,7 @@ void callback(const Image::ConstPtr& rgb_image,
 			std::string object_name(names[boxes->boxes[i].classID]);
 			if (yolo_based_person_detection && object_name != "person")
 			{
-				std::cout << "classID is " << object_name << " rejecting" << std::endl;
+				//std::cout << "classID is " << object_name << " rejecting" << std::endl;
 				continue;
 			}
 			int medianX = boxes->boxes[i].x + (boxes->boxes[i].w / 2);
