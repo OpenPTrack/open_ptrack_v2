@@ -1,3 +1,4 @@
+
 /*
  * Software License Agreement (BSD License)
  *
@@ -47,6 +48,7 @@
 // ROS includes:
 #include <ros/ros.h>
 #include <ros/package.h>
+#include <tf/transform_broadcaster.h>
 
 // PCL includes:
 #include <pcl/conversions.h>
@@ -56,6 +58,8 @@
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/common/transforms.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 // Open PTrack includes:
 #include <open_ptrack/detection/ground_segmentation.h>
@@ -120,6 +124,20 @@ cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
 {
   *cloud = *callback_cloud;
   new_cloud_available_flag = true;
+
+  // static tf::TransformBroadcaster br;
+  // tf::Vector3 tran_input = tf::Vector3(0,0,0);
+  // tf::Quaternion quat_input = tf::Quaternion(0,0,0,1);
+
+  // tf::Transform transform;
+  // transform.setOrigin(tran_input);
+  // transform.setRotation(quat_input);
+
+  // pcl_conversions::toPCL(ros::Time::now(), cloud->header.stamp);
+
+  // cloud->header.frame_id = "new" + callback_cloud->header.frame_id;
+  // br.sendTransform(tf::StampedTransform(transform, callback_cloud->header.stamp, cloud->header.frame_id, callback_cloud->header.frame_id));
+
 }
 
 void
@@ -246,6 +264,11 @@ main (int argc, char** argv)
   // Dynamic reconfigure
   boost::recursive_mutex config_mutex_;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
+
+  std::string sensor_type;
+  nh.param("sensor_type", sensor_type, std::string());
+  if (sensor_type == "zed")
+    people_detector.initializeZed();
 
   // Read some parameters from launch file:
   int ground_estimation_mode;
@@ -431,6 +454,7 @@ main (int argc, char** argv)
       std::vector<pcl::people::PersonCluster<PointT> > clusters;   // vector containing persons clusters
       people_detector.setInputCloud(cloud);
       people_detector.setGround(ground_coeffs);                    // set floor coefficients
+      
       people_detector.compute(clusters);                           // perform people detection
 
       // If not lock_ground, update ground coefficients:
@@ -509,5 +533,3 @@ main (int argc, char** argv)
 
   return 0;
 }
-
-

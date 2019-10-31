@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!-- SESSION ID: 1548443524 -->
+<launch>
+
+  <arg name="enable_people_tracking" default="true" />
+  <arg name="enable_pose" default="true" />
+  <arg name="enable_object" default="true" />
+  <arg name="sensor_name" default="real01" />
+
+  <!-- true  = Munaro Based OPT Detection -->
+  <!-- false = YOLO Based Detection (Must Have YOLO installed to use)-->
+  <arg name="munaro_detection_enabled"         default="true" />
+
+  <!-- Launch the sensor -->
+   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+      <arg name="camera"         value="$(arg sensor_name)" />
+   </include>
+  <!-- Detection node -->
+  <group if="$(arg enable_people_tracking)" >
+      <group if="$(arg munaro_detection_enabled)">
+          <include file="$(find detection)/launch/detector_realsense.launch">
+            <arg name="rgb_camera_info_url"     value="file://$(find opt_calibration)/camera_info/rgb_$(arg sensor_name).yaml" />
+              <arg name="sensor_name"             value="$(arg sensor_name)" />
+              <arg name="ground_from_calibration" value="true" />
+          </include>
+      </group>
+      <group unless="$(arg munaro_detection_enabled)" >
+  	    <include file="$(find yolo_detector)/launch/detect_yolo_object_realsense_network.launch">
+    	        <arg name="sensor_name"             value="$(arg sensor_name)" />
+    	        <arg name="standalone"              value="false" />
+  	    </include>
+      </group>
+  </group>
+
+  <!-- Skeleton Detection node -->
+  <group if="$(arg enable_pose)">
+    <include file="$(find detection)/launch/skeleton_detector_realsense.launch">
+      <arg name="sensor_name"             value="$(arg sensor_name)" />
+      <arg name="ground_from_calibration" value="true" />
+    </include>
+
+  </group>
+
+  <!-- Object Detection node -->
+  <group if="$(arg enable_object)">
+    <include file="$(find yolo_detector)/launch/detect_yolo_object_realsense_network.launch">
+      <arg name="sensor_name"             value="$(arg sensor_name)" />
+    </include>
+
+  </group>
+
+</launch>

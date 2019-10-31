@@ -222,10 +222,23 @@ void callback(const Image::ConstPtr& rgb_image,
 		detection_array_msg->image_type = std::string("rgb");
 		
 		int i;
+		ros::NodeHandle nh("~");
 		for(i = 0; i < boxes->num; i++)
 		{
+			
+			bool yolo_based_person_detection;
+    			nh.param("yolo_based_person_detection", yolo_based_person_detection, false);
+			std::string object_name(names[boxes->boxes[i].classID]);
+			if (yolo_based_person_detection && object_name != "person")
+			{
+				//std::cout << "classID is " << object_name << " rejecting" << std::endl;
+				continue;
+			}
 			int medianX = boxes->boxes[i].x + (boxes->boxes[i].w / 2);
 			int medianY = boxes->boxes[i].y + (boxes->boxes[i].h / 2);
+			// If the detect box coordinat is near edge of image, it will return a error 'Out of im.size().'
+			if ( medianX < im.w*0.02 || medianX > im.w*0.98) continue;
+			if ( medianY < im.h*0.02 || medianY > im.h*0.98) continue;
 			
 			int newX = medianX - (median_factor * (medianX - boxes->boxes[i].x));
 			int newY = medianY - (median_factor * (medianY - boxes->boxes[i].y));
@@ -235,13 +248,13 @@ void callback(const Image::ConstPtr& rgb_image,
 			
 			cv::Rect rect(newX, newY, newWidth, newHeight);
 			float medianDepth = median(_depth_image(rect)) / mm_factor;
-			if (medianDepth > 6.25) {
+			// If medianDepth <= 0, that means the sensor got a wrong depth distance.
+			if (medianDepth <= 0 || medianDepth > 6.25) {
 				std::cout << "mediandepth " << medianDepth << " rejecting" << std::endl;
 				continue;
 			}			
 //float medianDepth = _depth_image.at<float>(medianY, medianX) / 1000.0f;
-			
-			std::string object_name(names[boxes->boxes[i].classID]);  
+			 
 				    
 			std::stringstream ss;
 			ss << object_name << ":" << medianDepth; //  << " " << mm_factor;
@@ -314,6 +327,9 @@ void callback(const Image::ConstPtr& rgb_image,
 		
 		//std::cout << "publishing " << detection_array_msg << std::endl; 
 		detection_pub.publish(detection_array_msg);
+		// Free the object when the current loop is finishing, because if you don't free it, it will always occupy the memory until the pc collapses. 
+		free(boxes->boxes);
+		free(boxes);
     }
 }
 

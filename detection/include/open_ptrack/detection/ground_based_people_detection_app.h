@@ -79,6 +79,11 @@ namespace open_ptrack
         typedef boost::shared_ptr<PointCloud> PointCloudPtr;
         typedef boost::shared_ptr<const PointCloud> PointCloudConstPtr;
 
+
+        /** \brief Point_cloud_visulizer. */
+        void 
+        Point_cloud_visulizer(PointCloudPtr& cloud, Eigen::VectorXf& ground_coeffs_, pcl::visualization::PCLVisualizer& viewer, std::vector<pcl::people::PersonCluster<PointT> >& clusters);
+
         /** \brief Constructor. */
         GroundBasedPeopleDetectionApp ();
 
@@ -329,6 +334,19 @@ namespace open_ptrack
         bool
         compute (std::vector<pcl::people::PersonCluster<PointT> >& clusters);
 
+        /**
+         * \brief Call this after the constructor to set the isZed flag and to update
+         * default parameters for the Zed.
+         */
+        void
+        initializeZed ();
+
+        /**
+         * \brief Get the isZed flag which is true if called initializeZed().
+         */
+        bool
+        getIsZed () { return isZed_; }
+
       protected:
         /** \brief sampling factor used to downsample the point cloud */
         int sampling_factor_;
@@ -419,6 +437,8 @@ namespace open_ptrack
         float std_dev_denoising_;
 
 //        pcl::visualization::PCLVisualizer::Ptr denoising_viewer_;
+
+	bool isZed_;
 
     };
   } /* namespace detection */

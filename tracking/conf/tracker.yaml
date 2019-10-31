@@ -1,10 +1,11 @@
+
 #########################
 ## Tracking parameters ##
 #########################
 # Mininum confidence for track initialization:
-min_confidence_initialization: 0.0
+min_confidence_initialization: -2.1
 # Tracking maximum frame rate per sensor:
-rate: 30
+rate: 10
 # Tracking reference frame:
 world_frame_id: "/world"
 # Voxel size used for people detection:
@@ -71,4 +72,3 @@ tracking_results: true
 detection_debug: true
 # Dimension of the point cloud containing detection trajectories:
 detection_history_size: 500
-

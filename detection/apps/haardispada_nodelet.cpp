@@ -392,5 +392,5 @@ namespace open_ptrack
 }  // namespace open_ptrack
 
 #include <pluginlib/class_list_macros.h>
-// PLUGINLIB_DECLARE_CLASS(pkg,class_name,class_type,base_class_type)
-PLUGINLIB_DECLARE_CLASS(HaarDispAda,haardispada_nodelet, open_ptrack::detection::HaarDispAdaNodelet, nodelet::Nodelet)
+// PLUGINLIB_EXPORT_CLASS(class_type,base_class_type)
+PLUGINLIB_EXPORT_CLASS( open_ptrack::detection::HaarDispAdaNodelet, nodelet::Nodelet)
