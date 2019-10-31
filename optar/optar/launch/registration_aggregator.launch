@@ -1,0 +1,22 @@
+<launch>
+
+	<env name="ROSCONSOLE_FORMAT" value="[${severity}] [${walltime}] [${node}]: ${message}" />
+
+
+	<node pkg="optar" type="ardevices_registration_aggregator" name="ardevices_registration_aggregator" output="screen">
+			<remap from="input_raw_pose_estimate_topic" 								to="optar/raw_pose_estimations" />
+			<remap from="input_heartbeats_topic" 									to="optar/heartbeats" />
+	</node>
+
+	<node pkg="optar" type="ntp_server"                   name="ntp_server"                   output="screen"/>
+
+	<node pkg="optar" type="skeleton_centroid_publisher" name="skeleton_centroid_publisher" output="screen"/>
+
+
+	<node pkg="optar" type="ardevices_poses_republisher" name="ardevices_poses_republisher" output="screen">
+			<remap from="ardevices_poses_output" 						to="optar/device_poses" />
+			<remap from="ardevices_poses_output_markers" 				to="optar/device_poses_markers" />
+			<remap from="heartbeats_topic" 								to="optar/heartbeats" />
+	</node>
+
+</launch>

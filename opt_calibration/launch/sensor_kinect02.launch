@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
-<!-- SESSION ID: 1542242736 -->
+<!-- SESSION ID: 1541110528 -->
 <launch>
 
   <!-- Sensor parameters -->
-  <arg name="sensor_name"     default="kinect01" />
+  <arg name="sensor_name"     default="kinect02" />
 
   <!-- Launch sensor -->
   <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">
     <arg name="sensor_name"         value="$(arg sensor_name)" />
-    <arg name="publish_frame"       value="false" />
+    <arg name="publish_frame"       value="true" />
   </include>
 
   <!-- Publish a further transform -->

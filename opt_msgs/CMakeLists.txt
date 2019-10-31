@@ -32,10 +32,19 @@ add_message_files(FILES
   ObjectName.msg
   ObjectNameArray.msg
   Image2D_roi_file.msg
-  FeatureVectorArray.msg 
-  Association.msg 
+  FeatureVectorArray.msg
+  Association.msg
   NameArray.msg
+  ArcoreCameraImage.msg
+  OptarNtpMessage.msg
+  KeyPoint.msg
+  ArcoreCameraFeatures.msg
+  ARDevicePose.msg
+  ARDevicePoseArray.msg
+  ARDeviceRegistration.msg
+  ARDevicePoseEstimate.msg
   )
+
 
 add_service_files(FILES OPTSensor.srv OPTTransform.srv)
 
@@ -43,8 +52,8 @@ generate_messages(DEPENDENCIES std_msgs geometry_msgs sensor_msgs)
 
 
 catkin_package(
-   INCLUDE_DIRS 
-   LIBRARIES 
+   INCLUDE_DIRS
+   LIBRARIES
    CATKIN_DEPENDS roscpp std_msgs sensor_msgs message_runtime
 )
 

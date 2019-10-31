@@ -14,11 +14,11 @@ network:
       - type: kinect2
         id: "kinect02"
         people_detector: hog
-  - pc: "PC3"
-    sensors:
-      - type: kinect2
-        id: "kinect03"
-        people_detector: hog
+# - pc: "PC3"
+#    sensors:
+#      - type: kinect2
+#        id: "kinect03"
+#        people_detector: hog
 
 #  - pc: "opt2-chela-master"
 #    sensors:

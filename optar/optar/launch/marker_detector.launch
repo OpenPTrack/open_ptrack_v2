@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<launch>
+
+	<env name="ROSCONSOLE_FORMAT" value="[${severity}] [${walltime}] [${node}]: ${message}" />
+	
+	<arg name="sensor_name" default="kinect2_head" />
+	
+	<!-- Apriltag detector -->
+	<node pkg="apriltags_ros" name="$(arg sensor_name)_tag_detector" type="apriltag_detector_node">
+		<remap from="image_rect" to="/$(arg sensor_name)/hd/image_color_rect"/>
+
+		<remap from="camera_info" to="/$(arg sensor_name)/hd/camera_info"/>
+
+		<remap from="tag_detections" to="/camera_network/tag_detections"/>
+		<remap from="tag_detections_pose" to="/camera_network/tag_detections_pose"/>
+
+		<param name="tag_family" value="36h11"/>
+
+		<rosparam param="tag_descriptions">[
+                <!-- Big apriltag -->
+                {id: 0, size: 0.480, frame_id: tag_0},
+                {id: 1, size: 0.569, frame_id: tag_1}]
+                </rosparam>
+	</node>
+  
+</launch>
+
