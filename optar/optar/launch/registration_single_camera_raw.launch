@@ -1,23 +1,21 @@
+
 <launch>
 
 	<env name="ROSCONSOLE_FORMAT" value="[${severity}] [${walltime}] [${node}]: ${message}" />
-	<arg name="sensor_type" default="kinect" />
+
 	<node pkg="optar"
 				type="ardevices_pose_estimator_single_camera_raw"
 				name="ardevices_pose_estimator_single_camera_raw_$(arg sensor_name)"
 				output="screen"
 				args="">
 				<remap from="arcore_camera" 				to="optar/arcore_camera" />
+				<remap from="kinect_camera" 				to="$(arg sensor_name)/hd/image_mono_rect" />
+				<remap from="kinect_depth" 				to="$(arg sensor_name)/hd/image_depth_rect" />
+				<remap from="kinect_camera_info" 			to="$(arg sensor_name)/hd/camera_info" />
 				<remap from="debug_images_topic" 			to="optar/$(arg sensor_name)/debug_images" />
 				<remap from="heartbeats_topic" 				to="optar/heartbeats" />
 				<remap from="fixed_sensor_name" 			to="$(arg sensor_name)" />
 				<remap from="output_raw_pose_estimate_topic" 		to="optar/raw_pose_estimates" />
-				<remap from="kinect_camera" 				to="$(arg sensor_name)/hd/image_mono_rect" if="$(eval sensor_type == 'kinect')"/>
-				<remap from="kinect_depth" 				to="$(arg sensor_name)/hd/image_depth_rect" if="$(eval sensor_type == 'kinect')"/>
-				<remap from="kinect_camera_info" 			to="$(arg sensor_name)/hd/camera_info" if="$(eval sensor_type == 'kinect')"/>
-				<remap from="kinect_camera" 				to="$(arg sensor_name)/zed/zed_node/rgb/image_rect_color" if="$(eval sensor_type == 'zed')"/>
-				<remap from="kinect_depth" 				to="$(arg sensor_name)/zed/zed_node/depth/depth_registered" if="$(eval sensor_type == 'zed')"/>
-				<remap from="kinect_camera_info" 			to="$(arg sensor_name)/zed/zed_node/depth/camera_info" if="$(eval sensor_type == 'zed')"/>
 	</node>
 
 </launch>
