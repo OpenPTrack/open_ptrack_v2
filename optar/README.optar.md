@@ -10,6 +10,9 @@ The single AR devices must be running an application that uses OPTAR.
 
 
 ## Usage
+First, launch the rosbridge websocket from the master node:
+
+`roslaunch rosbridge_server rosbridge_websocket.launch`
 
 To use OPTAR you will need to run a ROS node for each fixed camera you want to
 use and a single central node. You can decide to not use all of the fixed cameras
@@ -42,7 +45,7 @@ change the parameters values for each running node. You can find it in rqt under
 ## A Practical Example
 
 If you have a system with two cameras called kinect01 and kinect02 you will need
-to launch 3 nodes.
+to launch 3 nodes. After launching the websocket:
 
 Run, preferably on the computer connected directly to kinect01:
 
