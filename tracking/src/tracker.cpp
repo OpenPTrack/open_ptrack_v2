@@ -274,12 +274,12 @@ Tracker::createNewTrack(open_ptrack::detection::Detection& detection)
         velocity_in_motion_term_  );
 
   t->init(detection.getWorldCentroid()(0), detection.getWorldCentroid()(1),detection.getWorldCentroid()(2),
-          detection.getHeight(), detection.getDistance(), detection.getSource());
+          detection.getWorldCentroid()(2), detection.getDistance(), detection.getSource());
 
 
   bool first_update = true;
   t->update(detection.getWorldCentroid()(0), detection.getWorldCentroid()(1), detection.getWorldCentroid()(2),
-            detection.getHeight(), detection.getDistance(), 0.0,
+            detection.getWorldCentroid()(2), detection.getDistance(), 0.0,
             detection.getConfidence(), min_confidence_, min_confidence_detections_, detection.getSource(), first_update);
 
   ROS_INFO("Created %d", t->getId());
@@ -416,7 +416,7 @@ Tracker::updateDetectedTracks()
           // Update track with the associated detection:
           bool first_update = false;
           associations_[measure] = t;
-          t->update(d.getWorldCentroid()(0), d.getWorldCentroid()(1), d.getWorldCentroid()(2),d.getHeight(),
+          t->update(d.getWorldCentroid()(0), d.getWorldCentroid()(1), d.getWorldCentroid()(2),d.getWorldCentroid()(2),
                     d.getDistance(), distance_matrix_(track, measure),
                     d.getConfidence(), min_confidence_, min_confidence_detections_,
                     d.getSource(), first_update);
