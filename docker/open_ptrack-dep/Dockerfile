@@ -147,3 +147,49 @@ RUN apt-get update \
 
 RUN apt-get install ntp -y  \ 
     && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies for the Azure Kinect Sensor SDK.
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    ninja-build \
+    doxygen \
+    clang \
+    gcc-multilib \
+    g++-multilib \
+    python3 \
+    git-lfs \
+    nasm \
+    cmake \
+    libgl1-mesa-dev \
+    libsoundio-dev \
+    libvulkan-dev \
+    libx11-dev \
+    libxcursor-dev \
+    libxinerama-dev \
+    libxrandr-dev \
+    libusb-1.0-0-dev \
+    libssl-dev \
+    libudev-dev \
+    mesa-common-dev \
+    uuid-dev \
+    libopencv-dev
+
+# Build and install the Azure Kinect Sensor SDK.
+RUN cd /tmp \
+    && rm -rf Azure-Kinect-Sensor-SDK \
+    && git clone https://github.com/microsoft/Azure-Kinect-Sensor-SDK.git \
+    && cd Azure-Kinect-Sensor-SDK \
+    && git checkout v1.3.0 \
+    && mkdir build \
+    && cd build \
+    && cmake .. -GNinja \
+    && ninja \
+    && ninja install
+
+# Get the Azure Kinect ROS driver, which will be built later by catkin_make.
+# (The most recent tagged release is pretty far behing, so we check out the November 7, 2019 commit.
+# If there is a tagged release after this, we should update the checkout command.)
+RUN  cd ~/workspace/ros/src     \
+    && git clone https://github.com/microsoft/Azure_Kinect_ROS_Driver     \
+    && cd Azure_Kinect_ROS_Driver     \
+    && git checkout 8c6964fcc30827b476d6c18076e291fc22daa702
