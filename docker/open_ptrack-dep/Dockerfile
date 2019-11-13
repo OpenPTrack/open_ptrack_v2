@@ -189,7 +189,17 @@ RUN cd /tmp \
 # Get the Azure Kinect ROS driver, which will be built later by catkin_make.
 # (The most recent tagged release is pretty far behing, so we check out the November 7, 2019 commit.
 # If there is a tagged release after this, we should update the checkout command.)
-RUN  cd ~/workspace/ros/src     \
+RUN cd ~/workspace/ros/src     \
     && git clone https://github.com/microsoft/Azure_Kinect_ROS_Driver     \
     && cd Azure_Kinect_ROS_Driver     \
     && git checkout 8c6964fcc30827b476d6c18076e291fc22daa702
+
+# Add the Microsoft repository, get the libk4a package, extract and install libdepthengine .
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -   \
+    && apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod    \
+    && apt-get update    \
+    && apt-get install -y --download-only libk4a1.3    \
+    && rm -rf /tmp/libk4a    \
+    && dpkg -x /var/cache/apt/archives/libk4a*.deb /tmp/libk4a    \
+    && cp /tmp/libk4a/usr/lib/x86_64-linux-gnu/libdepthengine.so.2.0 /usr/lib/x86_64-linux-gnu    \
+    && rm -rf /tmp/libk4a
