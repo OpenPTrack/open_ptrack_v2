@@ -1118,7 +1118,7 @@ int CameraPoseEstimator::readReceivedMessages_features(const opt_msgs::ArcoreCam
 
 
     //decode kinect depth image
-	kinectDepthImg = cv_bridge::toCvShare(kinectInputDepthMsg, "16UC1"->image;//convert compressed image data to cv::Mat
+	kinectDepthImg = cv_bridge::toCvShare(kinectInputDepthMsg, "16UC1")->image;//convert compressed image data to cv::Mat
 	if(!kinectDepthImg.data)
 	{
 		ROS_ERROR("couldn't extract kinect depth opencv image");
