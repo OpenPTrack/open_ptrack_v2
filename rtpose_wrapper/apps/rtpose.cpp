@@ -103,7 +103,7 @@ cv::Point3d _skeleton_color;
 std::string _skeleton_topic_to_publish;
 std::string _marker_topic_to_publish;
 ros::Publisher _skeleton_pub;
-ros::Publisher _raw_skeleton_image_pub, _very_raw_image_pub;
+ros::Publisher _raw_skeleton_image_pub;
 ros::Publisher _raw_skeleton_depth_image_pub;
 double _noise_threshold;
 int _minimum_number_of_valid_3D_joints;
@@ -214,7 +214,6 @@ enum SkeletonJointId
 
 // Used for mantaining information about the depth when the RGB is retrieved
 std::map<int, cv::Mat> _depth_queue;
-std::map<int, std_msgs::Header> _header_queue;
 std::recursive_mutex _depth_queue_mutex;
 
 struct ColumnCompare
@@ -970,7 +969,6 @@ void* getFrames(void *i) {
         if (global.quit_threads or !ros::ok())
           break;
         _depth_queue[frame.index] = _depth_image.clone();
-        _header_queue[frame.index] = _rgb_frame_from_sensor.header;
       }
       global.input_queue.push(frame);
       global.input_queue_mutex.unlock();
@@ -1574,7 +1572,6 @@ void* processFrame(void *i) {
           ROS_INFO_STREAM_COND(DEBUG > 1, "PRCFRAME: Wait depthQueue");
           std::lock_guard<std::recursive_mutex> lock(_depth_queue_mutex);
           _depth_queue.erase(frame.index);
-          _header_queue.erase(frame.index);
           ROS_INFO_STREAM_COND(DEBUG > 1, "PRCFRAME: Release depthQueue");
         }
         //n--;
@@ -1859,18 +1856,14 @@ void* displayFrame(void *i) { //single thread
     double tic = get_wall_time();
     cv::Mat wrap_frame(DISPLAY_RESOLUTION_HEIGHT, DISPLAY_RESOLUTION_WIDTH,
                        CV_8UC3, frame.data_for_wrap);
-    cv::Mat frame_copy = wrap_frame.clone();
     cv::Mat depth_frame;
-    std_msgs::Header header;
     {
       ROS_INFO_STREAM_COND(DEBUG > 1, "DSPFRAME: QueueWait");
       std::lock_guard<std::recursive_mutex> lock(_depth_queue_mutex);
       if (global.quit_threads or !ros::ok())
         break;
       depth_frame = _depth_queue[frame.index];
-      header = _header_queue[frame.index];
       _depth_queue.erase(frame.index);
-      _header_queue.erase(frame.index);
       ROS_INFO_STREAM_COND(DEBUG > 1, "DSPFRAME: QueueRelease");
     }
     //    if(!_no_display)
@@ -1888,12 +1881,13 @@ void* displayFrame(void *i) { //single thread
           net_copies.at(0).up_model_descriptor->get_number_parts();
       char fname[256];
 
-      //      visualization_msgs::MarkerArray skeleton_marker_array;
+//      visualization_msgs::MarkerArray skeleton_marker_array;
       rtpose_wrapper::SkeletonArrayMsg skeleton_array;
-      skeleton_array.header = _depth_frame_from_sensor.header;
+      skeleton_array.header =
+          _depth_frame_from_sensor.header;
       skeleton_array.header.stamp =
           ros::Time::now();
-      skeleton_array.rgb_header = header;
+      skeleton_array.rgb_header = _depth_frame_from_sensor.header;
       skeleton_array.intrinsic_matrix.reserve(9);
       for(int i = 0; i < 3; i++)
         for(int j = 0; j < 3; j++)
@@ -2054,13 +2048,13 @@ void* displayFrame(void *i) { //single thread
           skeleton.occluded = false;
           //////
           skeleton_array.skeletons.push_back(skeleton);
-          //          updateSkeletonMarkerArray(skeleton_marker_array,
-          //                                    skeleton,
-          //                                    skeleton_array.skeletons.size() - 1);
+//          updateSkeletonMarkerArray(skeleton_marker_array,
+//                                    skeleton,
+//                                    skeleton_array.skeletons.size() - 1);
         }
       }
       _skeleton_pub.publish(skeleton_array);
-      //      _marker_pub.publish(skeleton_marker_array);
+//      _marker_pub.publish(skeleton_marker_array);
     }
 
     if(_raw_skeleton_image_on_topic)
@@ -2068,9 +2062,6 @@ void* displayFrame(void *i) { //single thread
       _raw_skeleton_image_pub.publish
           (cv_bridge::CvImage(_rgb_frame_from_sensor.header, "bgr8",
                               wrap_frame).toImageMsg());
-      _very_raw_image_pub.publish
-          (cv_bridge::CvImage(_rgb_frame_from_sensor.header, "bgr8",
-                              frame_copy).toImageMsg());
       _raw_skeleton_depth_image_pub.publish
           (cv_bridge::CvImage(_depth_frame_from_sensor.header, "bgr8",
                               _colored_depth_image).toImageMsg());
@@ -2523,8 +2514,8 @@ int main(int argc, char *argv[]) {
   {
     _skeleton_pub = nh.advertise<rtpose_wrapper::SkeletonArrayMsg>
         (_skeleton_topic_to_publish, 1);
-    //    _marker_pub = nh.advertise<visualization_msgs::MarkerArray>
-    //        ("/detector/skeleton_array_markers", 1);
+//    _marker_pub = nh.advertise<visualization_msgs::MarkerArray>
+//        ("/detector/skeleton_array_markers", 1);
   }
   // skeleton image publisher
   if(_raw_skeleton_image_on_topic
@@ -2532,8 +2523,6 @@ int main(int argc, char *argv[]) {
   {
     _raw_skeleton_image_pub = nh.advertise<sensor_msgs::Image>
         (_raw_skeleton_image_topic_to_publish, 1);
-    _very_raw_image_pub = nh.advertise<sensor_msgs::Image>
-        ("/detector/image_raw", 1);
   }
   _raw_skeleton_depth_image_pub = nh.advertise<sensor_msgs::Image>
       ("/detector/skeletons_depth_image", 1);

@@ -397,8 +397,9 @@ else
 	endif
 endif
 INCLUDE_DIRS += $(BLAS_INCLUDE)
+INCLUDE_DIRS += /usr/local/opencv3/include
 LIBRARY_DIRS += $(BLAS_LIB)
-
+LIBRARY_DIRS += /usr/local/opencv3/lib
 LIBRARY_DIRS += $(LIB_BUILD_DIR)
 
 # Automatic dependency generation (nvcc is handled separately)
