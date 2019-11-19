@@ -1,4 +1,4 @@
-FROM openptrack/open_ptrack-dep:1804
+FROM openptrack/open_ptrack-dep:no-rtpose
 LABEL maintainer "Samir Tabriz"
 
 ARG branch=1804

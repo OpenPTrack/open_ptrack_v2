@@ -1,0 +1,19 @@
+<package format="2">
+  <name>rtpose_wrapper</name>
+  <version>1.0.0</version>
+  <description>
+    This package provides rtpose_wrapper capability.
+  </description>
+  <maintainer email="carraromarco89@gmail.com">Marco Carraro</maintainer>
+  <license>GPLv3</license>
+
+  <build_depend>catkin</build_depend>
+  <depend>body_pose_msgs</depend>
+  
+    <build_depend>message_generation</build_depend>
+  <depend>message_runtime</depend>
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
