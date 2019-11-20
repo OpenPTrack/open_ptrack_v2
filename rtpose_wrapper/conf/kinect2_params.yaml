@@ -1,0 +1,58 @@
+
+# Please, if you want to use the body_pose_estimator with a ROS callback use the camera_topic param, otherwise put it as "". 
+# In this way, it will use the webcam!
+
+# Example: Running on a video
+# put as "" all *_topic and image_dir parameters,
+# video must be the path to the video i.e. "video.mp4"
+
+# Example: Running on images on dir
+# put as "" all *_topic and video parameters
+# image_dir must be the path to the images (it will look for the images recursively!)
+
+# Example: Running on a webcam (specify which one with the camera_index parameter)
+# put as "" all *_topic, image_dir and video parameters
+
+# For all the examples check the resolution parameter (image to acquire),
+# net_resolution (resolution of the CNN) and
+# the camera_resolution (should be the same as resolution)
+
+rgb_topic: "/kinect_04/rgb_lowres/image"
+#rgb_topic: "/kinect2/sd/image_color_rect"
+depth_topic: "/kinect_04/depth_lowres/image"
+#depth_topic: "/kinect2/sd/image_depth_rect"
+camera_info_topic: "/kinect_04/rgb_lowres/camera_info"
+#rgb_topic: "/kinect2/sd/image_color_rect"
+#depth_topic: "/kinect2/sd/image_depth_rect"
+#camera_info_topic: "/kinect2/sd/camera_info"
+fullscreen: false
+part_to_show: 0
+write_frames: false
+no_frame_drops: false
+write_json: ""
+camera_index: 0
+video: ""                     # !!!!!
+image_dir: ""                 # !!!!!
+start_frame: 0
+resolution: ""         # Leave it blank for automatic reading from topic
+net_resolution: "656x368" # 496x368 "320x240" "240x160" "160x80"
+camera_resolution: ""  # Leave it blank for automatic reading from topic
+start_device: 0
+num_gpu: 1
+start_scale: 1
+scale_gap: 0.3
+num_scales: 1
+no_display: true
+raw_skeleton_image_on_topic: true
+raw_skeleton_image_topic_to_publish: "/detector/skeleton_image"
+skeleton_topic_to_publish: "/detector/skeletons"
+marker_topic_to_publish: "/detector/skeleton_marker"
+head_joint_enhancement: false # enables the head joint enhancement. MPI model estimates the head joint very high and the median calculate on the depth could result in wrong measurements.
+head_correction_param: 0.6 # if this value is x, the new head will be ((1 - x) * neck + x * head)
+max_size_input_queue: 1
+noise_threshold: 0.8 # maximum distance in meters for the z component of a joint wrt the median z value fo joints
+minimum_number_of_valid_3D_joints: 8 # if each skeleton do not have this number of valid joints, it will be rejected
+skeleton_solid_color: true
+skeleton_color_r: 1.0
+skeleton_color_g: 1.0
+skeleton_color_b: 0.0

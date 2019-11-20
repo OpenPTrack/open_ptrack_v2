@@ -1,0 +1,7 @@
+<launch>
+
+	<node pkg="body_pose_estimation" type="rtpose" name="rtpose" output="screen">
+		<rosparam file="$(find body_pose_estimation)/config/webcam_params.yaml" command="load" />
+	</node>
+
+</launch>

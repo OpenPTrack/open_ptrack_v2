@@ -83,14 +83,14 @@ RUN  apt-get install cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev li
     && git fetch origin --tags     \ 
     && git checkout tags/v0.2         
 
-RUN  /bin/bash -c "source /root/.bashrc    \ 
-    && cd ~/workspace/ros/src      \ 
-    && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
-    && cd rtpose_wrapper     \ 
-    && git checkout integration-1604     \ 
-    && sed -i -e 's/CUDNN_CROSS_CORRELATION/CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT/g' include/caffe/util/cudnn.hpp   \
-    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev    \
-    && make all -j8"
+#RUN  /bin/bash -c "source /root/.bashrc    \ 
+#    && cd ~/workspace/ros/src      \ 
+#    && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
+#    && cd rtpose_wrapper     \ 
+#    && git checkout integration-1604     \ 
+#    && sed -i -e 's/CUDNN_CROSS_CORRELATION/CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT/g' include/caffe/util/cudnn.hpp   \
+#    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev    \
+#    && make all -j8"
 
 RUN  cd     \ 
     && cd workspace     \ 
