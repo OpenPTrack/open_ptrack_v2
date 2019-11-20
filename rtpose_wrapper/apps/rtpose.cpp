@@ -113,6 +113,8 @@ double _min_confidence_per_joint;
 
 int debug_count =0;
 
+std::string sensor_type;
+
 // Global parameters
 int DISPLAY_RESOLUTION_WIDTH;
 int DISPLAY_RESOLUTION_HEIGHT;
@@ -1821,8 +1823,9 @@ getJoint3D(double x, double y, double confidence, const cv::Mat& depth_frame)
   //              0,0,cv::Scalar(0,255,255),5);
 #endif
   cv::Rect rect(min_x, min_y, (max_x - min_x), (max_y - min_y));
-  joint3D.z = medianBetweenValidPoints(depth_frame(rect))
-      / 1000.0f;
+  joint3D.z = medianBetweenValidPoints(depth_frame(rect));
+  if (sensor_type != "zed")
+    joint3D.z = joint3D.z / 1000.0f; //conversion from mm to m (necessary for openni)
   joint3D.x = (x - _cx) * joint3D.z * _constant_x;
   joint3D.y = (y - _cy) * joint3D.z * _constant_y;
   joint3D.confidence = confidence;
@@ -2436,6 +2439,8 @@ int main(int argc, char *argv[]) {
   ros::NodeHandle pnh("~"), nh;
 
   // Parameters
+  pnh.param<std::string>("sensor_type", sensor_type, "");
+
   pnh.param<bool>("fullscreen", _fullscreen, false);
   pnh.param<int>("part_to_show", _part_to_show, 0);
   pnh.param<std::string>("write_frames", _write_frames, "");

@@ -550,12 +550,12 @@ detection_cb(const rtpose_wrapper::SkeletonArrayMsg::ConstPtr& msg)
     // Read transforms between camera frame and world frame:
     if (!extrinsic_calibration)
     {
-      std::string frame_id_copy = frame_id;
-      std::string new_frame_id = frame_id_tmp + frame_id_copy.erase(0,temp);
+      //std::string frame_id_copy = frame_id;
+      //std::string new_frame_id = frame_id_tmp + frame_id_copy.erase(0,temp);
       static tf::TransformBroadcaster world_to_camera_tf_publisher;
       world_to_camera_tf_publisher.sendTransform
           (tf::StampedTransform(world_to_camera_frame_transform,
-                                ros::Time::now(), new_frame_id , world_frame_id));
+                                ros::Time::now(), frame_id , world_frame_id));
     }
 
     //Calculate direct and inverse transforms between camera and world frame:
