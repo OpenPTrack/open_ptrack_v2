@@ -1,7 +1,7 @@
-FROM openptrack/open_ptrack-dep:no-rtpose
+FROM openptrack/open_ptrack-dep:1804
 LABEL maintainer "Samir Tabriz"
 
-ARG branch=rtpose_integration
+ARG branch=1804
 
 RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections && \
     apt-get update && apt-get install -y apt-transport-https apt-utils less lsb-release udev wget && \
