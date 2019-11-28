@@ -777,10 +777,12 @@ main(int argc, char** argv)
   if (!extrinsic_calibration)
   { // Set fixed transformation from rgb frame and base_link
     std::string sensor_type;
+    bool yolo_based_people_tracking;
     nh.param("sensor_type", sensor_type, std::string());
-    tf::Quaternion fixed_rotation; // camera_rgb_optical_frame -> world
+    nh.param("yolo_based_people_tracking", yolo_based_people_tracking, false);
+    tf::Quaternion fixed_rotation;     // camera_rgb_optical_frame -> world
     tf::Quaternion inv_fixed_rotation; // world -> camera_rgb_optical_frame
-    if (sensor_type == "zed")
+    if (sensor_type == "zed" && !yolo_based_people_tracking)
     {
       fixed_rotation = tf::Quaternion(0.0,0.0,0.0,1.0);
       inv_fixed_rotation = tf::Quaternion(0.0,0.0,0.0,1.0);
@@ -795,6 +797,7 @@ main(int argc, char** argv)
     world_to_camera_frame_transform = tf::Transform(fixed_rotation, fixed_translation);
     camera_frame_to_world_transform = tf::Transform(inv_fixed_rotation, inv_fixed_translation);
   }
+
 
   // Spin and execute callbacks:
 //  ros::spin();
