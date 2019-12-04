@@ -83,14 +83,14 @@ RUN  apt-get install cmake libgoogle-glog-dev libatlas-base-dev libeigen3-dev li
     && git fetch origin --tags     \ 
     && git checkout tags/v0.2         
 
-RUN  /bin/bash -c "source /root/.bashrc    \ 
-    && cd ~/workspace/ros/src      \ 
-    && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
-    && cd rtpose_wrapper     \ 
-    && git checkout integration-1604     \ 
-    && sed -i -e 's/CUDNN_CROSS_CORRELATION/CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT/g' include/caffe/util/cudnn.hpp   \
-    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev    \
-    && make all -j8"
+#RUN  /bin/bash -c "source /root/.bashrc    \ 
+#    && cd ~/workspace/ros/src      \ 
+#    && git clone https://bitbucket.org/mcarraro/rtpose_wrapper     \ 
+#    && cd rtpose_wrapper     \ 
+#    && git checkout integration-1604     \ 
+#    && sed -i -e 's/CUDNN_CROSS_CORRELATION/CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT/g' include/caffe/util/cudnn.hpp   \
+#    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev    \
+#    && make all -j8"
 
 RUN  cd     \ 
     && cd workspace     \ 
@@ -147,59 +147,3 @@ RUN apt-get update \
 
 RUN apt-get install ntp -y  \ 
     && rm -rf /var/lib/apt/lists/*
-
-# Install dependencies for the Azure Kinect Sensor SDK.
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    ninja-build \
-    doxygen \
-    clang \
-    gcc-multilib \
-    g++-multilib \
-    python3 \
-    git-lfs \
-    nasm \
-    cmake \
-    libgl1-mesa-dev \
-    libsoundio-dev \
-    libvulkan-dev \
-    libx11-dev \
-    libxcursor-dev \
-    libxinerama-dev \
-    libxrandr-dev \
-    libusb-1.0-0-dev \
-    libssl-dev \
-    libudev-dev \
-    mesa-common-dev \
-    uuid-dev \
-    libopencv-dev
-
-# Build and install the Azure Kinect Sensor SDK.
-RUN cd /tmp \
-    && rm -rf Azure-Kinect-Sensor-SDK \
-    && git clone https://github.com/microsoft/Azure-Kinect-Sensor-SDK.git \
-    && cd Azure-Kinect-Sensor-SDK \
-    && git checkout v1.3.0 \
-    && mkdir build \
-    && cd build \
-    && cmake .. -GNinja \
-    && ninja \
-    && ninja install
-
-# Get the Azure Kinect ROS driver, which will be built later by catkin_make.
-# (The most recent tagged release is pretty far behing, so we check out the November 7, 2019 commit.
-# If there is a tagged release after this, we should update the checkout command.)
-RUN cd ~/workspace/ros/src     \
-    && git clone https://github.com/microsoft/Azure_Kinect_ROS_Driver     \
-    && cd Azure_Kinect_ROS_Driver     \
-    && git checkout 8c6964fcc30827b476d6c18076e291fc22daa702
-
-# Add the Microsoft repository, get the libk4a package, extract and install libdepthengine .
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -   \
-    && apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod    \
-    && apt-get update    \
-    && apt-get install -y --download-only libk4a1.3    \
-    && rm -rf /tmp/libk4a    \
-    && dpkg -x /var/cache/apt/archives/libk4a*.deb /tmp/libk4a    \
-    && cp /tmp/libk4a/usr/lib/x86_64-linux-gnu/libdepthengine.so.2.0 /usr/lib/x86_64-linux-gnu    \
-    && rm -rf /tmp/libk4a
