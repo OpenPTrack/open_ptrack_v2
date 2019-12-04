@@ -226,10 +226,10 @@ void callback(const Image::ConstPtr& rgb_image,
 		for(i = 0; i < boxes->num; i++)
 		{
 			
-			bool yolo_based_person_detection;
-    			nh.param("yolo_based_person_detection", yolo_based_person_detection, false);
+			bool yolo_based_people_tracking;
+    			nh.param("yolo_based_people_tracking_tracking", yolo_based_people_tracking, false);
 			std::string object_name(names[boxes->boxes[i].classID]);
-			if (yolo_based_person_detection && object_name != "person")
+			if (yolo_based_people_tracking && object_name != "person")
 			{
 				//std::cout << "classID is " << object_name << " rejecting" << std::endl;
 				continue;

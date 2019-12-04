@@ -1,0 +1,44 @@
+
+# Please, if you want to use the body_pose_estimator with a ROS callback use the camera_topic param, otherwise put it as "".
+# In this way, it will use the webcam!
+
+# Example: Running on a video
+# put as "" all *_topic and image_dir parameters,
+# video must be the path to the video i.e. "video.mp4"
+
+# Example: Running on images on dir
+# put as "" all *_topic and video parameters
+# image_dir must be the path to the images (it will look for the images recursively!)
+
+# Example: Running on a webcam (specify which one with the camera_index parameter)
+# put as "" all *_topic, image_dir and video parameters
+
+# For all the examples check the resolution parameter (image to acquire),
+# net_resolution (resolution of the CNN) and
+# the camera_resolution (should be the same as resolution)
+
+rgb_topic: ""
+camera_info_topic: ""
+depth_topic: ""
+fullscreen: false
+part_to_show: 0
+write_frames: false
+no_frame_drops: false
+write_json: ""
+camera_index: 0
+video: ""                     # !!!!!
+image_dir: ""                 # !!!!!
+start_frame: 0
+resolution: "1280x720"         # !!!!!
+net_resolution: "320x240" #"320x240" quite good # "240x160" so and so #"160x80" the quality is not too good     # !!!!!
+camera_resolution: "1280x720"
+start_device: 0
+num_gpu: 1
+start_scale: 1
+scale_gap: 0.3
+num_scales: 1
+no_display: false #true
+topic_to_publish: "/skeletons/skeleton"
+caffe_model: "/home/marco/workspace/catkin/src/body_pose_estimation/model/mpi/pose_iter_160000.caffemodel"
+caffe_proto: "/home/marco/workspace/catkin/src/body_pose_estimation/model/mpi/pose_deploy_linevec.prototxt"
+head_joint_enhancement: 1 # enables the head joint enhancement. MPI model estimates the head joint very high and the median calculate on the depth could result in wrong measurements.

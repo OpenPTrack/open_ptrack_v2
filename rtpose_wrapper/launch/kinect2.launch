@@ -1,0 +1,12 @@
+<launch>
+
+        <arg name="use_coco" default="true" />
+
+	<node pkg="rtpose_wrapper" type="rtpose" name="rtpose" output="screen">
+		<rosparam file="$(find rtpose_wrapper)/conf/kinect2_params.yaml" command="load" />
+	        <param name="caffe_model" value="$(find rtpose_wrapper)/model/mpi/pose_iter_150000.caffemodel"
+      if="$(arg use_coco)"/>
+      <param name="caffe_proto" value="$(find rtpose_wrapper)/model/mpi/pose_deploy_linevec_64.prototxt" if="$(arg use_coco)"/>
+        </node>
+
+</launch>

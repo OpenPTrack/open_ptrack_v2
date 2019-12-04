@@ -34,7 +34,13 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash \
     && git clone https://github.com/openptrack/open_ptrack_v2 ~/workspace/ros/src/open_ptrack \
     && cd ~/workspace/ros/src/open_ptrack \
     && git checkout $branch \
-    && cd ../..  \
+    && cd rtpose_wrapper     \  
+    && sed -i -e 's/CUDNN_CROSS_CORRELATION/CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT/g' include/caffe/util/cudnn.hpp   \
+    && apt-get --assume-yes install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler libboost-all-dev libgflags-dev libgoogle-glog-dev liblmdb-dev    \
+    && make all -j8"
+
+RUN /bin/bash -c "source /opt/ros/melodic/setup.bash \
+    && cd ~/workspace/ros \
     && export LD_LIBRARY_PATH=/root/workspace/ros/devel/lib:/opt/ros/melodic/lib:/opt/ros/melodic/lib/x86_64-linux-gnu:/usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu:/usr/local/cuda/lib64 \
     && catkin_make"
 
