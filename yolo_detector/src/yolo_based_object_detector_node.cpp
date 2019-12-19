@@ -246,7 +246,9 @@ void callback(const Image::ConstPtr& rgb_image,
 			int newHeight = 2 * (median_factor * (medianY - boxes->boxes[i].y));
 			
 			
-			cv::Rect rect(newX, newY, newWidth, newHeight);
+			// The dimensions of the depth image could be different from the RGB image, so adjust.
+			cv::Rect rect(newX * _depth_image.cols / im.w, newY * _depth_image.rows / im.h,
+				      newWidth * _depth_image.cols / im.w, newHeight * _depth_image.rows / im.h);
 			float medianDepth = median(_depth_image(rect)) / mm_factor;
 			// If medianDepth <= 0, that means the sensor got a wrong depth distance.
 			if (medianDepth <= 0 || medianDepth > 6.25) {

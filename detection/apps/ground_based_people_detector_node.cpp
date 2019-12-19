@@ -123,6 +123,16 @@ void
 cloud_cb (const PointCloudT::ConstPtr& callback_cloud)
 {
   *cloud = *callback_cloud;
+
+  // single_camera_tracking_node_azure.launch sets depth_mode to NFOV_UNBINNED = 640x576.
+  const int azure_width = 640;
+  const int azure_height = 576;
+  if (cloud->height == 1 && cloud->width == azure_width * azure_height) {
+    // The Azure provides a 1D array. Simply fix the width and height to be 2D.
+    cloud->width = azure_width;
+    cloud->height = azure_height;
+  }
+
   new_cloud_available_flag = true;
 
   // static tf::TransformBroadcaster br;
