@@ -6,13 +6,15 @@
     <arg name="enable_object" default="true" />
     <arg name="sensor_type" default="kinect2" />
     <arg name="sensor_name" default="$(arg sensor_type)_head" />
-
+    <arg name="yolo_based_people_tracking" default="false" />
+	        
     <!-- launch single camera tracking -->
     <include file="$(find tracking)/launch/single_camera_tracking_node_$(arg sensor_type).launch">
-        <arg name="sensor_name"             value="$(arg sensor_name)" />
-        <arg name="sensor_type"             value="$(arg sensor_type)" />
-        <arg name="enable_people_tracking"  value="$(arg enable_people_tracking)" />
-        <arg name="enable_pose"             value="$(arg enable_pose)" />
-        <arg name="enable_object"           value="$(arg enable_object)" />
+        <arg name="sensor_name"                   value="$(arg sensor_name)" />
+        <arg name="sensor_type"                   value="$(arg sensor_type)" />
+        <arg name="enable_people_tracking"        value="$(arg enable_people_tracking)" />
+        <arg name="enable_pose"                   value="$(arg enable_pose)" />
+	<arg name="enable_object"                 value="$(arg enable_object)" />
+	<arg name="yolo_based_people_tracking"    value="$(arg yolo_based_people_tracking)" />
     </include>
 </launch>

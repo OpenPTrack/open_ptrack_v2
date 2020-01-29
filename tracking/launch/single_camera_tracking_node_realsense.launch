@@ -7,6 +7,8 @@
     <arg name="sensor_name" default="realsense_head" />
     <arg name="sensor_type" default="realsense" />
 
+    <arg name="yolo_based_people_tracking" default="false" />
+
     <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
         <arg name="camera" value="$(arg sensor_name)" />
     </include>
@@ -21,7 +23,7 @@
 
     <group if="$(arg enable_pose)">
         <!-- Skeleton tracking -->
-        <include file="$(find detection)/skeleton_detector_realsense.launch">
+        <include file="$(find detection)/launch/skeleton_detector_realsense.launch">
             <arg name="sensor_name" value="$(arg sensor_name)" />
         </include>
         <include file="$(find tracking)/launch/skeleton_tracker_single.launch">
@@ -33,7 +35,7 @@
 
     <group if="$(arg enable_object)">
         <!-- Object Tracking -->
-        <include file="$(find detection)/detect_yolo_object_realsense_network.launch">
+        <include file="$(find yolo_detector)/launch/detect_yolo_object_realsense_network.launch">
             <arg name="sensor_name" value="$(arg sensor_name)" />
         </include>
         <node name="multiple_objects_detection" output="screen" pkg="detection" required="true" type="multiple_objects_detection_node">

@@ -7,7 +7,10 @@
   <arg name="enable_object" default="true" />
   <arg name="sensor_name" default="kinect2_head" />
   <arg name="sensor_type" default="kinect2" />
-  <!-- Load calibration results -->
+  
+  <arg name="yolo_based_people_tracking" default="false" />
+	  
+<!-- Load calibration results -->
   <!--include file="$(find opt_calibration)/launch/opt_calibration_results.launch"/-->
 
   <include file="$(find kinect2_bridge)/launch/kinect2_bridge_ir.launch">

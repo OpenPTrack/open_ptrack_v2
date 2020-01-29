@@ -1,5 +1,9 @@
 # Changelog for OpenPTrack
 
+## Unreleased
+- Sync tracking/launch files with [open_ptrack_docker_config](https://github.com/OpenPTrack/open_ptrack_docker_config/tree/1804) repo
+
+
 ## [2.2] - 2019-12-18
 - Upgrade to Ubuntu Linux 18.04 LTS (from Ubuntu Linux 16.04 LTS)
 - Upgrade to CUDA 10.0 (from CUDA 8.0)
