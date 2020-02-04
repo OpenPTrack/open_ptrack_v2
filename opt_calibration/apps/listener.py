@@ -389,9 +389,17 @@ class Listener :
       file.write('  <include file="$(find zed_wrapper)/launch/zed.launch">\n')
       file.write('    <arg name="camera_model"         value="zed" />\n')
       file.write('  </include>\n\n')
+      file.write('  <param name="zed/zed_node/general/resolution"    value="3" />\n')
       file.write('  <param name="zed/zed_node/depth/quality" value="4" />\n')
       file.write('  <param name="zed/zed_node/tracking/map_frame" value="$(arg sensor_name)_map" />\n')
-      file.write('  <include file="$(find detection)/launch/zed_frames.launch" />\n')
+      file.write('  <param name="zed/zed_description"    command="$(find xacro)/xacro.py \'$(find detection)/urdf/zed.xacro\' sensor_name:=$(arg sensor_name)" />\n')
+      file.write('  <param name="zed/zed_node/general/base_frame" value="base_link_$(arg sensor_name)" />\n')
+      file.write('  <param name="zed/zed_node/general/camera_frame" value="zed_camera_center_$(arg sensor_name)" />\n')
+      file.write('  <param name="zed/zed_node/general/left_camera_frame" value="zed_left_camera_frame_$(arg sensor_name)" />\n')
+      file.write('  <param name="zed/zed_node/general/left_camera_optical_frame" value="zed_left_camera_optical_frame_$(arg sensor_name)" />\n')
+      file.write('  <param name="zed/zed_node/general/right_camera_frame" value="zed_right_camera_frame_$(arg sensor_name)" />\n')
+      file.write('  <param name="zed/zed_node/general/right_camera_optical_frame" value="zed_right_camera_optical_frame_$(arg sensor_name)" />\n')
+
       file.write('  </group>\n\n')
 
       file.write('  <!-- Detection node -->\n')
@@ -443,7 +451,8 @@ class Listener :
       file.write('  <!-- Launch the sensor -->\n')
       file.write('   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">\n')
       file.write('      <arg name="camera"         value="$(arg sensor_name)" />\n')
-      file.write('      <arg name="serial_no"         value="$(arg sensor_id)" />\n\n')
+      if request.serial != '':
+        file.write('      <arg name="serial_no"         value="$(arg sensor_id)" />\n\n')
       file.write('      <arg name="depth_width"         value="$(arg width)" />\n')
       file.write('      <arg name="depth_height"         value="$(arg height)" />\n')
       file.write('      <arg name="infra_width"         value="$(arg width)" />\n')
