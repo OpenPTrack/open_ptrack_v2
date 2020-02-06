@@ -46,7 +46,7 @@
 #include <iostream>
 #include <string>
 
-pcl::visualization::PCLVisualizer viewer ("PCL visualizer"); 
+//pcl::visualization::PCLVisualizer viewer ("PCL visualizer"); 
 
 template <typename PointT>
 open_ptrack::detection::GroundBasedPeopleDetectionApp<PointT>::GroundBasedPeopleDetectionApp ()

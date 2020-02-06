@@ -2,7 +2,9 @@
 
 ## Unreleased
 - Sync tracking/launch files with [open_ptrack_docker_config](https://github.com/OpenPTrack/open_ptrack_docker_config/tree/1804) repo
-
+- Use zed.xacro file to auto-generate unique urdf files for multi-camera zed systems
+- Fix memory leak (in person_classifier.h)
+- Remove default PCL viewer window on detection node launch
 
 ## [2.2] - 2019-12-18
 - Upgrade to Ubuntu Linux 18.04 LTS (from Ubuntu Linux 16.04 LTS)

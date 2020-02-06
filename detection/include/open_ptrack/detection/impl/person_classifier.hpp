@@ -332,19 +332,19 @@ open_ptrack::detection::PersonClassifier<PointT>::evaluate (PointCloudPtr& image
               Eigen::Vector3f& centroid,
               bool vertical)
 {
-  PointCloudPtr& sample = image;
+  //PointCloudPtr& sample = image;
 
-  uint8_t* sample_float = new uint8_t[sample->width * sample->height * 3]; 
-  int delta = sample->height * sample->width;
-  for(int row = 0; row < sample->height; row++)
-  {
-    for(int col = 0; col < sample->width; col++)
-    {
-      sample_float[3*(col + sample->width * row)] = ( ((*sample)(col, row).b)); //ptr[col * 3 + 2];
-      sample_float[3*(col + sample->width * row) + 1] = (((*sample)(col, row).g)); //ptr[col * 3 + 1];
-      sample_float[3*(col + sample->width * row) + 2] = (((*sample)(col, row).r)); //ptr[col * 3];
-    }
-  }
+  //uint8_t* sample_float = new uint8_t[sample->width * sample->height * 3]; 
+  //int delta = sample->height * sample->width;
+  //for(int row = 0; row < sample->height; row++)
+  //{
+  //  for(int col = 0; col < sample->width; col++)
+  //  {
+  //    sample_float[3*(col + sample->width * row)] = ( ((*sample)(col, row).b)); //ptr[col * 3 + 2];
+  //    sample_float[3*(col + sample->width * row) + 1] = (((*sample)(col, row).g)); //ptr[col * 3 + 1];
+  //    sample_float[3*(col + sample->width * row) + 2] = (((*sample)(col, row).r)); //ptr[col * 3];
+  //  }
+  //}
 
   // point_cloud_visulizer( image , centroid, top, bottom, vertical);
 
