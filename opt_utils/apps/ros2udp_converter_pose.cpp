@@ -153,8 +153,10 @@ toJsonPoseMsg(
       jj.Add("confidence", std::string("nan"));
     else
       jj.Add("confidence", j.confidence);
-
-    joints.Add(s, jj);
+    if (j.x > 0.0001f || j.x < -0.0001f){ // receiving all zero/10^-310 tracks will create false track
+    //TODO: find origin of problem, this check provides a temporary fix for UDP stream
+      joints.Add(s, jj);
+    }
   }
   current_track.Add("joints", joints);
 
@@ -211,7 +213,7 @@ synchronizedCallback(
                                         t, st_t, pr);
     if (jsonmsg.length() + 1 > udp_buffer_length)
     {
-      ROS_WARN_STREAM("Unexpected: json message doesn’t fit in payload "
+      ROS_WARN_STREAM("Unexpected: json message doesn?t fit in payload "
                       << jsonmsg);
       if (not buffer.empty())
       {
