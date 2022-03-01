@@ -42,7 +42,7 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash \
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash \
     && cd ~/workspace/ros \
     && export LD_LIBRARY_PATH=/root/workspace/ros/devel/lib:/opt/ros/melodic/lib:/opt/ros/melodic/lib/x86_64-linux-gnu:/usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu:/usr/local/cuda/lib64 \
-    && catkin_make -DCMAKE_BUILD_TYPE=Release"
+    && catkin_make -j8 -DCMAKE_BUILD_TYPE=Release"
 
 RUN /bin/bash -c "source /root/workspace/ros/devel/setup.bash \
     && roscd yolo_detector/darknet_opt \
