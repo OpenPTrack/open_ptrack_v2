@@ -19,8 +19,8 @@ RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula selec
 
 RUN git clone --branch v2.8.x https://github.com/stereolabs/zed-ros-wrapper.git ~/workspace/ros/src/zed-ros-wrapper
 
-RUN apt-key adv --keyserver keys.gnupg.net --recv-key C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C8B3A55A6F3EFCDE \
-    && add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo bionic main" -u \
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE \
+    && add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo $(lsb_release -cs) main" -u \
     && rm -f /etc/apt/sources.list.d/realsense-public.list \
     && apt-get update \
     && apt-get install -y librealsense2-dkms librealsense2-utils librealsense2-dev librealsense2-dbg \
@@ -42,7 +42,7 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash \
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash \
     && cd ~/workspace/ros \
     && export LD_LIBRARY_PATH=/root/workspace/ros/devel/lib:/opt/ros/melodic/lib:/opt/ros/melodic/lib/x86_64-linux-gnu:/usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu:/usr/local/cuda/lib64 \
-    && catkin_make -DCMAKE_BUILD_TYPE=Release"
+    && catkin_make -j8 -DCMAKE_BUILD_TYPE=Release"
 
 RUN /bin/bash -c "source /root/workspace/ros/devel/setup.bash \
     && roscd yolo_detector/darknet_opt \
